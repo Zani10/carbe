@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import ImageCarousel from '@/components/carDetail/ImageCarousel';
-import TabBar from '@/components/carDetail/TabBar';
 import CarHeader from '@/components/carDetail/CarHeader';
 import SpecsGrid from '@/components/carDetail/SpecsGrid';
 import DetailsSection from '@/components/carDetail/DetailsSection';
@@ -29,22 +29,28 @@ const mockDetails = [
 ];
 
 export default function CarDetailPage() {
+  const router = useRouter();
+  
+  const handleBack = () => {
+    router.back();
+  };
+  
   return (
-    <div className="min-h-screen pb-24 bg-black text-white">
+    <div className="min-h-screen pb-28 bg-[#212121] text-white">
       <div className="relative">
-        {/* Image carousel with tab bar positioned at the bottom of the carousel */}
-        <div className="relative">
+        {/* Image carousel with integrated tab bar */}
+        <div className="relative bg-[#212121]">
           <ImageCarousel 
             images={mockImages} 
             rating={4.8} 
             location="Brussels, BE"
-            onBack={() => window.history.back()} 
+            tabs={['Overview', 'Host', 'Driving', 'Map']}
+            onBack={handleBack} 
           />
-          <TabBar tabs={['Overview', 'Host', 'Driving', 'Map']} />
         </div>
         
         {/* Car details section */}
-        <div className="px-4 pt-4" style={{ backgroundColor: '#292929' }}>
+        <div className="px-5 pt-10 pb-20 bg-[#212121]">
           <CarHeader 
             name="BMW B-Series" 
             description="Nice blue family car, good state, available in the weekends." 

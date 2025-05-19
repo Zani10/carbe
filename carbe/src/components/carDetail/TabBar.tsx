@@ -24,22 +24,23 @@ const TabBar: React.FC<TabBarProps> = ({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-10">
+    <div className="absolute bottom-0 left-0 right-0 z-10 px-4 mb-4">
       <div 
-        className="w-full flex justify-center mb-4 px-4"
+        className="w-full flex justify-center"
         style={{
           backdropFilter: 'blur(25px) brightness(1)',
           WebkitBackdropFilter: 'blur(25px) brightness(1)',
           backgroundColor: 'rgba(0, 0, 0, 0.15)',
+          borderRadius: '30px',
         }}
       >
-        <div className="flex w-full py-2 rounded-full overflow-x-auto no-scrollbar">
+        <div className="flex w-full py-2.5 px-1">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabClick(tab)}
               className={clsx(
-                "py-2 px-4 text-sm font-medium rounded-full transition-all duration-200 flex-1 mx-1",
+                "py-2 px-6 text-sm font-medium rounded-full transition-all duration-200 flex-1",
                 activeTab === tab 
                   ? "bg-white/10 text-white" 
                   : "text-gray-400 hover:text-gray-300"

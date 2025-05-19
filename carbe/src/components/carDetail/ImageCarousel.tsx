@@ -3,25 +3,30 @@
 import React, { useState, useRef } from 'react';
 import { Share2, Heart, ChevronLeft } from 'lucide-react';
 import clsx from 'clsx';
+import TabBar from './TabBar';
 
 interface ImageCarouselProps {
   images: string[];
   rating: number;
   location: string;
+  tabs: string[];
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   onShare?: () => void;
   onBack?: () => void;
+  onTabChange?: (tab: string) => void;
 }
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({
   images,
   rating,
   location,
+  tabs,
   isFavorite = false,
   onToggleFavorite = () => {},
   onShare = () => {},
   onBack = () => {},
+  onTabChange,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
@@ -56,11 +61,11 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[60vh] bg-black">
+    <div className="relative w-full bg-[#212121]">
       {/* Main Image with rounded corners at bottom */}
       <div 
         ref={carouselRef}
-        className="relative w-full h-full overflow-hidden"
+        className="relative w-full h-[50vh] overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -118,29 +123,38 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         </button>
       </div>
 
-      {/* Location indicator */}
-      <div className="absolute bottom-16 left-4 flex items-center space-x-2 bg-black/30 backdrop-blur-md px-3 py-1 rounded-full">
-        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-        <span className="text-white text-sm font-medium">{location}</span>
+      {/* Location and Rating indicators group */}
+      <div className="absolute bottom-28 left-4 flex items-center space-x-2">
+        <div className="flex items-center space-x-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full">
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+          <span className="text-white text-sm font-medium">{location}</span>
+        </div>
+        <div className="flex items-center space-x-1.5 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full">
+          <span className="text-yellow-400">★</span>
+          <span className="text-white text-sm font-medium">{rating.toFixed(1)}</span>
+        </div>
       </div>
 
-      {/* Rating indicator */}
-      <div className="absolute bottom-16 right-4 flex items-center space-x-1 bg-black/30 backdrop-blur-md px-3 py-1 rounded-full">
-        <span className="text-yellow-400">★</span>
-        <span className="text-white text-sm font-medium">{rating.toFixed(1)}</span>
+      {/* Image progress line indicator with pagination */}
+      <div className="absolute bottom-20 left-0 right-0 px-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 h-[3px] bg-white/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-white transition-all duration-300 rounded-full"
+              style={{ width: `${((currentIndex + 1) / images.length) * 100}%` }}
+            />
+          </div>
+          <div className="bg-black/30 backdrop-blur-md px-3 py-1 rounded-full flex-shrink-0">
+            <span className="text-white text-sm">
+              {currentIndex + 1}/{images.length}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Pagination indicators (dots) */}
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-1.5">
-        {images.map((_, index) => (
-          <div 
-            key={index} 
-            className={clsx(
-              "h-1 rounded-full transition-all duration-200",
-              currentIndex === index ? "w-6 bg-white" : "w-1.5 bg-white/50"
-            )}
-          ></div>
-        ))}
+      {/* TabBar integrated at the bottom */}
+      <div className="absolute left-0 right-0">
+        <TabBar tabs={tabs} onTabChange={onTabChange} />
       </div>
     </div>
   );
