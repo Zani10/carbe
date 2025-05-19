@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
 import CarCard, { CarCardProps } from '../car/CarCard';
+import Link from 'next/link';
 
 interface CarListProps {
   onDrag?: (yPosition: number) => void;
@@ -18,6 +19,7 @@ const vhToPx = (vh: number, screenHeight: number) => (vh / 100) * screenHeight;
 
 const mockedCars: CarCardProps[] = [
   {
+    id: '1',
     image: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?ixlib=rb-1.2.1&auto=format&fit=crop&w=750&q=80',
     rating: 4.8,
     isFavorite: true,
@@ -29,6 +31,7 @@ const mockedCars: CarCardProps[] = [
     brandLogoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/200px-BMW.svg.png'
   },
   {
+    id: '2',
     image: 'https://images.unsplash.com/photo-1580273916550-4c53a792947c?ixlib=rb-1.2.1&auto=format&fit=crop&w=750&q=80',
     rating: 5.0,
     isFavorite: true,
@@ -40,6 +43,7 @@ const mockedCars: CarCardProps[] = [
     brandLogoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Benz_Logo_2010.svg/200px-Mercedes-Benz_Logo_2010.svg.png'
   },
   {
+    id: '3',
     image: 'https://images.unsplash.com/photo-1553440569-bcc63803a83d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
     rating: 4.6,
     isFavorite: false,
@@ -175,8 +179,10 @@ const CarList: React.FC<CarListProps> = ({ onDrag }) => {
         className="overflow-y-auto pb-20 bg-[#212121]"
         style={{ height: `calc(100% - 48px)` }}
       >
-        {mockedCars.map((car, index) => (
-          <CarCard key={index} {...car} />
+        {mockedCars.map((car) => (
+          <Link key={car.id} href={`/car/${car.id}`}> 
+            <CarCard {...car} />
+          </Link>
         ))}
       </div>
     </animated.div>

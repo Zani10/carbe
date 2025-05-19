@@ -1,11 +1,9 @@
 import React from 'react';
 
-// interface MapViewProps {} // Removed empty interface
-
 const MapView = () => {
   return (
     <div className="w-full h-full relative overflow-hidden bg-gray-300">
-      {/* Fake map image - using a brighter, cleaner map style */}
+      {/* Fake map */}
       <div 
         className="absolute inset-0 bg-cover bg-center opacity-80"
         style={{
@@ -14,8 +12,8 @@ const MapView = () => {
         }}
       ></div>
       
-      {/* Car Markers - larger, more prominent, and styled like the XD */}
-      {[ // Array of marker positions for easier management
+      {/* Car Markers */}
+      {[ 
         { left: '25%', top: '35%' },
         { left: '50%', top: '20%' },
         { left: '65%', top: '50%' },

@@ -3,6 +3,7 @@ import { Star, Heart, MapPin, Settings2 } from 'lucide-react';
 import clsx from 'clsx';
 
 export interface CarCardProps {
+  id: string;
   image: string;
   rating: number;
   isFavorite: boolean;
