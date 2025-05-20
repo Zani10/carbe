@@ -65,32 +65,26 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       {/* Main Image with rounded corners at bottom */}
       <div 
         ref={carouselRef}
-        className="relative w-full h-[50vh]"
+        className="relative w-full h-[50vh] overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div 
-          className="w-full h-full flex transition-transform duration-300 ease-out"
-          style={{ 
-            transform: `translateX(-${currentIndex * 100}%)`,
-            width: `${images.length * 100}%`
-          }}
-        >
-          {images.map((img, index) => (
-            <div 
-              key={index} 
-              className="relative h-full"
-              style={{ width: `${100 / images.length}%` }}
-            >
-              <img
-                src={img}
-                alt={`Car image ${index + 1}`}
-                className="w-full h-full object-cover rounded-b-[35px]"
-              />
-            </div>
-          ))}
-        </div>
+        {images.map((img, index) => (
+          <div 
+            key={index} 
+            className="absolute inset-0 w-full h-full transition-transform duration-300 ease-out"
+            style={{ 
+              transform: `translateX(${(index - currentIndex) * 100}%)`
+            }}
+          >
+            <img
+              src={img}
+              alt={`Car image ${index + 1}`}
+              className="w-full h-full object-cover rounded-b-[35px]"
+            />
+          </div>
+        ))}
       </div>
 
       {/* Back button */}
