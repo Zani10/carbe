@@ -65,7 +65,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       {/* Main Image with rounded corners at bottom */}
       <div 
         ref={carouselRef}
-        className="relative w-full h-[50vh] overflow-hidden"
+        className="relative w-full h-[50vh]"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -117,7 +117,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             "w-10 h-10 rounded-full bg-black/30 backdrop-blur-[30px] flex items-center justify-center",
             isFavorite ? "text-red-500" : "text-white"
           )}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={isFavorite ? "Remove fro  m favorites" : "Add to favorites"}
         >
           <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
         </button>

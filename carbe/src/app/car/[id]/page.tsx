@@ -3,11 +3,11 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ImageCarousel from '@/components/carDetail/ImageCarousel';
-import CarHeader from '@/components/carDetail/CarHeader';
-import SpecsGrid from '@/components/carDetail/SpecsGrid';
-import DetailsSection from '@/components/carDetail/DetailsSection';
 import StickyFooterBar from '@/components/carDetail/StickyFooterBar';
 import HostTab from '@/components/carDetail/HostTab/HostTab';
+import DetailsTab from '@/components/carDetail/Details/DetailsTab';
+import PickupTab from '@/components/carDetail/Pickup/PickupTab';
+import OverviewTab from '@/components/carDetail/OverviewTab/OverviewTab';
 
 // Mock data
 const mockImages = [
@@ -58,31 +58,27 @@ export default function CarDetailPage() {
   };
   
   return (
-    <div className="min-h-screen bg-[#212121] text-white overflow-y-auto scroll-smooth">
-      <div className="relative">
-        {/* Image carousel with integrated tab bar */}
-        <div className="relative bg-[#212121]">
-          <ImageCarousel 
-            images={mockImages} 
-            rating={4.8} 
-            location="Brussels, BE"
-            tabs={['Overview', 'Host', 'Driving', 'Map']}
-            onBack={handleBack}
-            onTabChange={handleTabChange}
-          />
-        </div>
+    <div className="h-full w-full bg-[#212121] text-white flex flex-col">
+      <div className="h-full w-full overflow-y-auto pb-28">
+        {/* Carousel section */}
+        <ImageCarousel 
+          images={mockImages} 
+          rating={4.8} 
+          location="Brussels, BE"
+          tabs={['Overview', 'Host', 'Details', 'Pickup']}
+          onBack={handleBack}
+          onTabChange={handleTabChange}
+        />
         
-        {/* Content area based on active tab */}
-        <div className="px-5 pt-10 pb-28 bg-[#212121] min-h-[70vh]">
+        {/* Content section */}
+        <div className="px-5 pt-4">
           {activeTab === 'Overview' && (
-            <>
-              <CarHeader 
-                name="BMW B-Series" 
-                description="Nice blue family car, good state, available in the weekends." 
-              />
-              <SpecsGrid specs={mockSpecs} />
-              <DetailsSection details={mockDetails} />
-            </>
+            <OverviewTab 
+              carName="BMW B-Series"
+              description="Nice blue family car, good state, available in the weekends."
+              specs={mockSpecs}
+              details={mockDetails}
+            />
           )}
 
           {activeTab === 'Host' && (
@@ -92,22 +88,17 @@ export default function CarDetailPage() {
             />
           )}
 
-          {activeTab === 'Driving' && (
-            <div className="py-4">
-              <h2 className="text-xl font-semibold mb-4">Driving Experience</h2>
-              <p className="text-gray-300">Driving details will be displayed here.</p>
-            </div>
+          {activeTab === 'Details' && (
+            <DetailsTab />
           )}
 
-          {activeTab === 'Map' && (
-            <div className="py-4">
-              <h2 className="text-xl font-semibold mb-4">Car Location</h2>
-              <p className="text-gray-300">Map will be displayed here.</p>
-            </div>
+          {activeTab === 'Pickup' && (
+            <PickupTab />
           )}
         </div>
       </div>
-      
+
+      {/* Footer */}
       <StickyFooterBar price={70} />
     </div>
   );

@@ -9,12 +9,12 @@ interface StickyFooterBarProps {
 
 const StickyFooterBar: React.FC<StickyFooterBarProps> = ({
   price,
-  currency = '$',
+  currency = '€',
   onSelectDates = () => {},
 }) => {
   return (
     <div 
-      className="fixed bottom-4 left-4 right-4 rounded-full px-5 py-4 flex justify-between items-center"
+      className=" fixed bottom-4 left-4 right-4 rounded-full px-5 py-4 flex justify-between items-center"
       style={{
         backgroundColor: '#292929',
         boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.3)'
