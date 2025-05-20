@@ -9,6 +9,8 @@ import DetailsTab from '@/components/carDetail/Details/DetailsTab';
 import PickupTab from '@/components/carDetail/Pickup/PickupTab';
 import OverviewTab from '@/components/carDetail/OverviewTab/OverviewTab';
 import HeaderBar from '@/components/layout/HeaderBar';
+import BookingFooter from '@/components/booking/BookingFooter';
+import DatePicker from '@/components/booking/DatePicker';
 
 // Mock data
 const mockImages = [
@@ -55,6 +57,11 @@ export default function CarDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const headerThreshold = 150; // Threshold for header appearance
+  
+  // Date selection state
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const handleBack = () => {
     router.back();
@@ -107,6 +114,29 @@ export default function CarDetailPage() {
   const isHeaderSolid = scrollPosition > headerThreshold;
   const showTitle = scrollPosition > headerThreshold * 1.2;
   
+  // Handle date selection
+  const handleSelectDates = () => {
+    setIsDatePickerOpen(true);
+  };
+  
+  const handleDatePickerClose = () => {
+    setIsDatePickerOpen(false);
+  };
+  
+  const handleDateSelection = (start: Date, end: Date) => {
+    setStartDate(start);
+    setEndDate(end);
+    setIsDatePickerOpen(false);
+  };
+  
+  // Handle booking confirmation
+  const handleBookingConfirm = () => {
+    if (startDate && endDate) {
+      console.log(`Booking confirmed: from ${startDate.toDateString()} to ${endDate.toDateString()}`);
+      router.push(`/book/${CAR_NAME}?from=${startDate.toISOString()}&to=${endDate.toISOString()}`);
+    }
+  };
+
   return (
     <div className="h-full w-full bg-[#212121] text-white flex flex-col relative">
       <div 
@@ -165,8 +195,29 @@ export default function CarDetailPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <StickyFooterBar price={70} />
+      {/* Footer - conditionally render based on date selection */}
+      {startDate && endDate ? (
+        <BookingFooter
+          pricePerDay={70}
+          startDate={startDate}
+          endDate={endDate}
+          onConfirm={handleBookingConfirm}
+        />
+      ) : (
+        <StickyFooterBar 
+          price={70} 
+          onSelectDates={handleSelectDates}
+        />
+      )}
+
+      {/* Date Picker Modal */}
+      <DatePicker
+        isOpen={isDatePickerOpen}
+        onClose={handleDatePickerClose}
+        onSelectDates={handleDateSelection}
+        initialStartDate={startDate}
+        initialEndDate={endDate}
+      />
     </div>
   );
 }
