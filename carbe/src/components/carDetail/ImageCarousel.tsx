@@ -1,8 +1,6 @@
 'use client'
 
 import React, { useState, useRef } from 'react';
-import { Share2, Heart, ChevronLeft } from 'lucide-react';
-import clsx from 'clsx';
 import TabBar from './TabBar';
 
 interface ImageCarouselProps {
@@ -10,10 +8,6 @@ interface ImageCarouselProps {
   rating: number;
   location: string;
   tabs: string[];
-  isFavorite?: boolean;
-  onToggleFavorite?: () => void;
-  onShare?: () => void;
-  onBack?: () => void;
   onTabChange?: (tab: string) => void;
 }
 
@@ -22,10 +16,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   rating,
   location,
   tabs,
-  isFavorite = false,
-  onToggleFavorite = () => {},
-  onShare = () => {},
-  onBack = () => {},
   onTabChange,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -85,36 +75,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             />
           </div>
         ))}
-      </div>
-
-      {/* Back button */}
-      <button
-        onClick={onBack}
-        className="absolute left-4 top-4 w-10 h-10 rounded-full bg-black/30 backdrop-blur-[30px] flex items-center justify-center text-white"
-        aria-label="Go back"
-      >
-        <ChevronLeft size={24} />
-      </button>
-
-      {/* Top right icons */}
-      <div className="absolute top-4 right-4 flex space-x-2">
-        <button
-          onClick={onShare}
-          className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-[30px] flex items-center justify-center text-white"
-          aria-label="Share"
-        >
-          <Share2 size={20} />
-        </button>
-        <button
-          onClick={onToggleFavorite}
-          className={clsx(
-            "w-10 h-10 rounded-full bg-black/30 backdrop-blur-[30px] flex items-center justify-center",
-            isFavorite ? "text-red-500" : "text-white"
-          )}
-          aria-label={isFavorite ? "Remove fro  m favorites" : "Add to favorites"}
-        >
-          <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
-        </button>
       </div>
 
       {/* Location and Rating indicators group */}

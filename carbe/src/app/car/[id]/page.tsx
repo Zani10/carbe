@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import ImageCarousel from '@/components/carDetail/ImageCarousel';
 import StickyFooterBar from '@/components/carDetail/StickyFooterBar';
@@ -8,6 +8,7 @@ import HostTab from '@/components/carDetail/HostTab/HostTab';
 import DetailsTab from '@/components/carDetail/Details/DetailsTab';
 import PickupTab from '@/components/carDetail/Pickup/PickupTab';
 import OverviewTab from '@/components/carDetail/OverviewTab/OverviewTab';
+import HeaderBar from '@/components/layout/HeaderBar';
 
 // Mock data
 const mockImages = [
@@ -45,10 +46,16 @@ const mockHostData = {
   postalCode: '1081',
 };
 
+const CAR_NAME = "BMW B-Series";
+
 export default function CarDetailPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Overview');
-  
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const headerThreshold = 150; // Threshold for header appearance
+
   const handleBack = () => {
     router.back();
   };
@@ -56,17 +63,62 @@ export default function CarDetailPage() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
   };
+
+  const handleShare = () => {
+    // Share functionality
+    console.log('Share car:', CAR_NAME);
+  };
+
+  const handleToggleFavorite = () => {
+    setIsFavorite((prev) => !prev);
+    console.log(`${isFavorite ? 'Removed from' : 'Added to'} favorites:`, CAR_NAME);
+  };
+
+  // Handle scroll events with throttling for better performance
+  useEffect(() => {
+    const handleScroll = () => {
+      if (contentRef.current) {
+        setScrollPosition(contentRef.current.scrollTop);
+      }
+    };
+
+    const contentElement = contentRef.current;
+    if (contentElement) {
+      let isScrolling = false;
+      
+      const onScroll = () => {
+        if (!isScrolling) {
+          window.requestAnimationFrame(() => {
+            handleScroll();
+            isScrolling = false;
+          });
+          isScrolling = true;
+        }
+      };
+      
+      contentElement.addEventListener('scroll', onScroll, { passive: true });
+      return () => {
+        contentElement.removeEventListener('scroll', onScroll);
+      };
+    }
+  }, []);
+
+  // Calculate header styles based on scroll position
+  const isHeaderSolid = scrollPosition > headerThreshold;
+  const showTitle = scrollPosition > headerThreshold * 1.2;
   
   return (
-    <div className="h-full w-full bg-[#212121] text-white flex flex-col">
-      <div className="h-full w-full overflow-y-auto pb-28">
+    <div className="h-full w-full bg-[#212121] text-white flex flex-col relative">
+      <div 
+        ref={contentRef} 
+        className="h-full w-full overflow-y-auto pb-28 overscroll-none"
+      >
         {/* Carousel section */}
         <ImageCarousel 
           images={mockImages} 
           rating={4.8} 
           location="Brussels, BE"
           tabs={['Overview', 'Host', 'Details', 'Pickup']}
-          onBack={handleBack}
           onTabChange={handleTabChange}
         />
         
@@ -74,7 +126,7 @@ export default function CarDetailPage() {
         <div className="px-5 pt-4">
           {activeTab === 'Overview' && (
             <OverviewTab 
-              carName="BMW B-Series"
+              carName={CAR_NAME}
               description="Nice blue family car, good state, available in the weekends."
               specs={mockSpecs}
               details={mockDetails}
@@ -95,6 +147,21 @@ export default function CarDetailPage() {
           {activeTab === 'Pickup' && (
             <PickupTab />
           )}
+        </div>
+      </div>
+
+      {/* Fixed Header that changes based on scroll */}
+      <div className="fixed top-0 left-0 right-0 z-30 pointer-events-none">
+        <div className="pointer-events-auto">
+          <HeaderBar 
+            showTitle={showTitle}
+            title={CAR_NAME}
+            isFavorite={isFavorite}
+            isTransparent={!isHeaderSolid}
+            onBack={handleBack}
+            onShare={handleShare}
+            onToggleFavorite={handleToggleFavorite}
+          />
         </div>
       </div>
 
