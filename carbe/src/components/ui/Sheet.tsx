@@ -1,6 +1,4 @@
 import React, { useRef, useEffect } from 'react';
-import { useSpring, animated } from '@react-spring/web';
-import { useDrag } from '@use-gesture/react';
 import { X } from 'lucide-react';
 
 interface SheetProps {
@@ -9,8 +7,6 @@ interface SheetProps {
   title?: string;
   showCloseButton?: boolean;
   children: React.ReactNode;
-  snapPoints?: number[];
-  defaultSnapPoint?: number;
   showIndicator?: boolean;
   headerAction?: React.ReactNode;
   height?: string | number;
@@ -22,92 +18,11 @@ const Sheet: React.FC<SheetProps> = ({
   title,
   children,
   showCloseButton = true,
-  snapPoints = [0.9],
-  defaultSnapPoint = 0,
   showIndicator = true,
   headerAction,
   height = '90vh',
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
-  
-  // Convert snapPoints to pixel values
-  const getSnapPoints = () => {
-    if (!sheetRef.current) return snapPoints.map(point => window.innerHeight * point);
-    const windowHeight = window.innerHeight;
-    return snapPoints.map(point => windowHeight * point);
-  };
-
-  const [{ y }, api] = useSpring(() => ({ 
-    y: window.innerHeight,
-    config: { tension: 300, friction: 30 }
-  }));
-
-  const openSheet = () => {
-    const snapPixels = getSnapPoints();
-    api.start({ 
-      y: snapPixels[defaultSnapPoint],
-      immediate: false
-    });
-  };
-
-  const closeSheet = () => {
-    api.start({ 
-      y: window.innerHeight, 
-      immediate: false,
-      onRest: onClose 
-    });
-  };
-
-  // Drag binding
-  const bind = useDrag(
-    ({ movement: [, my], velocity: [, vy], direction: [, dy], cancel, last }) => {
-      // Cancel drag if moving up initially
-      if (my < -20) cancel();
-
-      if (last) {
-        const snapPixels = getSnapPoints();
-        const currentY = y.get();
-        
-        // If dragged more than 1/3 of the sheet's height or flicked down with velocity
-        if (my > sheetRef.current!.clientHeight / 3 || (vy > 0.5 && dy > 0)) {
-          closeSheet();
-          return;
-        }
-        
-        // Otherwise snap to closest snap point
-        let closestPoint = 0;
-        let minDistance = Infinity;
-        
-        snapPixels.forEach((point, index) => {
-          const distance = Math.abs(currentY - point);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestPoint = index;
-          }
-        });
-        
-        api.start({ y: snapPixels[closestPoint] });
-      } else {
-        // While dragging
-        api.start({ y: y.get() + my, immediate: true });
-      }
-    },
-    { 
-      from: () => [0, y.get()],
-      bounds: { top: 0 },
-      rubberband: true,
-      filterTaps: true,
-    }
-  );
-
-  // Effect to handle opening/closing
-  useEffect(() => {
-    if (isOpen) {
-      openSheet();
-    } else {
-      closeSheet();
-    }
-  }, [isOpen]);
 
   // Prevent body scrolling when sheet is open
   useEffect(() => {
@@ -134,17 +49,19 @@ const Sheet: React.FC<SheetProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60" onClick={onClose}>
-      <animated.div 
+    <div 
+      className="fixed inset-0 z-50 bg-black/60 flex items-end justify-center"
+      onClick={onClose}
+      style={{ animation: 'fadeIn 0.2s ease-out forwards' }}
+    >
+      <div 
         ref={sheetRef}
-        className="fixed bottom-0 left-0 right-0 bg-[#212121] rounded-t-[28px] shadow-xl overflow-hidden flex flex-col"
+        className="w-full bg-[#212121] rounded-t-[28px] shadow-xl overflow-hidden flex flex-col"
         style={{ 
           height: typeof height === 'string' ? height : `${height}px`,
-          y, 
-          touchAction: 'none',
+          animation: 'slideUp 0.3s ease-out forwards',
         }}
         onClick={e => e.stopPropagation()}
-        {...bind()}
       >
         {/* Drag indicator */}
         {showIndicator && (
@@ -183,7 +100,7 @@ const Sheet: React.FC<SheetProps> = ({
         <div className="flex-1 overflow-auto p-4">
           {children}
         </div>
-      </animated.div>
+      </div>
     </div>
   );
 };
