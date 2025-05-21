@@ -154,9 +154,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
                         h-12 flex items-center justify-center rounded-full relative
                         ${disabled ? 'text-gray-600 cursor-not-allowed' : 'text-white cursor-pointer'}
                         ${isSelected ? 'bg-[#FF4646]' : ''}
-                        ${isInRange ? 'bg-[#FF4646]/30' : ''}
-                        ${isStart ? 'rounded-r-none' : ''}
-                        ${isEnd ? 'rounded-l-none' : ''}
+                        ${isInRange ? 'bg-[#FF4646]/20' : ''}
+                        ${isStart ? 'rounded-l-full' : ''}
+                        ${isEnd ? 'rounded-r-full' : ''}
                       `}
                     >
                       {format(date, 'd')}
