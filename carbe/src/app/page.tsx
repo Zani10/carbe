@@ -16,6 +16,14 @@ export default function HomePage() {
     setCarListY(yValue);
   };
 
+  const handleSearch = (params: {
+    location: string;
+    dates: [Date | null, Date | null];
+  }) => {
+    // Here you would typically fetch cars based on the search parameters
+    console.log('Searching with params:', params);
+  };
+
   // The map should translate upwards by the same amount the CarList panel effectively moves up.
   // carListY is the direct y offset from react-spring (negative when panel moves up).
   const mapAnimation = useSpring({
@@ -38,7 +46,7 @@ export default function HomePage() {
 
       {/* SearchBar: Fixed at the top */}
       <header className="fixed top-0 left-0 right-0 z-30 w-full">
-        <SearchBar />
+        <SearchBar onSearch={handleSearch} />
       </header>
 
       {/* CarList: Draggable panel, provides drag data via onDrag */}
