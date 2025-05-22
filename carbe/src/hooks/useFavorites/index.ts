@@ -7,10 +7,19 @@ export function useFavorites() {
   const [favorites, setFavorites] = useState<Car[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+
+  // Check if we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Fetch favorites
   const fetchFavorites = useCallback(async () => {
+    // Don't run this function during server-side rendering
+    if (!isClient) return;
+    
     try {
       setIsLoading(true);
       
@@ -64,10 +73,12 @@ export function useFavorites() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isClient]);
 
   // Add a car to favorites
   const addFavorite = useCallback(async (carId: string) => {
+    if (!isClient) return false;
+    
     try {
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -96,10 +107,12 @@ export function useFavorites() {
       console.error('Error in addFavorite:', error);
       return false;
     }
-  }, [fetchFavorites, router]);
+  }, [fetchFavorites, router, isClient]);
 
   // Remove a car from favorites
   const removeFavorite = useCallback(async (carId: string) => {
+    if (!isClient) return false;
+    
     try {
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -126,7 +139,7 @@ export function useFavorites() {
       console.error('Error in removeFavorite:', error);
       return false;
     }
-  }, [fetchFavorites]);
+  }, [fetchFavorites, isClient]);
 
   // Check if a car is in favorites
   const isFavorite = useCallback((carId: string) => {
@@ -135,37 +148,41 @@ export function useFavorites() {
 
   // Toggle favorite status
   const toggleFavorite = useCallback(async (carId: string) => {
+    if (!isClient) return false;
+    
     if (isFavorite(carId)) {
       return removeFavorite(carId);
     } else {
       return addFavorite(carId);
     }
-  }, [isFavorite, removeFavorite, addFavorite]);
+  }, [isFavorite, removeFavorite, addFavorite, isClient]);
 
   // Load favorites on component mount
   useEffect(() => {
-    fetchFavorites();
-    
-    // Set up realtime subscription for favorites changes
-    const favoritesSubscription = supabase
-      .channel('favorites_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'favorites',
-        },
-        () => {
-          fetchFavorites();
-        }
-      )
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(favoritesSubscription);
-    };
-  }, [fetchFavorites]);
+    if (isClient) {
+      fetchFavorites();
+      
+      // Set up realtime subscription for favorites changes
+      const favoritesSubscription = supabase
+        .channel('favorites_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'favorites',
+          },
+          () => {
+            fetchFavorites();
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(favoritesSubscription);
+      };
+    }
+  }, [fetchFavorites, isClient]);
 
   return {
     favorites,

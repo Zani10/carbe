@@ -9,6 +9,8 @@ import {
   UserCircle2,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BottomNavItemProps {
   icon: React.ElementType;
@@ -44,19 +46,35 @@ const BottomNavItem: React.FC<BottomNavItemProps> = ({
 };
 
 const BottomNav = () => {
-  const [activeIndex, setActiveIndex] = React.useState(0);
-
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, isLoading } = useAuth();
+  
   const navItems = [
-    { icon: Compass, label: 'Explore', isOutlineIcon: true },
-    { icon: Heart, label: 'Saved', isOutlineIcon: false },
-    { icon: Car, label: 'Rides', isOutlineIcon: true },
-    { icon: MessageSquare, label: 'Inbox', isOutlineIcon: true },
-    { icon: UserCircle2, label: 'Profile', isOutlineIcon: true },
+    { path: '/explore', icon: Compass, label: 'Explore', isOutlineIcon: true, requiresAuth: false },
+    { path: '/favorites', icon: Heart, label: 'Saved', isOutlineIcon: false, requiresAuth: true },
+    { path: '/dashboard/renter', icon: Car, label: 'Rides', isOutlineIcon: true, requiresAuth: true },
+    { path: '/chat', icon: MessageSquare, label: 'Inbox', isOutlineIcon: true, requiresAuth: true },
+    { path: '/profile', icon: UserCircle2, label: 'Profile', isOutlineIcon: true, requiresAuth: false },
   ];
+
+  const handleNavigation = (path: string, requiresAuth: boolean) => {
+    if (requiresAuth && !user && !isLoading) {
+      // If auth is required but no user is logged in, redirect to profile to show login form
+      router.push('/profile');
+    } else {
+      router.push(path);
+    }
+  };
+
+  const getIsActive = (path: string): boolean => {
+    if (path === '/explore' && pathname === '/') return true;
+    return pathname === path || pathname?.startsWith(path + '/');
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none">
-      <div className="relative w-[437px] pointer-events-auto shadow-[0px_-5px_25px_-5px_rgba(0,0,0,0.2),_0px_-3px_10px_-7px_rgba(0,0,0,0.15)]">
+      <div className="relative w-full max-w-[437px] pointer-events-auto shadow-[0px_-5px_25px_-5px_rgba(0,0,0,0.2),_0px_-3px_10px_-7px_rgba(0,0,0,0.15)]">
         {/* Layer in the back: Angular gradient attempt */}
         {/* Tailwind doesn't have native angular gradients. This is an approximation. */}
         {/* For a true angular gradient, custom CSS/SVG might be needed. */}
@@ -67,13 +85,13 @@ const BottomNav = () => {
 
         {/* Layer between the 2: Solid color, holds the content */}
         <div className="absolute inset-x-0 bottom-0 h-[89px] rounded-t-[80px] bg-[#292929] flex justify-center items-stretch gap-x-3 z-10">
-          {navItems.map((item, index) => (
+          {navItems.map((item) => (
             <BottomNavItem
               key={item.label}
               icon={item.icon}
               label={item.label}
-              isActive={activeIndex === index}
-              onClick={() => setActiveIndex(index)}
+              isActive={getIsActive(item.path)}
+              onClick={() => handleNavigation(item.path, item.requiresAuth)}
               isOutlineIcon={item.isOutlineIcon}
             />
           ))}
