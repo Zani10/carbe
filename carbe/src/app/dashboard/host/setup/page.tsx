@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronRight, Check, X, Plus } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 
 // Simplified setup steps for now, can be expanded later
 const setupSteps = [
@@ -53,21 +53,20 @@ export default function HostSetupPage() {
   });
   const router = useRouter();
   
-  // Debugging logs
+  // Redirect if not authenticated
   useEffect(() => {
     if (isLoading) return; // Don't redirect while loading
 
-    console.log('User:', user);
-    console.log('isHostMode:', isHostMode);
-
-    if (!user && !isHostMode) {
-      console.log('Redirecting to /profile');
-      router.push('/profile');
+    if (!user) {
+      console.log('No user, redirecting to /signin');
+      router.push('/signin');
     }
-  }, [user, isHostMode, router, isLoading]);
+  }, [user, router, isLoading]);
   
+  // Redirect if already a host
   useEffect(() => {
     if (isHostMode) {
+      console.log('User is already a host, redirecting to host dashboard');
       router.push('/dashboard/host/today');
     }
   }, [isHostMode, router]);
@@ -80,9 +79,11 @@ export default function HostSetupPage() {
         console.log('Updating profile to mark as host...');
         const updates = { is_host: true };
         console.log('Updates:', updates);
-        await updateProfile(updates);
-        console.log('Profile updated successfully.');
-        console.log('isHostMode after update:', isHostMode);
+        const updatedProfile = await updateProfile(updates);
+        console.log('Profile updated successfully:', updatedProfile);
+        
+        // The useEffect hook will handle the redirect when isHostMode becomes true
+        // No need to manually redirect here as the state update will trigger the useEffect
       } catch (error) {
         console.error('Error completing host setup:', error);
       }
@@ -100,7 +101,7 @@ export default function HostSetupPage() {
     }
   };
   
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -123,7 +124,7 @@ export default function HostSetupPage() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-700">Set your own schedule</p>
-                  <p className="text-sm text-gray-500">Make your car available when you're not using it</p>
+                  <p className="text-sm text-gray-500">Make your car available when you&apos;re not using it</p>
                 </div>
               </div>
               
@@ -142,7 +143,7 @@ export default function HostSetupPage() {
                   <Check size={14} className="text-green-600" />
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">We've got your back</p>
+                  <p className="text-sm font-medium text-gray-700">We&apos;ve got your back</p>
                   <p className="text-sm text-gray-500">$1M insurance protection for every trip</p>
                 </div>
               </div>
@@ -237,7 +238,7 @@ export default function HostSetupPage() {
             
             <p className="text-sm text-gray-500">
               This is where renters will pick up and return your car.
-              Make sure it's a safe and convenient location.
+              Make sure it&apos;s a safe and convenient location.
             </p>
           </div>
         );
@@ -318,6 +319,36 @@ export default function HostSetupPage() {
         return null;
     }
   };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">You need to be signed in to access this page.</p>
+          <button
+            onClick={() => router.push('/signin')}
+            className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">

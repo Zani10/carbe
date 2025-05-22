@@ -47,6 +47,7 @@ export function useAuth() {
               id: session.user.id,
               full_name: session.user.email, // Default to email if no name is provided
               verified: false,
+              is_host: false, // Explicitly set to false for new profiles
             });
           
           if (createError) {
@@ -64,9 +65,13 @@ export function useAuth() {
             .single();
           
           setProfile(newProfile || null);
+          // Set isHostMode based on new profile data (should be false for new profiles)
+          setIsHostMode(newProfile?.is_host || false);
         } else {
           // Profile exists, set it
           setProfile(profile);
+          // Set isHostMode based on profile data
+          setIsHostMode(profile.is_host || false);
         }
       }
       
@@ -90,6 +95,8 @@ export function useAuth() {
             .single();
           
           setProfile(profile || null);
+          // Set isHostMode based on profile data
+          setIsHostMode(profile?.is_host || false);
         } else {
           setProfile(null);
           setIsHostMode(false);
