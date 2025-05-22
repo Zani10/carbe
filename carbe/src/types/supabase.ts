@@ -99,6 +99,7 @@ export interface Database {
           languages: string[] | null
           profile_image: string | null
           verified: boolean
+          is_host: boolean
           created_at: string
         }
         Insert: {
@@ -108,6 +109,7 @@ export interface Database {
           languages?: string[] | null
           profile_image?: string | null
           verified?: boolean
+          is_host?: boolean
           created_at?: string
         }
         Update: {
@@ -117,6 +119,7 @@ export interface Database {
           languages?: string[] | null
           profile_image?: string | null
           verified?: boolean
+          is_host?: boolean
           created_at?: string
         }
       }

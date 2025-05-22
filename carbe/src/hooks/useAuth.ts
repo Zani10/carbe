@@ -12,6 +12,7 @@ export function useAuth() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHostMode, setIsHostMode] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -91,6 +92,7 @@ export function useAuth() {
           setProfile(profile || null);
         } else {
           setProfile(null);
+          setIsHostMode(false);
         }
         
         setIsLoading(false);
@@ -164,6 +166,7 @@ export function useAuth() {
       setUser(null);
       setProfile(null);
       setSession(null);
+      setIsHostMode(false);
       
       // Redirect to home page
       router.push('/');
@@ -225,11 +228,22 @@ export function useAuth() {
         throw error;
       }
       
+      // Update the profile state
       setProfile(data);
+
+      // Update isHostMode if is_host is in the updates
+      if ('is_host' in updates) {
+        setIsHostMode(updates.is_host as boolean);
+      }
+
       return data;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const toggleHostMode = () => {
+    setIsHostMode((prev) => !prev);
   };
 
   return {
@@ -237,12 +251,14 @@ export function useAuth() {
     profile,
     session,
     isLoading,
+    isHostMode,
     signIn,
     signUp,
     signOut,
     resetPassword,
     updatePassword,
     updateProfile,
+    toggleHostMode,
   };
 }
 

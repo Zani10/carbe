@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 import SignInForm from '@/components/forms/SignInForm';
-import SignUpForm from '@/components/forms/SignUpForm';
+// import SignUpForm from '@/components/forms/SignUpForm'; // Removed to fix linter error
+import { LogOut, UserCircle, ChevronRight, Briefcase, Heart, CalendarDays } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, signOut, isLoading } = useAuth();
+  const { user, signOut, isLoading, toggleHostMode, isHostMode } = useAuth();
   const [showSignIn, setShowSignIn] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
 
   // Handle client-side rendering
   useEffect(() => {
@@ -21,79 +24,110 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500"></div>
       </div>
     );
   }
 
+  const handleSwitchToHost = () => {
+    if (isHostMode) {
+      // If already in host mode, just toggle back to renter mode
+      toggleHostMode();
+      router.push('/');
+    } else {
+      // If in renter mode, toggle to host mode and redirect to setup or dashboard
+      toggleHostMode();
+      router.push('/dashboard/host/setup');
+    }
+  };
+
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       {user ? (
-        <div className="max-w-md mx-auto">
-          <h1 className="text-2xl font-bold mb-6">Your Profile</h1>
-          
-          <div className="bg-white rounded-xl shadow p-6 mb-6">
-            <div className="flex items-center mb-4">
-              <div className="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-xl font-medium text-gray-600">
-                  {user.user_metadata?.full_name?.[0] || user.email?.[0] || '?'}
-                </span>
+        <div className="max-w-xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-md p-6 md:p-8 mb-8">
+            <div className="flex items-center mb-6">
+              <div className="h-20 w-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-800">
+                <UserCircle size={48} strokeWidth={1.5} />
               </div>
-              <div className="ml-4">
-                <h2 className="text-xl font-semibold">
-                  {user.user_metadata?.full_name || 'User'}
-                </h2>
-                <p className="text-gray-500">{user.email}</p>
+              <div className="ml-5">
+                <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
+                  {user.user_metadata?.full_name || 'User Profile'}
+                </h1>
+                <p className="text-gray-500 text-sm md:text-base">{user.email}</p>
               </div>
             </div>
             
-            <div className="border-t border-gray-200 pt-4 mt-4">
-              <div className="space-y-4">
-                <a href="/dashboard" className="block px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-                  <div className="flex items-center">
-                    <span className="flex-1 font-medium">My Bookings</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </a>
-                
-                <a href="/favorites" className="block px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-                  <div className="flex items-center">
-                    <span className="flex-1 font-medium">My Favorites</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </a>
-                
-                <button 
-                  onClick={() => signOut()}
-                  className="w-full mt-6 px-4 py-3 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 text-left font-medium"
-                >
-                  Sign Out
-                </button>
-              </div>
+            <div className="space-y-4">
+              <a 
+                href="/dashboard/renter" 
+                className="flex items-center justify-between px-4 py-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-150 text-gray-800"
+              >
+                <div className="flex items-center">
+                  <CalendarDays size={20} className="mr-3 text-gray-600" />
+                  <span className="font-medium">My Bookings</span>
+                </div>
+                <ChevronRight size={20} className="text-gray-400" />
+              </a>
+              
+              <a 
+                href="/favorites" 
+                className="flex items-center justify-between px-4 py-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-150 text-gray-800"
+              >
+                <div className="flex items-center">
+                  <Heart size={20} className="mr-3 text-gray-600" />
+                  <span className="font-medium">My Favorites</span>
+                </div>
+                <ChevronRight size={20} className="text-gray-400" />
+              </a>
+
+              <button 
+                onClick={handleSwitchToHost}
+                className="w-full flex items-center justify-between px-4 py-4 bg-red-500 text-white hover:bg-red-600 rounded-xl transition-colors duration-150 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400"
+              >
+                <div className="flex items-center">
+                  <Briefcase size={20} className="mr-3" />
+                  <span>{isHostMode ? 'Switch to Renter' : 'Switch to Host'}</span>
+                </div>
+                <ChevronRight size={20} />
+              </button>
             </div>
+
           </div>
+
+          <button 
+            onClick={() => signOut()}
+            className="w-full flex items-center justify-center mt-6 px-4 py-4 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-colors duration-150 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+          >
+            <LogOut size={20} className="mr-3" />
+            Sign Out
+          </button>
         </div>
       ) : (
-        <div className="max-w-md mx-auto">
-          <div className="flex justify-center mb-6">
-            <div className="space-x-2">
+        <div className="max-w-md mx-auto mt-10 md:mt-20">
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex rounded-lg shadow-sm" role="group">
               <button
-                className={`px-4 py-2 ${
-                  showSignIn ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'
-                } rounded-lg font-medium`}
+                type="button"
+                className={`px-6 py-3 text-sm font-medium rounded-l-lg transition-colors duration-150 focus:z-10 focus:ring-2 focus:ring-red-400
+                  ${
+                    showSignIn
+                      ? 'bg-red-500 text-white border border-red-500'
+                      : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                  }`}
                 onClick={() => setShowSignIn(true)}
               >
                 Sign In
               </button>
               <button
-                className={`px-4 py-2 ${
-                  !showSignIn ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'
-                } rounded-lg font-medium`}
+                type="button"
+                className={`px-6 py-3 text-sm font-medium rounded-r-lg transition-colors duration-150 focus:z-10 focus:ring-2 focus:ring-red-400
+                  ${
+                    !showSignIn
+                      ? 'bg-red-500 text-white border border-red-500'
+                      : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                  }`}
                 onClick={() => setShowSignIn(false)}
               >
                 Sign Up
@@ -101,7 +135,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {showSignIn ? <SignInForm /> : <SignUpForm />}
+          {showSignIn ? <SignInForm /> : <div className="text-center p-4">Sign up has been temporarily disabled.</div> /* Replaced SignUpForm with a placeholder */}
         </div>
       )}
     </div>
