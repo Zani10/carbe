@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import BottomNav from './BottomNav';
+import RenterBottomNav from './RenterBottomNav';
 import HostBottomNav from './HostBottomNav';
 
 const NavigationController = () => {
@@ -23,16 +23,15 @@ const NavigationController = () => {
     return null;
   }
 
-  // Show host navigation if user is in host mode or on host pages
+  // Show host navigation ONLY if user is on host routes
   const isHostRoute = pathname?.startsWith('/host') || pathname?.startsWith('/dashboard/host');
-  const shouldShowHostNav = user && (isHostMode || isHostRoute);
 
-  if (shouldShowHostNav) {
+  if (isHostRoute) {
     return <HostBottomNav />;
   }
 
-  // Show regular navigation for renter mode or general pages
-  return <BottomNav />;
+  // Show renter navigation for all other pages
+  return <RenterBottomNav />;
 };
 
 export default NavigationController; 

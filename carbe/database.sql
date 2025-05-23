@@ -6,10 +6,15 @@ CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
   full_name TEXT,
   nationality TEXT,
-  languages TEXT[],
+  languages TEXT,
   profile_image TEXT,
   verified BOOLEAN DEFAULT false,
   role TEXT DEFAULT 'renter',
+  is_host BOOLEAN DEFAULT false,
+  location TEXT,
+  work TEXT,
+  education TEXT,
+  bio TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 

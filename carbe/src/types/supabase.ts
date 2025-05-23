@@ -96,30 +96,45 @@ export interface Database {
           id: string
           full_name: string | null
           nationality: string | null
-          languages: string[] | null
+          languages: string | null
           profile_image: string | null
           verified: boolean
+          role: string
           is_host: boolean
+          location: string | null
+          work: string | null
+          education: string | null
+          bio: string | null
           created_at: string
         }
         Insert: {
           id: string
           full_name?: string | null
           nationality?: string | null
-          languages?: string[] | null
+          languages?: string | null
           profile_image?: string | null
           verified?: boolean
+          role?: string
           is_host?: boolean
+          location?: string | null
+          work?: string | null
+          education?: string | null
+          bio?: string | null
           created_at?: string
         }
         Update: {
           id?: string
           full_name?: string | null
           nationality?: string | null
-          languages?: string[] | null
+          languages?: string | null
           profile_image?: string | null
           verified?: boolean
+          role?: string
           is_host?: boolean
+          location?: string | null
+          work?: string | null
+          education?: string | null
+          bio?: string | null
           created_at?: string
         }
       }

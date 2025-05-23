@@ -41,33 +41,33 @@ const MenuItem: React.FC<MenuItemProps> = ({
   variant = 'default'
 }) => (
   <Card 
-    variant="light" 
+    variant="dark" 
     padding="md" 
     onClick={onClick} 
-    className={`text-left ${variant === 'highlight' ? 'border-green-200 bg-green-50' : ''}`}
+    className={`text-left ${variant === 'highlight' ? 'border-green-600/50 bg-green-900/20' : ''}`}
   >
     <div className="flex items-center">
       <div className={`p-2 rounded-lg mr-3 ${
         variant === 'highlight' 
-          ? 'bg-green-100 text-green-600' 
-          : 'bg-gray-100 text-gray-600'
+          ? 'bg-green-900/50 text-green-400' 
+          : 'bg-gray-700 text-gray-300'
       }`}>
         <Icon className="h-5 w-5" />
       </div>
       <div className="flex-1">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-gray-900">{title}</h3>
+          <h3 className="font-medium text-white">{title}</h3>
           {badge && (
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+            <span className="bg-[#FF2800] text-white text-xs px-2 py-1 rounded-full">
               {badge}
             </span>
           )}
         </div>
         {description && (
-          <p className="text-sm text-gray-600 mt-1">{description}</p>
+          <p className="text-sm text-gray-400 mt-1">{description}</p>
         )}
       </div>
-      <ChevronRight className="h-4 w-4 text-gray-400" />
+      <ChevronRight className="h-4 w-4 text-gray-500" />
     </div>
   </Card>
 );
@@ -82,15 +82,15 @@ interface StatBoxProps {
 }
 
 const StatBox: React.FC<StatBoxProps> = ({ title, value, subtitle, icon: Icon, color, onClick }) => (
-  <Card variant="light" padding="lg" onClick={onClick} className="text-center">
+  <Card variant="dark" padding="lg" onClick={onClick} className="text-center">
     <div className={`inline-flex p-3 rounded-full mb-3 ${
-      color === 'green' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+      color === 'green' ? 'bg-green-900/50 text-green-400' : 'bg-blue-900/50 text-blue-400'
     }`}>
       <Icon className="h-6 w-6" />
     </div>
-    <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
-    <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
-    <p className="text-sm text-gray-600">{subtitle}</p>
+    <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
+    <p className="text-2xl font-bold text-white mb-1">{value}</p>
+    <p className="text-sm text-gray-400">{subtitle}</p>
   </Card>
 );
 
@@ -113,12 +113,12 @@ export default function HostMenuPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#212121] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">Please sign in</h2>
-          <p className="text-gray-600 mt-2">You need to be signed in to access the host menu.</p>
+          <h2 className="text-xl font-semibold text-white">Please sign in</h2>
+          <p className="text-gray-400 mt-2">You need to be signed in to access the host menu.</p>
           <Button 
-            variant="host-primary" 
+            variant="primary" 
             className="mt-4"
             onClick={() => router.push('/signin')}
           >
@@ -130,39 +130,39 @@ export default function HostMenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-[#212121] pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
+      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center">
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => router.back()}
-              className="mr-3 text-gray-600"
+              className="mr-3 text-gray-300"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-lg font-semibold text-gray-900">Menu</h1>
+            <h1 className="text-lg font-semibold text-white">Menu</h1>
           </div>
         </div>
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
         {/* Profile Section */}
-        <Card variant="light" padding="md">
+        <Card variant="dark" padding="md">
           <div className="flex items-center">
-            <div className="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center text-gray-800 mr-4">
+            <div className="h-16 w-16 bg-gray-700 rounded-full flex items-center justify-center text-gray-200 mr-4">
               <User className="h-8 w-8" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-white">
                 {profile?.full_name || 'Host Profile'}
               </h2>
-              <p className="text-sm text-gray-600">{user.email}</p>
+              <p className="text-sm text-gray-400">{user.email}</p>
               <div className="flex items-center mt-1">
                 <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                <span className="text-sm text-gray-600">4.8 · Host since 2023</span>
+                <span className="text-sm text-gray-400">4.8 · Host since 2023</span>
               </div>
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function HostMenuPage() {
 
         {/* Host Tools */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Host Tools</h3>
+          <h3 className="text-lg font-semibold text-white mb-3">Host Tools</h3>
           <div className="space-y-3">
             <MenuItem
               title="Manage Listings"
@@ -222,7 +222,7 @@ export default function HostMenuPage() {
 
         {/* Support & Settings */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Support & Settings</h3>
+          <h3 className="text-lg font-semibold text-white mb-3">Support & Settings</h3>
           <div className="space-y-3">
             <MenuItem
               title="Account Settings"
@@ -254,7 +254,7 @@ export default function HostMenuPage() {
         {/* Actions */}
         <div className="space-y-3">
           <Button 
-            variant="host-secondary" 
+            variant="secondary" 
             className="w-full justify-between"
             onClick={handleSwitchToRenter}
           >
@@ -267,7 +267,7 @@ export default function HostMenuPage() {
           
           <Button 
             variant="ghost" 
-            className="w-full justify-center text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="w-full justify-center text-red-400 hover:text-red-300 hover:bg-red-900/20"
             onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4 mr-2" />

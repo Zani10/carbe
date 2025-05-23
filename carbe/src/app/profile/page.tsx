@@ -5,10 +5,27 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import SignInForm from '@/components/forms/SignInForm';
 import SignUpForm from '@/components/forms/SignUpForm';
-import { LogOut, UserCircle, ChevronRight, Briefcase, Heart, CalendarDays } from 'lucide-react';
+import { 
+  LogOut, 
+  UserCircle, 
+  ChevronRight, 
+  Briefcase, 
+  Heart, 
+  CalendarDays,
+  Settings,
+  Shield,
+  CreditCard,
+  Pen,
+  Plus,
+  Star,
+  Languages,
+  GraduationCap,
+  Building,
+  Home
+} from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, signOut, isLoading, toggleHostMode, isHostMode } = useAuth();
+  const { user, profile, signOut, isLoading, isHostMode } = useAuth();
   const [showSignIn, setShowSignIn] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
@@ -24,97 +41,228 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-100">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500"></div>
+      <div className="flex justify-center items-center min-h-screen bg-[#212121]">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#FF2800]"></div>
       </div>
     );
   }
 
-  const handleSwitchToHost = () => {
+  const handleSwitchMode = () => {
     if (isHostMode) {
-      // If already in host mode, just toggle back to renter mode
-      toggleHostMode();
+      // Switch to renter mode - go to main page
       router.push('/');
     } else {
-      // If in renter mode, toggle to host mode and redirect to setup or dashboard
-      toggleHostMode();
-      router.push('/dashboard/host/setup');
+      // Switch to host mode - go to host dashboard
+      router.push('/host/today');
     }
   };
 
+  const ProfileInfoItem = ({ icon: Icon, title, value, hasValue = false, onClick }: {
+    icon: React.ElementType;
+    title: string;
+    value?: string | null;
+    hasValue?: boolean;
+    onClick?: () => void;
+  }) => (
+    <button 
+      onClick={onClick}
+      className="w-full flex items-center justify-between p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl hover:bg-[#2A2A2A]/80 transition-colors"
+    >
+      <div className="flex items-center">
+        <Icon className="h-5 w-5 text-gray-400 mr-3" />
+        <div className="text-left">
+          <p className="text-white font-medium">{title}</p>
+          {hasValue && value && (
+            <p className="text-sm text-gray-400">{value}</p>
+          )}
+          {!hasValue && (
+            <p className="text-sm text-gray-500">Not provided</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center">
+        {!hasValue && <Plus className="h-4 w-4 text-gray-500 mr-1" />}
+        {hasValue && <Pen className="h-4 w-4 text-gray-500 mr-1" />}
+        <ChevronRight className="h-4 w-4 text-gray-500" />
+      </div>
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#212121] pb-20">
       {user ? (
-        <div className="max-w-xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-md p-6 md:p-8 mb-8">
-            <div className="flex items-center mb-6">
-              <div className="h-20 w-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-800">
+        <div className="max-w-md mx-auto px-4 py-6">
+          {/* Profile Header */}
+          <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-6 mb-6">
+            <div className="flex items-center mb-4">
+              <div className="h-20 w-20 bg-gray-700 rounded-full flex items-center justify-center text-gray-300 mr-4">
                 <UserCircle size={48} strokeWidth={1.5} />
               </div>
-              <div className="ml-5">
-                <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
-                  {user.user_metadata?.full_name || 'User Profile'}
+              <div className="flex-1">
+                <h1 className="text-xl font-semibold text-white">
+                  {profile?.full_name || user.user_metadata?.full_name || 'Your Name'}
                 </h1>
-                <p className="text-gray-500 text-sm md:text-base">{user.email}</p>
+                <p className="text-gray-400 text-sm">{user.email}</p>
+                <div className="flex items-center mt-1">
+                  <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                  <span className="text-sm text-gray-400">New member</span>
+                </div>
               </div>
+              <button className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                <Pen className="h-4 w-4 text-gray-300" />
+              </button>
             </div>
             
-            <div className="space-y-4">
-              <a 
-                href="/dashboard/renter" 
-                className="flex items-center justify-between px-4 py-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-150 text-gray-800"
-              >
-                <div className="flex items-center">
-                  <CalendarDays size={20} className="mr-3 text-gray-600" />
-                  <span className="font-medium">My Bookings</span>
-                </div>
-                <ChevronRight size={20} className="text-gray-400" />
-              </a>
-              
-              <a 
-                href="/favorites" 
-                className="flex items-center justify-between px-4 py-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-150 text-gray-800"
-              >
-                <div className="flex items-center">
-                  <Heart size={20} className="mr-3 text-gray-600" />
-                  <span className="font-medium">My Favorites</span>
-                </div>
-                <ChevronRight size={20} className="text-gray-400" />
-              </a>
-
+            {!isHostMode && !profile?.is_host && (
               <button 
-                onClick={handleSwitchToHost}
-                className="w-full flex items-center justify-between px-4 py-4 bg-red-500 text-white hover:bg-red-600 rounded-xl transition-colors duration-150 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400"
+                onClick={handleSwitchMode}
+                className="w-full flex items-center justify-center px-4 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
+              >
+                <Briefcase size={18} className="mr-2" />
+                Become a Host
+              </button>
+            )}
+          </div>
+
+          {/* Personal Information */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Personal info</h2>
+            <div className="space-y-3">
+              <ProfileInfoItem
+                icon={Home}
+                title="Where you live"
+                value={profile?.location}
+                hasValue={!!profile?.location}
+                onClick={() => alert('Edit location functionality coming soon!')}
+              />
+              <ProfileInfoItem
+                icon={Building}
+                title="Work"
+                value={profile?.work}
+                hasValue={!!profile?.work}
+                onClick={() => alert('Edit work functionality coming soon!')}
+              />
+              <ProfileInfoItem
+                icon={GraduationCap}
+                title="Education"
+                value={profile?.education}
+                hasValue={!!profile?.education}
+                onClick={() => alert('Edit education functionality coming soon!')}
+              />
+              <ProfileInfoItem
+                icon={Languages}
+                title="Languages"
+                value={profile?.languages}
+                hasValue={!!profile?.languages}
+                onClick={() => alert('Edit languages functionality coming soon!')}
+              />
+              <ProfileInfoItem
+                icon={UserCircle}
+                title="About you"
+                value={profile?.bio}
+                hasValue={!!profile?.bio}
+                onClick={() => alert('Edit bio functionality coming soon!')}
+              />
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="space-y-3 mb-6">
+            <button 
+              onClick={() => router.push('/dashboard/renter')}
+              className="w-full flex items-center justify-between p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl hover:bg-[#2A2A2A]/80 transition-colors"
+            >
+              <div className="flex items-center">
+                <CalendarDays size={20} className="mr-3 text-gray-400" />
+                <span className="font-medium text-white">Past trips</span>
+              </div>
+              <ChevronRight size={20} className="text-gray-500" />
+            </button>
+            
+            <button 
+              onClick={() => router.push('/favorites')}
+              className="w-full flex items-center justify-between p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl hover:bg-[#2A2A2A]/80 transition-colors"
+            >
+              <div className="flex items-center">
+                <Heart size={20} className="mr-3 text-gray-400" />
+                <span className="font-medium text-white">Saved</span>
+              </div>
+              <ChevronRight size={20} className="text-gray-500" />
+            </button>
+
+            {(isHostMode || profile?.is_host) && (
+              <button 
+                onClick={handleSwitchMode}
+                className="w-full flex items-center justify-between p-4 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
               >
                 <div className="flex items-center">
                   <Briefcase size={20} className="mr-3" />
-                  <span>{isHostMode ? 'Switch to Renter' : 'Switch to Host'}</span>
+                  <span>Switch to {isHostMode ? 'Renter' : 'Host'}</span>
                 </div>
                 <ChevronRight size={20} />
               </button>
-            </div>
-
+            )}
           </div>
 
+          {/* Settings & Support */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Settings</h2>
+            <div className="space-y-3">
+              <button 
+                onClick={() => alert('Account settings coming soon!')}
+                className="w-full flex items-center justify-between p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl hover:bg-[#2A2A2A]/80 transition-colors"
+              >
+                <div className="flex items-center">
+                  <Settings size={20} className="mr-3 text-gray-400" />
+                  <span className="font-medium text-white">Account settings</span>
+                </div>
+                <ChevronRight size={20} className="text-gray-500" />
+              </button>
+              
+              <button 
+                onClick={() => alert('Payment methods coming soon!')}
+                className="w-full flex items-center justify-between p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl hover:bg-[#2A2A2A]/80 transition-colors"
+              >
+                <div className="flex items-center">
+                  <CreditCard size={20} className="mr-3 text-gray-400" />
+                  <span className="font-medium text-white">Payment methods</span>
+                </div>
+                <ChevronRight size={20} className="text-gray-500" />
+              </button>
+              
+              <button 
+                onClick={() => alert('Privacy settings coming soon!')}
+                className="w-full flex items-center justify-between p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl hover:bg-[#2A2A2A]/80 transition-colors"
+              >
+                <div className="flex items-center">
+                  <Shield size={20} className="mr-3 text-gray-400" />
+                  <span className="font-medium text-white">Privacy & sharing</span>
+                </div>
+                <ChevronRight size={20} className="text-gray-500" />
+              </button>
+            </div>
+          </div>
+
+          {/* Sign Out */}
           <button 
             onClick={() => signOut()}
-            className="w-full flex items-center justify-center mt-6 px-4 py-4 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-colors duration-150 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+            className="w-full flex items-center justify-center p-4 bg-gray-700 text-gray-300 rounded-xl hover:bg-gray-600 transition-colors font-medium"
           >
             <LogOut size={20} className="mr-3" />
-            Sign Out
+            Sign out
           </button>
         </div>
       ) : (
-        <div className="max-w-md mx-auto mt-10 md:mt-20">
+        <div className="max-w-md mx-auto px-4 py-8">
           <div className="flex justify-center mb-8">
-            <div className="inline-flex rounded-lg shadow-sm" role="group">
+            <div className="inline-flex rounded-lg bg-[#2A2A2A] p-1" role="group">
               <button
                 type="button"
-                className={`px-6 py-3 text-sm font-medium rounded-l-lg transition-colors duration-150 focus:z-10 focus:ring-2 focus:ring-red-400
+                className={`px-6 py-3 text-sm font-medium rounded-md transition-colors duration-150
                   ${
                     showSignIn
-                      ? 'bg-red-500 text-white border border-red-500'
-                      : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      ? 'bg-[#FF2800] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-gray-200'
                   }`}
                 onClick={() => setShowSignIn(true)}
               >
@@ -122,11 +270,11 @@ export default function ProfilePage() {
               </button>
               <button
                 type="button"
-                className={`px-6 py-3 text-sm font-medium rounded-r-lg transition-colors duration-150 focus:z-10 focus:ring-2 focus:ring-red-400
+                className={`px-6 py-3 text-sm font-medium rounded-md transition-colors duration-150
                   ${
                     !showSignIn
-                      ? 'bg-red-500 text-white border border-red-500'
-                      : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      ? 'bg-[#FF2800] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-gray-200'
                   }`}
                 onClick={() => setShowSignIn(false)}
               >
@@ -135,8 +283,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {showSignIn ? <SignInForm /> : 
-          <SignUpForm />}
+          {showSignIn ? <SignInForm /> : <SignUpForm />}
         </div>
       )}
     </div>

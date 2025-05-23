@@ -12,7 +12,7 @@ import clsx from 'clsx';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
-interface BottomNavItemProps {
+interface RenterBottomNavItemProps {
   icon: React.ElementType;
   label: string;
   isActive?: boolean;
@@ -20,7 +20,7 @@ interface BottomNavItemProps {
   isOutlineIcon?: boolean;
 }
 
-const BottomNavItem: React.FC<BottomNavItemProps> = ({
+const RenterBottomNavItem: React.FC<RenterBottomNavItemProps> = ({
   icon: Icon,
   label,
   isActive,
@@ -45,7 +45,7 @@ const BottomNavItem: React.FC<BottomNavItemProps> = ({
   );
 };
 
-const BottomNav = () => {
+const RenterBottomNav = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
@@ -86,7 +86,7 @@ const BottomNav = () => {
         {/* Layer between the 2: Solid color, holds the content */}
         <div className="absolute inset-x-0 bottom-0 h-[89px] rounded-t-[80px] bg-[#292929] flex justify-center items-stretch gap-x-3 z-10">
           {navItems.map((item) => (
-            <BottomNavItem
+            <RenterBottomNavItem
               key={item.label}
               icon={item.icon}
               label={item.label}
@@ -108,4 +108,4 @@ const BottomNav = () => {
   );
 };
 
-export default BottomNav; 
+export default RenterBottomNav; 

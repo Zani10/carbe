@@ -73,12 +73,12 @@ interface MessageItemProps {
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({ message, onClick }) => (
-  <Card variant="light" padding="md" onClick={onClick} className="text-left">
+  <Card variant="dark" padding="md" onClick={onClick} className="text-left">
     <div className="flex items-start space-x-3">
       {/* Avatar */}
       <div className="flex-shrink-0">
-        <div className="h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center">
-          <User className="h-6 w-6 text-gray-600" />
+        <div className="h-12 w-12 bg-gray-700 rounded-full flex items-center justify-center">
+          <User className="h-6 w-6 text-gray-300" />
         </div>
       </div>
       
@@ -86,30 +86,30 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onClick }) => (
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center space-x-2">
-            <h3 className={`font-medium truncate ${message.isUnread ? 'text-gray-900' : 'text-gray-700'}`}>
+            <h3 className={`font-medium truncate ${message.isUnread ? 'text-white' : 'text-gray-300'}`}>
               {message.guestName}
             </h3>
             {message.rating && (
-              <div className="flex items-center text-xs text-gray-500">
+              <div className="flex items-center text-xs text-gray-400">
                 <Star className="h-3 w-3 text-yellow-500 mr-1" />
                 {message.rating}
               </div>
             )}
           </div>
           <div className="flex items-center space-x-1">
-            <span className="text-xs text-gray-500">{message.timestamp}</span>
+            <span className="text-xs text-gray-400">{message.timestamp}</span>
             {message.isUnread && (
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-[#FF2800] rounded-full"></div>
             )}
           </div>
         </div>
         
-        <div className="flex items-center text-xs text-gray-500 mb-2">
+        <div className="flex items-center text-xs text-gray-400 mb-2">
           <Car className="h-3 w-3 mr-1" />
           {message.carName}
         </div>
         
-        <p className={`text-sm truncate ${message.isUnread ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+        <p className={`text-sm truncate ${message.isUnread ? 'text-gray-200 font-medium' : 'text-gray-400'}`}>
           {message.lastMessage}
         </p>
       </div>
@@ -143,12 +143,12 @@ export default function HostMessagesPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#212121] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">Please sign in</h2>
-          <p className="text-gray-600 mt-2">You need to be signed in to access messages.</p>
+          <h2 className="text-xl font-semibold text-white">Please sign in</h2>
+          <p className="text-gray-400 mt-2">You need to be signed in to access messages.</p>
           <Button 
-            variant="host-primary" 
+            variant="primary" 
             className="mt-4"
             onClick={() => router.push('/signin')}
           >
@@ -160,9 +160,9 @@ export default function HostMessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-[#212121] pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
+      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -170,18 +170,18 @@ export default function HostMessagesPage() {
                 variant="ghost" 
                 size="sm"
                 onClick={() => router.back()}
-                className="mr-3 text-gray-600"
+                className="mr-3 text-gray-300"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">Messages</h1>
+                <h1 className="text-lg font-semibold text-white">Messages</h1>
                 {unreadCount > 0 && (
-                  <p className="text-sm text-gray-600">{unreadCount} unread</p>
+                  <p className="text-sm text-gray-400">{unreadCount} unread</p>
                 )}
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="text-gray-300">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </div>
@@ -193,24 +193,24 @@ export default function HostMessagesPage() {
         <div className="space-y-4 mb-6">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
             <input
               type="text"
               placeholder="Search messages..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-[#2A2A2A] border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF2800]/50 focus:border-transparent"
             />
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          <div className="flex space-x-1 bg-[#2A2A2A] border border-gray-700/50 p-1 rounded-lg">
             <button
               onClick={() => setFilter('all')}
               className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
                 filter === 'all' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-[#FF2800] text-white shadow-sm' 
+                  : 'text-gray-400 hover:text-gray-200'
               }`}
             >
               All ({mockMessages.length})
@@ -219,8 +219,8 @@ export default function HostMessagesPage() {
               onClick={() => setFilter('unread')}
               className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
                 filter === 'unread' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-[#FF2800] text-white shadow-sm' 
+                  : 'text-gray-400 hover:text-gray-200'
               }`}
             >
               Unread ({unreadCount})
@@ -239,10 +239,10 @@ export default function HostMessagesPage() {
               />
             ))
           ) : (
-            <Card variant="light" padding="lg" className="text-center">
-              <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No messages found</h3>
-              <p className="text-gray-600">
+            <Card variant="dark" padding="lg" className="text-center">
+              <MessageSquare className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-white mb-2">No messages found</h3>
+              <p className="text-gray-400">
                 {searchQuery 
                   ? 'Try adjusting your search terms'
                   : 'When guests message you, their conversations will appear here'
@@ -255,17 +255,17 @@ export default function HostMessagesPage() {
         {/* Quick Actions */}
         {filteredMessages.length > 0 && (
           <div className="mt-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Quick Actions</h3>
+            <h3 className="text-lg font-semibold text-white mb-3">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-3">
-              <Card variant="light" padding="md" onClick={() => {}} className="text-center">
-                <Clock className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900">Set Auto-Reply</p>
-                <p className="text-xs text-gray-600">Respond faster</p>
+              <Card variant="dark" padding="md" onClick={() => {}} className="text-center">
+                <Clock className="h-6 w-6 text-blue-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-white">Set Auto-Reply</p>
+                <p className="text-xs text-gray-400">Respond faster</p>
               </Card>
-              <Card variant="light" padding="md" onClick={() => {}} className="text-center">
-                <MessageSquare className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900">Message Templates</p>
-                <p className="text-xs text-gray-600">Save time</p>
+              <Card variant="dark" padding="md" onClick={() => {}} className="text-center">
+                <MessageSquare className="h-6 w-6 text-green-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-white">Message Templates</p>
+                <p className="text-xs text-gray-400">Save time</p>
               </Card>
             </div>
           </div>
