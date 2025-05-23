@@ -98,7 +98,7 @@ export default function HostCalendarPage() {
     return null;
   };
 
-  const handleDateClick = (value: Date | Date[] | null) => {
+  const handleDateClick = (value: any) => {
     if (value instanceof Date) {
       setSelectedDate(value);
     }

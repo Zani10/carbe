@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import SignInForm from '@/components/forms/SignInForm';
 import SignUpForm from '@/components/forms/SignUpForm';
 import { 
@@ -25,10 +25,14 @@ import {
 } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, profile, signOut, isLoading, isHostMode } = useAuth();
+  const { user, profile, signOut, isLoading } = useAuth();
   const [showSignIn, setShowSignIn] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  
+  // Determine if user is currently in host mode based on current route
+  const isCurrentlyInHostMode = pathname?.startsWith('/host') || pathname?.startsWith('/dashboard/host');
 
   // Handle client-side rendering
   useEffect(() => {
@@ -48,7 +52,7 @@ export default function ProfilePage() {
   }
 
   const handleSwitchMode = () => {
-    if (isHostMode) {
+    if (isCurrentlyInHostMode) {
       // Switch to renter mode - go to main page
       router.push('/');
     } else {
@@ -113,7 +117,7 @@ export default function ProfilePage() {
               </button>
             </div>
             
-            {!isHostMode && !profile?.is_host && (
+            {!isCurrentlyInHostMode && !profile?.is_host && (
               <button 
                 onClick={handleSwitchMode}
                 className="w-full flex items-center justify-center px-4 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
@@ -190,14 +194,14 @@ export default function ProfilePage() {
               <ChevronRight size={20} className="text-gray-500" />
             </button>
 
-            {(isHostMode || profile?.is_host) && (
+            {(isCurrentlyInHostMode || profile?.is_host) && (
               <button 
                 onClick={handleSwitchMode}
                 className="w-full flex items-center justify-between p-4 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
               >
                 <div className="flex items-center">
                   <Briefcase size={20} className="mr-3" />
-                  <span>Switch to {isHostMode ? 'Renter' : 'Host'}</span>
+                  <span>Switch to {isCurrentlyInHostMode ? 'Renter' : 'Host'}</span>
                 </div>
                 <ChevronRight size={20} />
               </button>

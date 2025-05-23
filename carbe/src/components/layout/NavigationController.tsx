@@ -2,13 +2,11 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
 import RenterBottomNav from './RenterBottomNav';
 import HostBottomNav from './HostBottomNav';
 
 const NavigationController = () => {
   const pathname = usePathname();
-  const { user, isHostMode } = useAuth();
 
   // Don't show navigation on certain pages
   const hideNavigation = [
