@@ -5,7 +5,6 @@ import { useSpring, animated } from '@react-spring/web';
 import SearchBar from '@/components/home/SearchBar';
 import MapView from '@/components/home/MapView';
 import CarList from '@/components/home/CarList';
-import BottomNav from '@/components/layout/BottomNav';
 
 const SEARCHBAR_HEIGHT_PX = 68; // Consistent with SearchBar and CarList
 
@@ -51,9 +50,6 @@ export default function HomePage() {
 
       {/* CarList: Draggable panel, provides drag data via onDrag */}
       <CarList onDrag={handleCarListDrag} />
-
-      {/* BottomNav: Fixed at the bottom */}
-      <BottomNav />
     </main>
   );
 }

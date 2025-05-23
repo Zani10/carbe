@@ -41,12 +41,12 @@ const upcomingBookings = [
 ];
 
 // Helper function to format dates
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-const formatTime = (dateString) => {
+const formatTime = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
@@ -116,7 +116,7 @@ export default function HostTodayPage() {
         {activeTab === 'today' ? (
           <>
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Today's Schedule</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Today&apos;s Schedule</h2>
               
               {upcomingBookings.length === 0 ? (
                 <div className="text-center py-12">
