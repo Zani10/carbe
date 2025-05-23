@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import SignInForm from '@/components/forms/SignInForm';
-// import SignUpForm from '@/components/forms/SignUpForm'; // Removed to fix linter error
+import SignUpForm from '@/components/forms/SignUpForm';
 import { LogOut, UserCircle, ChevronRight, Briefcase, Heart, CalendarDays } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -135,7 +135,8 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {showSignIn ? <SignInForm /> : <div className="text-center p-4">Sign up has been temporarily disabled.</div> /* Replaced SignUpForm with a placeholder */}
+          {showSignIn ? <SignInForm /> : 
+          <SignUpForm />}
         </div>
       )}
     </div>
