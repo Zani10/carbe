@@ -23,6 +23,7 @@ CREATE TABLE cars (
   owner_id UUID NOT NULL REFERENCES auth.users,
   make TEXT NOT NULL,
   model TEXT NOT NULL,
+  year INTEGER NOT NULL,
   description TEXT,
   price_per_day NUMERIC NOT NULL,
   location TEXT,

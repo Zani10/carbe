@@ -15,6 +15,7 @@ export interface Database {
           owner_id: string
           make: string
           model: string
+          year: number
           description: string | null
           price_per_day: number
           location: string | null
@@ -32,6 +33,7 @@ export interface Database {
           owner_id: string
           make: string
           model: string
+          year: number
           description?: string | null
           price_per_day: number
           location?: string | null
@@ -49,6 +51,7 @@ export interface Database {
           owner_id?: string
           make?: string
           model?: string
+          year?: number
           description?: string | null
           price_per_day?: number
           location?: string | null

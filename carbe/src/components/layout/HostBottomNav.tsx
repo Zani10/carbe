@@ -49,7 +49,7 @@ const HostBottomNav = () => {
   const navItems = [
     { path: '/host/today', icon: LayoutDashboard, label: 'Today' },
     { path: '/host/calendar', icon: Calendar, label: 'Calendar' },
-    { path: '/host/listings', icon: Car, label: 'Listings' },
+    { path: '/host/garage', icon: Car, label: 'Garage' },
     { path: '/host/messages', icon: MessageSquare, label: 'Inbox' },
     { path: '/host/menu', icon: Settings, label: 'Menu' },
   ];

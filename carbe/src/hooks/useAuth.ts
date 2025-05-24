@@ -16,97 +16,106 @@ export function useAuth() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      setIsLoading(true);
-      
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      
-      if (session?.user) {
-        setUser(session.user);
-        
+    let mounted = true; // Prevent state updates if component unmounted
+
+    const fetchProfile = async (userId: string) => {
+      try {
         // Check if the profile exists
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle(); // Use maybeSingle to handle no rows
+          .eq('id', userId)
+          .maybeSingle();
         
         if (error) {
           console.error('Error fetching profile:', error);
-          return;
+          return null;
         }
 
         if (!profile) {
           // Profile doesn't exist, create it
           console.log('Profile does not exist. Creating a new profile...');
-          const { error: createError } = await supabase
+          const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
-              id: session.user.id,
-              full_name: session.user.email, // Default to email if no name is provided
+              id: userId,
+              full_name: '', // Will be updated when user provides it
               verified: false,
-              is_host: false, // Explicitly set to false for new profiles
-            });
+              is_host: false,
+            })
+            .select()
+            .single();
           
           if (createError) {
             console.error('Error creating profile:', createError);
-            return;
+            return null;
           }
 
           console.log('Profile created successfully.');
-          
-          // Fetch the newly created profile
-          const { data: newProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          setProfile(newProfile || null);
-          // Set isHostMode based on new profile data (should be false for new profiles)
-          setIsHostMode(newProfile?.is_host || false);
-        } else {
-          // Profile exists, set it
-          setProfile(profile);
-          // Set isHostMode based on profile data
-          setIsHostMode(profile.is_host || false);
+          return newProfile;
         }
+
+        return profile;
+      } catch (error) {
+        console.error('Error in fetchProfile:', error);
+        return null;
       }
-      
-      setIsLoading(false);
     };
 
-    fetchUserData();
+    const initializeAuth = async () => {
+      try {
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+
+        setSession(session);
+        
+        if (session?.user) {
+          setUser(session.user);
+          
+          const profile = await fetchProfile(session.user.id);
+          if (mounted) {
+            setProfile(profile);
+            setIsHostMode(profile?.is_host || false);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+
         setSession(session);
         setUser(session?.user || null);
         
         if (session?.user) {
-          // Get user profile when auth state changes
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          setProfile(profile || null);
-          // Set isHostMode based on profile data
-          setIsHostMode(profile?.is_host || false);
+          const profile = await fetchProfile(session.user.id);
+          if (mounted) {
+            setProfile(profile);
+            setIsHostMode(profile?.is_host || false);
+          }
         } else {
-          setProfile(null);
-          setIsHostMode(false);
+          if (mounted) {
+            setProfile(null);
+            setIsHostMode(false);
+          }
         }
-        
-        setIsLoading(false);
       }
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
