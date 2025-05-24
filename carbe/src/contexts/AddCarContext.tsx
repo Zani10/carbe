@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { CarDraftState, CarBasicInfo, CarSpecs, CarPricing } from '@/types/car';
 
 interface AddCarContextType {
@@ -28,41 +28,41 @@ const initialDraftState: CarDraftState = {
 export function AddCarProvider({ children }: { children: ReactNode }) {
   const [draftState, setDraftState] = useState<CarDraftState>(initialDraftState);
 
-  const setStep = (step: number) => {
+  const setStep = useCallback((step: number) => {
     setDraftState(prev => ({ ...prev, step }));
-  };
+  }, []);
 
-  const updateBasicInfo = (data: Partial<CarBasicInfo>) => {
+  const updateBasicInfo = useCallback((data: Partial<CarBasicInfo>) => {
     setDraftState(prev => ({
       ...prev,
       basicInfo: { ...prev.basicInfo, ...data }
     }));
-  };
+  }, []);
 
-  const updateSpecs = (data: Partial<CarSpecs>) => {
+  const updateSpecs = useCallback((data: Partial<CarSpecs>) => {
     setDraftState(prev => ({
       ...prev,
       specs: { ...prev.specs, ...data }
     }));
-  };
+  }, []);
 
-  const updatePricing = (data: Partial<CarPricing>) => {
+  const updatePricing = useCallback((data: Partial<CarPricing>) => {
     setDraftState(prev => ({
       ...prev,
       pricing: { ...prev.pricing, ...data }
     }));
-  };
+  }, []);
 
-  const updatePhotos = (photos: File[]) => {
+  const updatePhotos = useCallback((photos: File[]) => {
     setDraftState(prev => ({
       ...prev,
       photos
     }));
-  };
+  }, []);
 
-  const resetDraft = () => {
+  const resetDraft = useCallback(() => {
     setDraftState(initialDraftState);
-  };
+  }, []);
 
   const isStepComplete = (step: number): boolean => {
     switch (step) {
