@@ -56,11 +56,18 @@ export default function PricingStep() {
   });
 
   const watchedValues = watch();
+  
+  // Watch specific fields to avoid infinite loops
+  const price_per_day = watch('price_per_day');
+  const smart_pricing_enabled = watch('smart_pricing_enabled');
 
   // Update context when form values change
   useEffect(() => {
-    updatePricing(watchedValues);
-  }, [watchedValues, updatePricing]);
+    updatePricing({
+      price_per_day,
+      smart_pricing_enabled
+    });
+  }, [price_per_day, smart_pricing_enabled, updatePricing]);
 
   const calculateEarnings = (dailyRate: number) => {
     const weeklyRate = dailyRate * 7 * 0.95; // 5% discount for weekly

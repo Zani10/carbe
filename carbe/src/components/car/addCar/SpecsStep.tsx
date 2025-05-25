@@ -44,11 +44,22 @@ export default function SpecsStep() {
   });
 
   const watchedValues = watch();
+  
+  // Watch specific fields to avoid infinite loops
+  const transmission = watch('transmission');
+  const fuel_type = watch('fuel_type');
+  const range_km = watch('range_km');
+  const lock_type = watch('lock_type');
 
   // Update context when form values change
   useEffect(() => {
-    updateSpecs(watchedValues);
-  }, [watchedValues, updateSpecs]);
+    updateSpecs({
+      transmission,
+      fuel_type,
+      range_km,
+      lock_type
+    });
+  }, [transmission, fuel_type, range_km, lock_type, updateSpecs]);
 
   return (
     <div className="space-y-6">

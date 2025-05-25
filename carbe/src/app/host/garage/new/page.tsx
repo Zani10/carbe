@@ -62,8 +62,24 @@ function AddCarWizard() {
         photos: draftState.photos
       };
 
+      // Create properly typed form data
+      const carData = {
+        make: formData.make as string,
+        model: formData.model as string,
+        year: formData.year as number,
+        seats: formData.seats as number,
+        location: formData.location as string,
+        transmission: formData.transmission as 'Manual' | 'Automatic',
+        fuel_type: formData.fuel_type as 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid',
+        range_km: formData.range_km as number,
+        lock_type: formData.lock_type as 'manual' | 'smart',
+        price_per_day: formData.price_per_day as number,
+        smart_pricing_enabled: formData.smart_pricing_enabled as boolean,
+        photos: formData.photos as File[]
+      };
+
       const result = await createCar(
-        formData as any, // Type assertion since we know all required fields are present
+        carData,
         user.id,
         (photoIndex, progress) => {
           setUploadProgress(prev => ({

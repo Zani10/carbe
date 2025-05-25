@@ -55,6 +55,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
         onRefresh();
       }
     } catch (error) {
+      console.error('Error deleting car:', error);
       toast.error('Failed to delete car');
     } finally {
       setIsDeleting(false);
@@ -280,7 +281,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
                 </div>
                 <h3 className="text-white font-semibold mb-2">Delete Car Listing</h3>
                 <p className="text-gray-400 text-sm mb-6">
-                  Are you sure you want to delete "{car.year} {car.make} {car.model}"? 
+                  Are you sure you want to delete &ldquo;{car.year} {car.make} {car.model}&rdquo;? 
                   This action cannot be undone.
                 </p>
                 

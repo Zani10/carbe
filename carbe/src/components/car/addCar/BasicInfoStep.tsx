@@ -27,7 +27,6 @@ export default function BasicInfoStep() {
   
   const {
     register,
-    handleSubmit,
     watch,
     setValue,
     formState: { errors },
@@ -43,11 +42,24 @@ export default function BasicInfoStep() {
   });
 
   const watchedValues = watch();
+  
+  // Watch specific fields to avoid infinite loops
+  const make = watch('make');
+  const model = watch('model');
+  const year = watch('year');
+  const seats = watch('seats');
+  const location = watch('location');
 
   // Update context when form values change
   useEffect(() => {
-    updateBasicInfo(watchedValues);
-  }, [watchedValues, updateBasicInfo]);
+    updateBasicInfo({
+      make,
+      model,
+      year,
+      seats,
+      location
+    });
+  }, [make, model, year, seats, location, updateBasicInfo]);
 
   return (
     <div className="space-y-6">
