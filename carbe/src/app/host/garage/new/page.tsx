@@ -115,9 +115,9 @@ function AddCarWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#212121]">
+    <div className="min-h-screen bg-[#212121] flex flex-col">
       {/* Header */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
+      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4 sticky top-0 z-10">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -128,9 +128,6 @@ function AddCarWizard() {
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <h1 className="text-lg font-semibold text-white">Add New Car</h1>
-            </div>
-            <div className="text-sm text-gray-400">
-              {currentStep}/4
             </div>
           </div>
         </div>
@@ -184,7 +181,7 @@ function AddCarWizard() {
       </div>
 
       {/* Step Content */}
-      <div className="max-w-md mx-auto px-4 py-6">
+      <div className="flex-1 max-w-md mx-auto px-4 py-6 pb-24">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -199,12 +196,13 @@ function AddCarWizard() {
       </div>
 
       {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#2A2A2A] border-t border-gray-700/50 px-4 py-4">
+      <div className="sticky bottom-0 bg-[#2A2A2A] border-t border-gray-700/50 px-4 py-4 mt-auto">
         <div className="max-w-md mx-auto flex space-x-3">
           {currentStep > 1 && (
             <button
               onClick={handlePrev}
-              className="flex-1 py-3 px-4 bg-gray-700 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors"
+              disabled={isSubmitting}
+              className="flex-1 py-3 px-4 bg-gray-700 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors disabled:opacity-50"
             >
               Previous
             </button>

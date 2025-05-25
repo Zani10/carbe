@@ -15,6 +15,8 @@ const NavigationController = () => {
     '/verify',
     '/car/', // Car detail pages
     '/book/', // Booking pages
+    '/host/garage/new', // Add car wizard
+    '/unlock/', // Unlock car pages
   ].some(path => pathname?.startsWith(path));
 
   if (hideNavigation) {

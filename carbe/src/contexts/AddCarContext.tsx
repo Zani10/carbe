@@ -64,7 +64,7 @@ export function AddCarProvider({ children }: { children: ReactNode }) {
     setDraftState(initialDraftState);
   }, []);
 
-  const isStepComplete = (step: number): boolean => {
+  const isStepComplete = useCallback((step: number): boolean => {
     switch (step) {
       case 1: // Basic Info
         const { make, model, year, seats, location } = draftState.basicInfo;
@@ -84,7 +84,7 @@ export function AddCarProvider({ children }: { children: ReactNode }) {
       default:
         return false;
     }
-  };
+  }, [draftState]);
 
   const value: AddCarContextType = {
     draftState,

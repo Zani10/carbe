@@ -28,6 +28,7 @@ export function useHostCars() {
 
       setCars(data || []);
     } catch (err) {
+      console.error('Error fetching cars:', err);
       const errorMessage = 'Failed to fetch cars';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -81,6 +82,7 @@ export function useHostCars() {
       toast.success('Car deleted successfully');
       return true;
     } catch (err) {
+      console.error('Error deleting car:', err);
       toast.error('Failed to delete car');
       return false;
     }

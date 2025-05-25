@@ -11,8 +11,7 @@ import {
   TrendingUp,
   Star,
   Trash2,
-  Pause,
-  Play,
+
   Clock
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -68,12 +67,12 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
 
   const handleEdit = () => {
     // TODO: Implement edit functionality
-    toast.info('Edit functionality coming soon');
+    toast('Edit functionality coming soon');
   };
 
   const handleSettings = () => {
     // TODO: Implement car settings
-    toast.info('Car settings coming soon');
+    toast('Car settings coming soon');
   };
 
   return (

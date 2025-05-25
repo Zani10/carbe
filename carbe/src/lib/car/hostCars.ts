@@ -1,6 +1,14 @@
 import { supabase } from '@/lib/supabase';
 import { Car } from '@/types/car';
 
+interface BookingData {
+  id: string;
+  start_date: string;
+  end_date: string;
+  status: 'pending' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled';
+  user_id: string;
+}
+
 export interface CarStats {
   totalCars: number;
   activeCars: number;
@@ -36,8 +44,7 @@ export async function getHostCars(userId: string): Promise<{
           start_date,
           end_date,
           status,
-          user_id,
-          profiles(full_name)
+          user_id
         )
       `)
       .eq('owner_id', userId)
@@ -49,11 +56,11 @@ export async function getHostCars(userId: string): Promise<{
 
     // Process cars to add booking statistics
     const carsWithStats: CarWithBookingStats[] = cars.map(car => {
-      const bookings = car.bookings || [];
-      const completedBookings = bookings.filter((b: any) => b.status === 'completed');
+      const bookings = car.bookings as BookingData[] || [];
+      const completedBookings = bookings.filter((b: BookingData) => b.status === 'completed');
       
       // Calculate total revenue (price per day * booking days)
-      const revenue = completedBookings.reduce((total: number, booking: any) => {
+      const revenue = completedBookings.reduce((total: number, booking: BookingData) => {
         const startDate = new Date(booking.start_date);
         const endDate = new Date(booking.end_date);
         const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -62,13 +69,13 @@ export async function getHostCars(userId: string): Promise<{
 
       // Find next upcoming booking
       const upcomingBookings = bookings
-        .filter((b: any) => new Date(b.start_date) > new Date() && b.status === 'confirmed')
-        .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+        .filter((b: BookingData) => new Date(b.start_date) > new Date() && b.status === 'confirmed')
+        .sort((a: BookingData, b: BookingData) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
       const nextBooking = upcomingBookings[0] ? {
         start_date: upcomingBookings[0].start_date,
         end_date: upcomingBookings[0].end_date,
-        user_name: upcomingBookings[0].profiles?.full_name || 'Unknown User'
+        user_name: 'Renter' // We'll fetch this separately if needed
       } : undefined;
 
       return {
@@ -133,14 +140,14 @@ export async function getHostStats(userId: string): Promise<{
     const priceMap = new Map(carPrices.map(car => [car.id, car.price_per_day]));
 
     cars.forEach(car => {
-      const bookings = car.bookings || [];
-      const completedBookings = bookings.filter((b: any) => b.status === 'completed');
+      const bookings = car.bookings as BookingData[] || [];
+      const completedBookings = bookings.filter((b: BookingData) => b.status === 'completed');
       
       totalBookings += completedBookings.length;
       
       // Calculate revenue for this car
       const carPrice = priceMap.get(car.id) || 0;
-      const carRevenue = completedBookings.reduce((total: number, booking: any) => {
+      const carRevenue = completedBookings.reduce((total: number, booking: BookingData) => {
         const startDate = new Date(booking.start_date);
         const endDate = new Date(booking.end_date);
         const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -228,7 +235,7 @@ export async function deleteCar(carId: string): Promise<{
 
     // Delete car images from storage
     if (car.images && car.images.length > 0) {
-      const imagePaths = car.images.map(url => {
+      const imagePaths = car.images.map((url: string) => {
         const urlParts = url.split('/');
         const fileName = urlParts[urlParts.length - 1];
         return `${carId}/${fileName}`;
