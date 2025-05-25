@@ -205,7 +205,7 @@ export default function PricingStep() {
         <h3 className="text-white font-medium mb-3">💡 Pricing Tips</h3>
         <ul className="space-y-2 text-sm text-gray-400">
           <li>• Start competitive and adjust based on booking frequency</li>
-          <li>• Consider your car's age, condition, and unique features</li>
+          <li>• Consider your car&apos;s age, condition, and unique features</li>
           <li>• Check similar cars in your area for reference</li>
           <li>• Premium features (smart lock, new model) can justify higher prices</li>
         </ul>

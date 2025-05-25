@@ -35,6 +35,8 @@ export async function getHostCars(userId: string): Promise<{
   error: string | null;
 }> {
   try {
+    console.log('Fetching cars for user:', userId);
+    
     const { data: cars, error } = await supabase
       .from('cars')
       .select(`
@@ -51,8 +53,11 @@ export async function getHostCars(userId: string): Promise<{
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('Supabase error fetching cars:', error);
       return { data: null, error: error.message };
     }
+
+    console.log('Fetched cars:', cars?.length || 0);
 
     // Process cars to add booking statistics
     const carsWithStats: CarWithBookingStats[] = cars.map(car => {
@@ -190,6 +195,7 @@ export async function toggleCarStatus(carId: string, isActive: boolean): Promise
   try {
     // For now, we'll use a simple approach. In the future, you might want to add a status field
     // Currently just keeping it simple since we don't have a status field in the schema
+    console.log('Toggle car status requested for:', carId, 'isActive:', isActive);
     
     return { success: true, error: null };
   } catch (error) {

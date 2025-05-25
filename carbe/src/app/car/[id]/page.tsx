@@ -6,19 +6,21 @@ import { supabase } from '@/lib/supabase';
 import { FaStar, FaCar, FaGasPump, FaUserFriends, FaCog } from 'react-icons/fa';
 
 interface CarDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({
   params,
 }: CarDetailPageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  
   // Fetch car data
   const { data: car } = await supabase
     .from('cars')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .single();
 
   if (!car) {
@@ -34,11 +36,16 @@ export async function generateMetadata({
 }
 
 export default async function CarDetailPage({ params }: CarDetailPageProps) {
+  const resolvedParams = await params;
+  
   // Fetch car data
   const { data: car, error } = await supabase
     .from('cars')
-    .select('*, profiles:owner_id(*)')
-    .eq('id', params.id)
+    .select(`
+      *,
+      profiles!owner_id(*)
+    `)
+    .eq('id', resolvedParams.id)
     .single();
 
   if (error || !car) {

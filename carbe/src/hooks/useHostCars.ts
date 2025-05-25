@@ -18,7 +18,15 @@ export function useHostCars() {
 
     try {
       setError(null);
-      const { data, error: fetchError } = await getHostCars(user.id);
+      
+      // Add timeout for the request
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), 10000)
+      );
+
+      const fetchPromise = getHostCars(user.id);
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      const { data, error: fetchError } = result as Awaited<ReturnType<typeof getHostCars>>;
       
       if (fetchError) {
         setError(fetchError);
@@ -29,7 +37,9 @@ export function useHostCars() {
       setCars(data || []);
     } catch (err) {
       console.error('Error fetching cars:', err);
-      const errorMessage = 'Failed to fetch cars';
+      const errorMessage = err instanceof Error && err.message === 'Request timed out' 
+        ? 'Request timed out. Please check your connection and try again.'
+        : 'Failed to fetch cars';
       setError(errorMessage);
       toast.error(errorMessage);
     }
@@ -91,6 +101,8 @@ export function useHostCars() {
   useEffect(() => {
     if (user) {
       fetchData();
+    } else {
+      setIsLoading(false);
     }
   }, [user, fetchData]);
 

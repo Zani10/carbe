@@ -11,10 +11,11 @@ import {
   Calendar,
   RefreshCw,
   Star,
-  Euro,
-  AlertCircle
+  Euro
 } from 'lucide-react';
 import HostCarCard from '@/components/car/HostCarCard';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorMessage from '@/components/ui/ErrorMessage';
 import { motion } from 'framer-motion';
 
 export default function HostGaragePage() {
@@ -91,23 +92,16 @@ export default function HostGaragePage() {
       <div className="max-w-md mx-auto px-4 py-6">
         {/* Loading State */}
         {isLoading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF2800] mx-auto mb-4"></div>
-            <p className="text-gray-400">Loading your garage...</p>
-          </div>
+          <LoadingSpinner size="lg" text="Loading your garage..." />
         )}
 
         {/* Error State */}
         {error && !isLoading && (
-          <div className="bg-red-900/20 border border-red-700/50 rounded-xl p-4 mb-6">
-            <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-400 mr-3" />
-              <div>
-                <h3 className="text-red-300 font-medium">Error Loading Cars</h3>
-                <p className="text-red-200 text-sm mt-1">{error}</p>
-              </div>
-            </div>
-          </div>
+          <ErrorMessage 
+            title="Error Loading Cars"
+            message={error}
+            onRetry={refreshData}
+          />
         )}
 
         {/* Stats Cards */}
