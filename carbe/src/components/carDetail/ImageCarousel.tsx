@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import TabBar from './TabBar';
 
 interface ImageCarouselProps {
@@ -68,10 +69,13 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
               transform: `translateX(${(index - currentIndex) * 100}%)`
             }}
           >
-            <img
+            <Image
               src={img}
               alt={`Car image ${index + 1}`}
-              className="w-full h-full object-cover rounded-b-[35px]"
+              fill
+              className="object-cover rounded-b-[35px]"
+              sizes="100vw"
+              priority={index === 0}
             />
           </div>
         ))}

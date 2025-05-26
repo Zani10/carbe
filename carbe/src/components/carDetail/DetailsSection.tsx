@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface DetailItem {
   label: string;
@@ -21,9 +22,11 @@ const DetailsSection: React.FC<DetailsSectionProps> = ({ details }) => {
             </div>
             <div className="flex items-center">
               {detail.iconUrl && (
-                <img 
+                <Image 
                   src={detail.iconUrl} 
                   alt={detail.label} 
+                  width={36}
+                  height={36}
                   className="w-9 h-9 mr-3 object-contain" 
                 />
               )}

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { MapPin, Star } from 'lucide-react';
 
 interface HostProfileProps {
@@ -29,9 +30,11 @@ const HostProfile: React.FC<HostProfileProps> = ({
         {/* Profile picture and basic info */}
         <div className="flex items-start gap-4">
           <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-            <img 
+            <Image 
               src={profilePicture} 
               alt={`${name} profile`} 
+              width={80}
+              height={80}
               className="w-full h-full object-cover"
             />
           </div>
