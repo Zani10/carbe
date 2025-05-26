@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Plus, 
-  ChevronRight, 
   Settings, 
   Star, 
   Eye, 
@@ -56,7 +56,7 @@ const mockListings = [
 export default function HostListingsPage() {
   const { user, isHostMode } = useAuth();
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'active', 'unlisted'
-  const [openMenu, setOpenMenu] = useState(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   
   if (!user || !isHostMode) {
     return (
@@ -85,7 +85,7 @@ export default function HostListingsPage() {
           : listing.status === 'unlisted'
       );
 
-  const toggleMenu = (listingId) => {
+  const toggleMenu = (listingId: string) => {
     if (openMenu === listingId) {
       setOpenMenu(null);
     } else {
@@ -175,9 +175,11 @@ export default function HostListingsPage() {
               <div key={listing.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
                 {/* Car image */}
                 <div className="aspect-w-16 aspect-h-9 bg-gray-200 relative">
-                  <img 
+                  <Image 
                     src={listing.imageUrl} 
                     alt={listing.name} 
+                    width={400}
+                    height={192}
                     className="object-cover w-full h-48"
                   />
                   <div className="absolute top-2 right-2">

@@ -98,6 +98,7 @@ export default function HostCalendarPage() {
     return null;
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDateClick = (value: any) => {
     if (value instanceof Date) {
       setSelectedDate(value);
