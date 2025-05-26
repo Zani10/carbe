@@ -36,7 +36,7 @@ export default function PhotosStep({ uploadProgress = {} }: PhotosStepProps) {
     const validationErrors: string[] = [];
     const validFiles: File[] = [];
 
-    fileArray.forEach((file, index) => {
+    fileArray.forEach((file) => {
       const error = validateFile(file);
       if (error) {
         validationErrors.push(`${file.name}: ${error}`);

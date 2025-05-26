@@ -119,11 +119,11 @@ export default function SuccessScreen() {
           transition={{ delay: 0.8 }}
           className="bg-[#1F1F1F] border border-gray-700/50 rounded-xl p-4 mb-6"
         >
-          <h3 className="text-white font-medium mb-2">What's Next?</h3>
+          <h3 className="text-white font-medium mb-2">What&apos;s Next?</h3>
           <ul className="text-sm text-gray-400 space-y-1 text-left">
             <li>✓ Your listing is now searchable</li>
             <li>✓ Guests can book immediately</li>
-            <li>✓ You'll receive booking notifications</li>
+            <li>✓ You&apos;ll receive booking notifications</li>
           </ul>
         </motion.div>
 

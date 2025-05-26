@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { CarWithBookingStats } from '@/lib/car/hostCars';
 import { 
   Eye, 
@@ -86,9 +87,11 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
         {/* Car Image and Basic Info */}
         <div className="flex items-start space-x-3 mb-4">
           <div className="relative">
-            <img
+            <Image
               src={car.images?.[0] || '/api/placeholder/80/80'}
               alt={`${car.make} ${car.model}`}
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-lg object-cover"
             />
             {car.next_booking && (

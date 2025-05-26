@@ -1,145 +1,134 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
-import { Car } from '@/lib/car';
+import { useAuth } from '../useAuth';
+import { Car } from '../useCars';
 
 export function useFavorites() {
+  const { user } = useAuth();
   const [favorites, setFavorites] = useState<Car[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
-  const router = useRouter();
 
-  // Check if we're on the client side
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // Fetch favorites
+  // Fetch favorites from Supabase
   const fetchFavorites = useCallback(async () => {
-    // Don't run this function during server-side rendering
-    if (!isClient) return;
+    if (!user) {
+      setFavorites([]);
+      setFavoriteIds([]);
+      setIsLoading(false);
+      return;
+    }
     
     try {
       setIsLoading(true);
       
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        setFavorites([]);
-        setFavoriteIds([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Fetch the user's favorites
-      const { data: userFavorites, error } = await supabase
-        .from('favorites')
-        .select('car_id')
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select(`
+          car_id,
+          cars (
+            *,
+            profiles!owner_id(
+              id,
+              full_name,
+              avatar_url,
+              created_at
+            )
+          )
+        `)
         .eq('user_id', user.id);
-      
+
       if (error) {
         console.error('Error fetching favorites:', error);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Extract car IDs
-      const carIds = userFavorites.map(favorite => favorite.car_id);
-      setFavoriteIds(carIds);
-      
-      if (carIds.length === 0) {
         setFavorites([]);
-        setIsLoading(false);
+        setFavoriteIds([]);
         return;
       }
-      
-      // Fetch car details for the favorite cars
-      const { data: cars, error: carsError } = await supabase
-        .from('cars')
-        .select('*')
-        .in('id', carIds);
-      
-      if (carsError) {
-        console.error('Error fetching favorite cars:', carsError);
-        setIsLoading(false);
-        return;
-      }
-      
-      setFavorites(cars || []);
+
+      // Transform the data - temporarily use any for complex Supabase types
+      const favoriteCars = (data || [])
+        .map((item: any) => item.cars)
+        .filter((car: any) => car !== null)
+        .map((car: any) => ({
+          ...car,
+          host_profile: car.profiles ? {
+            id: car.profiles.id,
+            full_name: car.profiles.full_name,
+            avatar_url: car.profiles.avatar_url,
+            created_at: car.profiles.created_at,
+          } : undefined,
+        })) as Car[];
+
+      const favoriteCarIds = favoriteCars.map(car => car.id);
+
+      setFavorites(favoriteCars);
+      setFavoriteIds(favoriteCarIds);
     } catch (error) {
       console.error('Error in fetchFavorites:', error);
+      setFavorites([]);
+      setFavoriteIds([]);
     } finally {
       setIsLoading(false);
     }
-  }, [isClient]);
+  }, [user]);
 
   // Add a car to favorites
   const addFavorite = useCallback(async (carId: string) => {
-    if (!isClient) return false;
+    if (!user) return false;
     
     try {
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // If not logged in, redirect to login
-        router.push('/signin');
-        return false;
-      }
-      
-      // Add the car to favorites
-      const { error } = await supabase.from('favorites').insert({
-        user_id: user.id,
-        car_id: carId,
-      });
-      
+      const { error } = await supabase
+        .from('user_favorites')
+        .insert([{
+          user_id: user.id,
+          car_id: carId
+        }]);
+
       if (error) {
         console.error('Error adding favorite:', error);
         return false;
       }
       
-      // Refresh favorites
+      // Update local state
+      if (!favoriteIds.includes(carId)) {
+        setFavoriteIds(prev => [...prev, carId]);
+      }
+      
+      // Refresh favorites to get the full car data
       await fetchFavorites();
+      
       return true;
     } catch (error) {
       console.error('Error in addFavorite:', error);
       return false;
     }
-  }, [fetchFavorites, router, isClient]);
+  }, [user, favoriteIds, fetchFavorites]);
 
   // Remove a car from favorites
   const removeFavorite = useCallback(async (carId: string) => {
-    if (!isClient) return false;
+    if (!user) return false;
     
     try {
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return false;
-      }
-      
-      // Remove the car from favorites
       const { error } = await supabase
-        .from('favorites')
+        .from('user_favorites')
         .delete()
-        .match({ user_id: user.id, car_id: carId });
-      
+        .eq('user_id', user.id)
+        .eq('car_id', carId);
+
       if (error) {
         console.error('Error removing favorite:', error);
         return false;
       }
       
-      // Refresh favorites
-      await fetchFavorites();
+      // Update local state
+      setFavoriteIds(prev => prev.filter(id => id !== carId));
+      setFavorites(prev => prev.filter(car => car.id !== carId));
+      
       return true;
     } catch (error) {
       console.error('Error in removeFavorite:', error);
       return false;
     }
-  }, [fetchFavorites, isClient]);
+  }, [user]);
 
   // Check if a car is in favorites
   const isFavorite = useCallback((carId: string) => {
@@ -148,41 +137,19 @@ export function useFavorites() {
 
   // Toggle favorite status
   const toggleFavorite = useCallback(async (carId: string) => {
-    if (!isClient) return false;
+    if (!user) return false;
     
     if (isFavorite(carId)) {
       return removeFavorite(carId);
     } else {
       return addFavorite(carId);
     }
-  }, [isFavorite, removeFavorite, addFavorite, isClient]);
+  }, [isFavorite, removeFavorite, addFavorite, user]);
 
-  // Load favorites on component mount
+  // Load favorites on component mount or when user changes
   useEffect(() => {
-    if (isClient) {
-      fetchFavorites();
-      
-      // Set up realtime subscription for favorites changes
-      const favoritesSubscription = supabase
-        .channel('favorites_changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'favorites',
-          },
-          () => {
-            fetchFavorites();
-          }
-        )
-        .subscribe();
-      
-      return () => {
-        supabase.removeChannel(favoritesSubscription);
-      };
-    }
-  }, [fetchFavorites, isClient]);
+    fetchFavorites();
+  }, [fetchFavorites]);
 
   return {
     favorites,

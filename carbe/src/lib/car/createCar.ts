@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { AddCarFormData, PhotoUploadProgress } from '@/types/car';
+import { AddCarFormData } from '@/types/car';
 
 export interface CreateCarResult {
   success: boolean;
