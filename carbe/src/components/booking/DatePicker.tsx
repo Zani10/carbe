@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { format, isBefore, isAfter, isSameDay } from 'date-fns';
-import { X } from 'lucide-react';
+import { format, isBefore, isAfter, isSameDay, differenceInDays } from 'date-fns';
+import { X, Calendar } from 'lucide-react';
 
 interface DatePickerProps {
   isOpen: boolean;
@@ -8,6 +8,7 @@ interface DatePickerProps {
   onSelectDates: (startDate: Date, endDate: Date) => void;
   initialStartDate?: Date;
   initialEndDate?: Date;
+  unavailableDates?: Date[];
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
@@ -16,17 +17,18 @@ const DatePicker: React.FC<DatePickerProps> = ({
   onSelectDates,
   initialStartDate,
   initialEndDate,
+  unavailableDates = [],
 }) => {
   const [startDate, setStartDate] = useState<Date | null>(initialStartDate || null);
   const [endDate, setEndDate] = useState<Date | null>(initialEndDate || null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
 
-  // Generate dates for the calendar (2 months)
+  // Generate dates for the calendar (3 months for better planning)
   const generateCalendarDates = () => {
     const today = new Date();
     const months = [];
     
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       const monthStart = new Date(today.getFullYear(), today.getMonth() + i, 1);
       const monthName = format(monthStart, 'MMMM yyyy');
       
@@ -73,18 +75,33 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   const isDateInRange = (date: Date) => {
     if (startDate && !endDate && hoverDate) {
+      const start = startDate;
+      const end = hoverDate;
       return (
-        (isAfter(date, startDate) && isBefore(date, hoverDate)) ||
-        (isAfter(date, hoverDate) && isBefore(date, startDate))
+        (isAfter(date, start) && isBefore(date, end)) ||
+        (isAfter(date, end) && isBefore(date, start))
       );
     }
     return false;
   };
 
+  const isDateUnavailable = (date: Date) => {
+    return unavailableDates.some(unavailableDate => isSameDay(date, unavailableDate));
+  };
+
   const handleDateClick = (date: Date) => {
+    if (isDateDisabled(date) || isDateUnavailable(date)) return;
+
     if (!startDate || (startDate && endDate)) {
       // Start a new selection
       setStartDate(date);
+      setEndDate(null);
+    } else if (startDate && isSameDay(date, startDate)) {
+      // Clicking on the same start date - deselect it
+      setStartDate(null);
+      setEndDate(null);
+    } else if (endDate && isSameDay(date, endDate)) {
+      // Clicking on the same end date - deselect it, keep start date
       setEndDate(null);
     } else {
       // Complete the selection
@@ -98,7 +115,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   const handleDateHover = (date: Date) => {
-    setHoverDate(date);
+    if (!isDateDisabled(date) && !isDateUnavailable(date)) {
+      setHoverDate(date);
+    }
   };
 
   const isDateDisabled = (date: Date) => {
@@ -107,22 +126,51 @@ const DatePicker: React.FC<DatePickerProps> = ({
     return isBefore(date, today);
   };
 
-  // Don't render anything if the picker is not open
-  if (!isOpen) return null;
+  const clearSelection = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setHoverDate(null);
+  };
 
+  const handleApply = () => {
+    if (startDate && endDate) {
+      onSelectDates(startDate, endDate);
+      // Close with animation
+      setTimeout(() => onClose(), 300);
+    }
+  };
+
+  // Fixed calculation - use differenceInDays + 1 for inclusive counting
+  const calculateDays = () => {
+    if (!startDate || !endDate) return 0;
+    return differenceInDays(endDate, startDate) + 1;
+  };
+
+  // Always render the sheet to enable slide-in/out animations
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex flex-col">
+    <div className={`fixed bottom-0 left-0 right-0 z-50 bg-[#1A1A1A] rounded-t-3xl transform transition-transform duration-500 ease-out flex flex-col ${
+      isOpen ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+    }`} style={{ height: '75vh' }}>
+      
       {/* Header */}
-      <div className="bg-[#292929] text-white p-4 flex justify-between items-center">
-        <button onClick={onClose} className="p-2">
+      <div className="bg-[#292929] text-white p-4 flex justify-between items-center rounded-t-3xl">
+        <button 
+          onClick={onClose} 
+          className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+        >
           <X size={24} />
         </button>
         <h2 className="text-lg font-medium">Select dates</h2>
-        <div className="w-10" />
+        <button 
+          onClick={clearSelection}
+          className="text-sm text-gray-400 hover:text-white transition-colors"
+        >
+          Clear
+        </button>
       </div>
 
-      {/* Calendar */}
-      <div className="flex-1 bg-[#1A1A1A] overflow-y-auto p-4">
+      {/* Calendar content */}
+      <div className="flex-1 overflow-y-auto p-4 pb-24">
         <div className="max-w-lg mx-auto">
           {generateCalendarDates().map((month, monthIndex) => (
             <div key={monthIndex} className="mb-8">
@@ -130,7 +178,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
               
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <div key={day} className="text-gray-400 text-xs text-center">{day}</div>
+                  <div key={day} className="text-gray-400 text-xs text-center py-2">{day}</div>
                 ))}
               </div>
               
@@ -143,23 +191,32 @@ const DatePicker: React.FC<DatePickerProps> = ({
                   const isSelected = isDateSelected(date);
                   const isInRange = isDateInRange(date);
                   const disabled = isDateDisabled(date);
+                  const unavailable = isDateUnavailable(date);
                   
                   return (
                     <button
                       key={dateIndex}
-                      onClick={() => !disabled && handleDateClick(date)}
-                      onMouseEnter={() => !disabled && handleDateHover(date)}
-                      disabled={disabled}
+                      onClick={() => handleDateClick(date)}
+                      onMouseEnter={() => handleDateHover(date)}
+                      disabled={disabled || unavailable}
                       className={`
-                        h-12 flex items-center justify-center rounded-full relative
-                        ${disabled ? 'text-gray-600 cursor-not-allowed' : 'text-white cursor-pointer'}
-                        ${isSelected ? 'bg-[#FF4646]' : ''}
-                        ${isInRange ? 'bg-[#FF4646]/20' : ''}
-                        ${isStart ? 'rounded-l-full' : ''}
-                        ${isEnd ? 'rounded-r-full' : ''}
+                        h-12 flex items-center justify-center rounded-lg relative transition-all duration-200
+                        ${disabled ? 'text-gray-600 cursor-not-allowed' : 
+                          unavailable ? 'text-red-400 cursor-not-allowed bg-red-900/20' :
+                          'text-white cursor-pointer hover:bg-gray-700'}
+                        ${isSelected && !isInRange ? 'bg-[#FF2800] text-white shadow-lg scale-105' : ''}
+                        ${isInRange ? 'bg-[#FF2800]/30' : ''}
+                        ${isStart ? 'rounded-l-lg' : ''}
+                        ${isEnd ? 'rounded-r-lg' : ''}
+                        ${!disabled && !unavailable && !isSelected && !isInRange ? 'hover:scale-105' : ''}
                       `}
                     >
                       {format(date, 'd')}
+                      {unavailable && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-6 h-0.5 bg-red-500 rotate-45"></div>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -169,17 +226,24 @@ const DatePicker: React.FC<DatePickerProps> = ({
         </div>
       </div>
 
-      {/* Footer with apply button */}
-      <div className="bg-[#292929] p-4">
+      {/* Footer with apply button - Fixed at bottom */}
+      <div className="bg-[#292929] p-4 border-t border-gray-700 mt-auto">
         <button
-          onClick={() => startDate && endDate && onSelectDates(startDate, endDate)}
+          onClick={handleApply}
           disabled={!startDate || !endDate}
           className={`
-            w-full rounded-full py-3 font-medium text-center
-            ${startDate && endDate ? 'bg-[#FF4646] text-white' : 'bg-gray-700 text-gray-400'}
+            w-full rounded-xl py-4 font-medium text-center transition-all duration-200 flex items-center justify-center space-x-2
+            ${startDate && endDate 
+              ? 'bg-[#FF2800] text-white hover:bg-[#E02400] shadow-lg' 
+              : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
           `}
         >
-          Apply
+          <Calendar size={20} />
+          <span>
+            {startDate && endDate 
+              ? `Apply dates (${calculateDays()} days)` 
+              : 'Select both dates to continue'}
+          </span>
         </button>
       </div>
     </div>

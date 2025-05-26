@@ -390,9 +390,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
       {/* Apply button - fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#212121] border-t border-gray-800">
         <Button 
-          isFullWidth 
           onClick={handleApplyFilters}
           size="lg"
+          className="w-full"
         >
           Show 200+ results
         </Button>

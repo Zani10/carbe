@@ -7,13 +7,7 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
-// Define an error interface
-interface AuthError {
-  message: string;
-  status?: number;
-  code?: string;
-  details?: unknown;
-}
+
 
 const signUpSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
