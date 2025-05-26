@@ -3,8 +3,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
-import CarCard, { CarCardProps } from '../car/CarCard';
+import CarCard from '../car/CarCard';
 import Link from 'next/link';
+import { useCars } from '@/hooks/useCars';
 
 interface CarListProps {
   onDrag?: (yPosition: number) => void;
@@ -17,46 +18,8 @@ const SEARCHBAR_HEIGHT_PX = 68;
 
 const vhToPx = (vh: number, screenHeight: number) => (vh / 100) * screenHeight;
 
-const mockedCars: CarCardProps[] = [
-  {
-    id: '1',
-    image: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?ixlib=rb-1.2.1&auto=format&fit=crop&w=750&q=80',
-    rating: 4.8,
-    isFavorite: true,
-    makeModel: 'BMW B-Series',
-    location: 'Brussels, BE',
-    transmission: 'Automatic',
-    pricePerDay: 70,
-    distance: '2km',
-    brandLogoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/200px-BMW.svg.png'
-  },
-  {
-    id: '2',
-    image: 'https://images.unsplash.com/photo-1580273916550-4c53a792947c?ixlib=rb-1.2.1&auto=format&fit=crop&w=750&q=80',
-    rating: 5.0,
-    isFavorite: true,
-    makeModel: 'Mercedes GLB',
-    location: 'Ghent, BE',
-    transmission: 'Automatic',
-    pricePerDay: 85,
-    distance: '10km',
-    brandLogoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Benz_Logo_2010.svg/200px-Mercedes-Benz_Logo_2010.svg.png'
-  },
-  {
-    id: '3',
-    image: 'https://images.unsplash.com/photo-1553440569-bcc63803a83d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    rating: 4.6,
-    isFavorite: false,
-    makeModel: 'Audi A6 Avant',
-    location: 'Antwerp, BE',
-    transmission: 'Automatic',
-    pricePerDay: 95,
-    distance: '15km',
-    brandLogoUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7f/Audi_logo_detail.svg'
-  }
-];
-
 const CarList: React.FC<CarListProps> = ({ onDrag }) => {
+  const { cars } = useCars();
   const [screenHeight, setScreenHeight] = useState(DEFAULT_SCREEN_HEIGHT);
   const [isClient, setIsClient] = useState(false);
 
@@ -179,9 +142,18 @@ const CarList: React.FC<CarListProps> = ({ onDrag }) => {
         className="overflow-y-auto pb-20 bg-[#212121]"
         style={{ height: `calc(100% - 48px)` }}
       >
-        {mockedCars.map((car) => (
+        {cars.map((car) => (
           <Link key={car.id} href={`/car/${car.id}`}> 
-            <CarCard {...car} />
+            <CarCard 
+              id={car.id}
+              image={car.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+              rating={car.rating || 0}
+              isFavorite={false}
+              makeModel={`${car.make} ${car.model}`}
+              location={car.location || 'Location not specified'}
+              transmission={car.transmission || 'Not specified'}
+              pricePerDay={car.price_per_day}
+            />
           </Link>
         ))}
       </div>

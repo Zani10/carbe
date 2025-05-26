@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Star, Heart, MapPin, Settings2 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -31,7 +32,14 @@ const CarCard: React.FC<CarCardProps> = ({
       <div className="bg-[#2A2A2A] rounded-2xl shadow-md overflow-hidden text-white flex flex-col">
         <div className="relative">
           {/* Car image */}
-          <img src={image} alt={makeModel} className="w-full h-44 object-cover" /> 
+          <Image 
+            src={image} 
+            alt={makeModel} 
+            width={400}
+            height={176}
+            className="w-full h-44 object-cover" 
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          /> 
           
           {/* Rating badge */}
           <div className="absolute top-2.5 left-2.5 bg-black/50 text-white px-2 py-0.5 rounded-md text-xs flex items-center">
@@ -60,9 +68,11 @@ const CarCard: React.FC<CarCardProps> = ({
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center">
               {brandLogoUrl && (
-                <img 
+                <Image 
                   src={brandLogoUrl} 
                   alt="Brand Logo" 
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full mr-2.5 border-2 border-slate-700 object-contain p-0.5 bg-white"
                 />
               )}
