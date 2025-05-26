@@ -3,14 +3,15 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { getBookingById, updateBookingStatus } from '@/lib/booking';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
+  const { id } = await params;
+  
   try {
-    const { id } = params;
     const supabase = createServerSupabaseClient();
     
     // Verify the user is authenticated
@@ -57,7 +58,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     
     return NextResponse.json(booking);
   } catch (error) {
-    console.error(`Error fetching booking with ID ${params.id}:`, error);
+    console.error(`Error fetching booking with ID ${id}:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch booking' },
       { status: 500 }
@@ -66,8 +67,9 @@ export async function GET(request: Request, { params }: RouteParams) {
 }
 
 export async function PATCH(request: Request, { params }: RouteParams) {
+  const { id } = await params;
+  
   try {
-    const { id } = params;
     const supabase = createServerSupabaseClient();
     
     // Verify the user is authenticated
@@ -140,7 +142,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     
     return NextResponse.json(updatedBooking);
   } catch (error) {
-    console.error(`Error updating booking with ID ${params.id}:`, error);
+    console.error(`Error updating booking with ID ${id}:`, error);
     return NextResponse.json(
       { error: 'Failed to update booking' },
       { status: 500 }

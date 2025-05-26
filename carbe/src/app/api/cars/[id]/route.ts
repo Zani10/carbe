@@ -3,14 +3,15 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { getCarById } from '@/lib/car';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
+  const { id } = await params;
+  
   try {
-    const { id } = params;
     const car = await getCarById(id);
 
     if (!car) {
@@ -19,14 +20,15 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(car);
   } catch (error) {
-    console.error(`Error fetching car with ID ${params.id}:`, error);
+    console.error(`Error fetching car with ID ${id}:`, error);
     return NextResponse.json({ error: 'Failed to fetch car' }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request, { params }: RouteParams) {
+  const { id } = await params;
+  
   try {
-    const { id } = params;
     const supabase = createServerSupabaseClient();
     
     // Verify the user is authenticated
@@ -82,7 +84,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     
     return NextResponse.json(data);
   } catch (error) {
-    console.error(`Error updating car with ID ${params.id}:`, error);
+    console.error(`Error updating car with ID ${id}:`, error);
     return NextResponse.json(
       { error: 'Failed to update car' },
       { status: 500 }
@@ -91,8 +93,9 @@ export async function PUT(request: Request, { params }: RouteParams) {
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
+  const { id } = await params;
+  
   try {
-    const { id } = params;
     const supabase = createServerSupabaseClient();
     
     // Verify the user is authenticated
@@ -143,7 +146,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`Error deleting car with ID ${params.id}:`, error);
+    console.error(`Error deleting car with ID ${id}:`, error);
     return NextResponse.json(
       { error: 'Failed to delete car' },
       { status: 500 }

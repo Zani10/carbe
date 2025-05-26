@@ -62,9 +62,9 @@ export default function FavoritesPage() {
 
   // Filter functions
   const filteredFavorites = favorites.filter(car =>
-    car.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    car.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    car.location.toLowerCase().includes(searchQuery.toLowerCase())
+    `${car.make} ${car.model}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    car.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (car.location && car.location.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredRecentlyViewed = mockRecentlyViewed.filter(car =>
@@ -157,11 +157,18 @@ export default function FavoritesPage() {
             ) : filteredFavorites.length > 0 ? (
               <div className="space-y-4">
                 {filteredFavorites.map((car) => (
-                  <CarCard
-                    key={car.id}
-                    car={car}
-                    onCardClick={() => router.push(`/car/${car.id}`)}
-                  />
+                  <div key={car.id} onClick={() => router.push(`/car/${car.id}`)}>
+                    <CarCard
+                      id={car.id}
+                      image={car.images?.[0] || '/api/placeholder/400/200'}
+                      rating={car.rating || 0}
+                      isFavorite={true}
+                      makeModel={`${car.make} ${car.model}`}
+                      location={car.location || 'Unknown'}
+                      transmission={car.transmission || 'Unknown'}
+                      pricePerDay={car.price_per_day}
+                    />
+                  </div>
                 ))}
               </div>
             ) : searchQuery ? (
@@ -193,11 +200,18 @@ export default function FavoritesPage() {
             {filteredRecentlyViewed.length > 0 ? (
               <div className="space-y-4">
                 {filteredRecentlyViewed.map((car) => (
-                  <CarCard
-                    key={car.id}
-                    car={car}
-                    onCardClick={() => router.push(`/car/${car.id}`)}
-                  />
+                  <div key={car.id} onClick={() => router.push(`/car/${car.id}`)}>
+                    <CarCard
+                      id={car.id}
+                      image={car.images[0]}
+                      rating={car.rating}
+                      isFavorite={false}
+                      makeModel={car.name}
+                      location={car.location}
+                      transmission={car.transmission}
+                      pricePerDay={car.price_per_day}
+                    />
+                  </div>
                 ))}
               </div>
             ) : searchQuery ? (
