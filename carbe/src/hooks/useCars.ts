@@ -13,13 +13,12 @@ export interface Car {
   price_per_day: number;
   location: string | null;
   transmission: string | null;
-  images: string[] | null;
+  images: string[]; // Always an array
   rating: number | null;
   fuel_type: string | null;
   seats: number | null;
   description: string | null;
-  availability_start: string | null;
-  availability_end: string | null;
+  is_available: boolean;
   created_at: string;
   updated_at: string;
   // Host profile from join
@@ -51,10 +50,19 @@ export function useCars(filters?: UseCarFilters) {
       setIsLoading(true);
       setError(null);
 
-      // Build query - get all cars (no is_available field exists)
+      // Build query - ONLY fetch available cars with host info
       let query = supabase
         .from('cars')
-        .select('*')
+        .select(`
+          *,
+          profiles!owner_id (
+            id,
+            full_name,
+            profile_image,
+            created_at
+          )
+        `)
+        .eq('is_available', true) // Only available cars
         .order('created_at', { ascending: false });
 
       // Apply filters
@@ -88,10 +96,16 @@ export function useCars(filters?: UseCarFilters) {
         throw fetchError;
       }
 
-      // Transform data to match our interface (without host profile for now)
+      // Transform data with ChatGPT's improvements
       const transformedCars: Car[] = (data || []).map(car => ({
         ...car,
-        host_profile: undefined, // Will add host profile once we fix the join
+        images: car.images ?? [], // Ensure always array
+        host_profile: car.profiles && {
+          id: car.profiles.id,
+          full_name: car.profiles.full_name,
+          avatar_url: car.profiles.profile_image, // Map profile_image → avatar_url
+          created_at: car.profiles.created_at,
+        },
       }));
 
       setCars(transformedCars);
@@ -131,7 +145,16 @@ export function useCarById(id: string) {
 
         const { data, error: fetchError } = await supabase
           .from('cars')
-          .select('*')
+          .select(`
+            *,
+            profiles!owner_id (
+              id,
+              full_name,
+              profile_image,
+              verified,
+              created_at
+            )
+          `)
           .eq('id', id)
           .single();
 
@@ -145,10 +168,15 @@ export function useCarById(id: string) {
           return;
         }
 
-        // Transform data to match our interface (without host profile for now)
         const transformedCar: Car = {
           ...data,
-          host_profile: undefined, // Will add host profile once we fix the join
+          images: data.images ?? [], // Ensure always array
+          host_profile: data.profiles && {
+            id: data.profiles.id,
+            full_name: data.profiles.full_name,
+            avatar_url: data.profiles.profile_image,
+            created_at: data.profiles.created_at,
+          },
         };
 
         setCar(transformedCar);

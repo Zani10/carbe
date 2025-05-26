@@ -5,8 +5,8 @@ interface BookingData {
   id: string;
   start_date: string;
   end_date: string;
-  status: 'pending' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled';
-  user_id: string;
+  status: 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled';
+  renter_id: string;
 }
 
 export interface CarStats {
@@ -46,7 +46,7 @@ export async function getHostCars(userId: string): Promise<{
           start_date,
           end_date,
           status,
-          user_id
+          renter_id
         )
       `)
       .eq('owner_id', userId)
@@ -193,9 +193,14 @@ export async function toggleCarStatus(carId: string, isActive: boolean): Promise
   error: string | null;
 }> {
   try {
-    // For now, we'll use a simple approach. In the future, you might want to add a status field
-    // Currently just keeping it simple since we don't have a status field in the schema
-    console.log('Toggle car status requested for:', carId, 'isActive:', isActive);
+    const { error } = await supabase
+      .from('cars')
+      .update({ is_available: isActive })
+      .eq('id', carId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
     
     return { success: true, error: null };
   } catch (error) {
@@ -217,7 +222,7 @@ export async function deleteCar(carId: string): Promise<{
       .from('bookings')
       .select('id')
       .eq('car_id', carId)
-      .in('status', ['confirmed', 'ongoing'])
+      .in('status', ['confirmed', 'active'])
       .limit(1);
 
     if (bookingsError) {
