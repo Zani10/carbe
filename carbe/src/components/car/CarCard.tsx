@@ -2,34 +2,53 @@ import React from 'react';
 import Image from 'next/image';
 import { Star, Heart, MapPin, Settings2 } from 'lucide-react';
 import clsx from 'clsx';
+import { useFavorites } from '@/hooks/useFavorites';
 
 export interface CarCardProps {
   id: string;
   image: string;
   rating: number;
-  isFavorite: boolean;
   makeModel: string;
   location: string;
   transmission: string;
   pricePerDay: number;
   distance?: string;
   brandLogoUrl?: string;
+  onCardClick?: () => void;
 }
 
 const CarCard: React.FC<CarCardProps> = ({
+  id,
   image,
   rating,
-  isFavorite,
   makeModel,
   location,
   transmission,
   pricePerDay,
   distance,
   brandLogoUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/200px-BMW.svg.png',
+  onCardClick,
 }) => {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    await toggleFavorite(id);
+  };
+
+  const isCarFavorite = isFavorite(id);
+
   return (
     <div className="w-full px-4 py-2">
-      <div className="bg-[#2A2A2A] rounded-2xl shadow-md overflow-hidden text-white flex flex-col">
+      <div 
+        className={clsx(
+          "bg-[#2A2A2A] rounded-2xl shadow-md overflow-hidden text-white flex flex-col",
+          onCardClick && "cursor-pointer"
+        )}
+        onClick={onCardClick}
+      >
         <div className="relative">
           {/* Car image */}
           <Image 
@@ -49,15 +68,16 @@ const CarCard: React.FC<CarCardProps> = ({
           
           {/* Heart button */}
           <button 
-            className="absolute top-2 right-3 p-1 rounded-full"
-            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            onClick={handleFavoriteClick}
+            className="absolute top-2 right-3 p-1 rounded-full hover:bg-black/20 transition-colors"
+            aria-label={isCarFavorite ? "Remove from favorites" : "Add to favorites"}
           >
             <Heart
               className={clsx(
-                'h-7 w-7',
-                isFavorite 
+                'h-7 w-7 transition-colors',
+                isCarFavorite 
                   ? 'text-red-500 fill-red-500' 
-                  : 'text-white stroke-[3] drop-shadow-md'
+                  : 'text-white stroke-[3] drop-shadow-md hover:text-red-200'
               )}
             />
           </button>

@@ -148,7 +148,6 @@ const CarList: React.FC<CarListProps> = ({ onDrag }) => {
               id={car.id}
               image={car.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
               rating={car.rating || 0}
-              isFavorite={false}
               makeModel={`${car.make} ${car.model}`}
               location={car.location || 'Location not specified'}
               transmission={car.transmission || 'Not specified'}

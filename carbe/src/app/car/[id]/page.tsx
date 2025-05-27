@@ -2,9 +2,11 @@
 
 import { notFound } from 'next/navigation';
 import { useCarById } from '@/hooks/useCars';
+import { useFavorites } from '@/hooks/useFavorites';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Share, Heart } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 // Import all the beautiful existing components
 import ImageCarousel from '@/components/carDetail/ImageCarousel';
@@ -30,7 +32,8 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
+  
+  const { isFavorite, toggleFavorite } = useFavorites();
   
   useEffect(() => {
     params.then(resolvedParams => {
@@ -60,17 +63,21 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
         });
       } catch (err) {
         console.log('Error sharing:', err);
+        // Fallback - copy to clipboard
+        navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard!');
       }
     } else {
       // Fallback - copy to clipboard
       navigator.clipboard.writeText(window.location.href);
-      // You could show a toast here
+      toast.success('Link copied to clipboard!');
     }
   };
 
-  const handleToggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    // TODO: Integrate with favorites API
+  const handleToggleFavorite = async () => {
+    if (!id) return;
+    
+    await toggleFavorite(id);
   };
 
   const handleDateSelect = (startDate: Date, endDate: Date) => {
@@ -210,7 +217,7 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
           >
             <Heart 
               size={18} 
-              className={isFavorite ? 'fill-red-500 text-red-500' : ''} 
+              className={isFavorite(id) ? 'fill-red-500 text-red-500' : ''} 
             />
           </button>
         </div>
@@ -243,7 +250,7 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
               >
                 <Heart 
                   size={18} 
-                  className={isFavorite ? 'fill-red-500 text-red-500' : ''} 
+                  className={isFavorite(id) ? 'fill-red-500 text-red-500' : ''} 
                 />
               </button>
             </div>
