@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import RenterBottomNav from '@/components/layout/RenterBottomNav';
 import { 
-  ArrowLeft,
   Calendar,
   Clock,
   MapPin,
@@ -191,7 +190,7 @@ export default function RenterDashboardPage() {
           </div>
         </div>
 
-      <div className="max-w-md mx-auto px-4 py-4">
+        <div className="max-w-md mx-auto px-4 py-4">
         {/* Search Bar */}
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
@@ -302,9 +301,9 @@ export default function RenterDashboardPage() {
             </div>
           </div>
         )}
+        </div>
       </div>
-
       <RenterBottomNav />
-    </div>
+    </>
   );
 } 

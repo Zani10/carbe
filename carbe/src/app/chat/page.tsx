@@ -51,7 +51,7 @@ export default function ChatPage() {
             <MessageSquare className="h-16 w-16 text-gray-600 mx-auto mb-6" />
             <h2 className="text-2xl font-semibold text-white mb-4">Messages Coming Soon</h2>
             <p className="text-gray-400 mb-8 leading-relaxed">
-              We're building an amazing messaging experience where you can chat with hosts, 
+              We&apos;re building an amazing messaging experience where you can chat with hosts, 
               get support, and manage your bookings seamlessly.
             </p>
             

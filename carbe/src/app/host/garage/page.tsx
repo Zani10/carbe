@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useHostCars } from '@/hooks/useHostCars';
 import { useRouter } from 'next/navigation';
+import HostBottomNav from '@/components/layout/HostBottomNav';
 import { 
   Plus,
   Car,
-  ArrowLeft,
   Calendar,
   RefreshCw,
   Star,
@@ -43,7 +43,7 @@ export default function HostGaragePage() {
           </p>
           <button 
             onClick={() => router.push('/profile')}
-            className="inline-block px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90"
+            className="inline-block px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90"
           >
             Go to Profile
           </button>
@@ -56,20 +56,13 @@ export default function HostGaragePage() {
   const inactiveCars: typeof cars = []; // No inactive cars for now
 
   return (
-    <div className="min-h-screen bg-[#212121] pb-20">
-      {/* Header */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
+    <>
+    <div className="min-h-screen bg-[#212121] pb-24">
+      {/* Header - Simple title without back button */}
+      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <button 
-                onClick={() => router.back()}
-                className="mr-3 p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <h1 className="text-lg font-semibold text-white">My Garage</h1>
-            </div>
+            <h1 className="text-xl font-semibold text-white">My Garage</h1>
             <div className="flex items-center space-x-2">
               <button 
                 onClick={refreshData}
@@ -80,7 +73,7 @@ export default function HostGaragePage() {
               </button>
               <button 
                 onClick={() => router.push('/host/garage/new')}
-                className="p-2 bg-[#FF2800] text-white rounded-lg hover:bg-[#FF2800]/90 transition-colors"
+                className="p-2 bg-[#FF4646] text-white rounded-lg hover:bg-[#FF4646]/90 transition-colors"
               >
                 <Plus className="h-5 w-5" />
               </button>
@@ -112,7 +105,7 @@ export default function HostGaragePage() {
             className="grid grid-cols-3 gap-3 mb-6"
           >
             <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-4 text-center">
-              <Car className="h-6 w-6 text-[#FF2800] mx-auto mb-2" />
+              <Car className="h-6 w-6 text-[#FF4646] mx-auto mb-2" />
               <p className="text-xl font-bold text-white">{stats.totalCars}</p>
               <p className="text-sm text-gray-400">Cars</p>
             </div>
@@ -145,7 +138,7 @@ export default function HostGaragePage() {
             </p>
             <button 
               onClick={() => router.push('/host/garage/new')}
-              className="w-full bg-[#FF2800] text-white py-3 rounded-xl font-medium hover:bg-[#FF2800]/90 transition-colors"
+              className="w-full bg-[#FF4646] text-white py-3 rounded-xl font-medium hover:bg-[#FF4646]/90 transition-colors"
             >
               Add New Car
             </button>
@@ -163,7 +156,7 @@ export default function HostGaragePage() {
               onClick={() => setActiveTab('active')}
               className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
                 activeTab === 'active' 
-                  ? 'bg-[#FF2800] text-white shadow-sm' 
+                  ? 'bg-[#FF4646] text-white shadow-sm' 
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
@@ -173,7 +166,7 @@ export default function HostGaragePage() {
               onClick={() => setActiveTab('inactive')}
               className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
                 activeTab === 'inactive' 
-                  ? 'bg-[#FF2800] text-white shadow-sm' 
+                  ? 'bg-[#FF4646] text-white shadow-sm' 
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
@@ -208,7 +201,7 @@ export default function HostGaragePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => router.push('/host/garage/new')}
-            className="w-full mt-6 bg-[#FF2800] text-white py-3 rounded-xl font-medium hover:bg-[#FF2800]/90 transition-colors flex items-center justify-center"
+            className="w-full mt-6 bg-[#FF4646] text-white py-3 rounded-xl font-medium hover:bg-[#FF4646]/90 transition-colors flex items-center justify-center"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add Another Car
@@ -232,5 +225,7 @@ export default function HostGaragePage() {
         )}
       </div>
     </div>
+    <HostBottomNav />
+    </>
   );
 } 

@@ -65,7 +65,7 @@ const userIcon = new L.DivIcon({
   iconAnchor: [10, 10],
 });
 
-// Component to handle map updates
+// Component to handle map updates and resize
 const MapUpdater: React.FC<{ center: Coordinates; zoom: number }> = ({ center, zoom }) => {
   const map = useMap();
   
@@ -76,6 +76,44 @@ const MapUpdater: React.FC<{ center: Coordinates; zoom: number }> = ({ center, z
       map.invalidateSize();
     }, 100);
   }, [center, map, zoom]);
+
+  // Handle resize when container changes
+  useEffect(() => {
+    const container = map.getContainer();
+    
+    const resizeObserver = new ResizeObserver(() => {
+      // Multiple invalidations with different timings to ensure proper rendering
+      setTimeout(() => {
+        map.invalidateSize({ animate: false });
+      }, 50);
+      setTimeout(() => {
+        map.invalidateSize({ animate: false });
+      }, 150);
+      setTimeout(() => {
+        map.invalidateSize({ animate: false });
+      }, 300);
+    });
+
+    if (container) {
+      resizeObserver.observe(container);
+    }
+
+    // Also listen for window resize
+    const handleWindowResize = () => {
+      setTimeout(() => {
+        map.invalidateSize({ animate: false });
+      }, 100);
+    };
+
+    window.addEventListener('resize', handleWindowResize);
+
+    return () => {
+      if (container) {
+        resizeObserver.unobserve(container);
+      }
+      window.removeEventListener('resize', handleWindowResize);
+    };
+  }, [map]);
   
   return null;
 };

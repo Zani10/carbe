@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import HostBottomNav from '@/components/layout/HostBottomNav';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { 
-  ArrowLeft,
   Settings,
   DollarSign,
   Calendar as CalendarIcon,
@@ -50,7 +50,7 @@ export default function HostCalendarPage() {
           </p>
           <button 
             onClick={() => router.push('/profile')}
-            className="inline-block px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90"
+            className="inline-block px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90"
           >
             Go to Profile
           </button>
@@ -123,20 +123,13 @@ export default function HostCalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#212121] pb-20">
-      {/* Header */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
+    <>
+    <div className="min-h-screen bg-[#212121] pb-24">
+      {/* Header - Simple title without back button */}
+      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <button 
-                onClick={() => router.back()}
-                className="mr-3 p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <h1 className="text-lg font-semibold text-white">Calendar</h1>
-            </div>
+            <h1 className="text-xl font-semibold text-white">Calendar</h1>
             <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
               <Settings className="h-5 w-5" />
             </button>
@@ -151,7 +144,7 @@ export default function HostCalendarPage() {
             <button
               className={`py-4 px-1 font-medium text-sm border-b-2 ${
                 activeTab === 'calendar' 
-                  ? 'border-[#FF2800] text-[#FF2800]' 
+                  ? 'border-[#FF4646] text-[#FF4646]' 
                   : 'border-transparent text-gray-400 hover:text-gray-200'
               }`}
               onClick={() => setActiveTab('calendar')}
@@ -161,7 +154,7 @@ export default function HostCalendarPage() {
             <button
               className={`py-4 px-1 font-medium text-sm border-b-2 ${
                 activeTab === 'settings' 
-                  ? 'border-[#FF2800] text-[#FF2800]' 
+                  ? 'border-[#FF4646] text-[#FF4646]' 
                   : 'border-transparent text-gray-400 hover:text-gray-200'
               }`}
               onClick={() => setActiveTab('settings')}
@@ -184,7 +177,7 @@ export default function HostCalendarPage() {
                   <span className="text-gray-300">Available</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-4 h-4 bg-[#FF2800] rounded mr-3"></div>
+                  <div className="w-4 h-4 bg-[#FF4646] rounded mr-3"></div>
                   <span className="text-gray-300">Booked</span>
                 </div>
                 <div className="flex items-center">
@@ -268,8 +261,8 @@ export default function HostCalendarPage() {
                   color: white !important;
                 }
                 
-                .react-calendar__tile.booked-date {
-                  background: #FF2800 !important;
+                .react-calendar__tile                .booked-date {
+                  background: #FF4646 !important;
                   color: white !important;
                 }
                 
@@ -380,7 +373,7 @@ export default function HostCalendarPage() {
                     name="pricing"
                     checked={selectedPricing === 'default'}
                     onChange={() => setSelectedPricing('default')}
-                    className="w-4 h-4 text-[#FF2800] bg-gray-700 border-gray-600 focus:ring-[#FF2800] focus:ring-2"
+                    className="w-4 h-4 text-[#FF4646] bg-gray-700 border-gray-600 focus:ring-[#FF4646] focus:ring-2"
                   />
                   <label htmlFor="default-pricing" className="ml-2 text-white">
                     Use default price (€85/day)
@@ -394,7 +387,7 @@ export default function HostCalendarPage() {
                     name="pricing"
                     checked={selectedPricing === 'custom'}
                     onChange={() => setSelectedPricing('custom')}
-                    className="w-4 h-4 text-[#FF2800] bg-gray-700 border-gray-600 focus:ring-[#FF2800] focus:ring-2"
+                    className="w-4 h-4 text-[#FF4646] bg-gray-700 border-gray-600 focus:ring-[#FF4646] focus:ring-2"
                   />
                   <label htmlFor="custom-pricing" className="ml-2 text-white">
                     Set custom price
@@ -409,7 +402,7 @@ export default function HostCalendarPage() {
                         type="number"
                         value={customPrice}
                         onChange={(e) => setCustomPrice(e.target.value)}
-                        className="bg-[#1F1F1F] border border-gray-600 text-white rounded-lg px-3 py-2 w-20 mr-2 focus:ring-2 focus:ring-[#FF2800] focus:border-transparent"
+                        className="bg-[#1F1F1F] border border-gray-600 text-white rounded-lg px-3 py-2 w-20 mr-2 focus:ring-2 focus:ring-[#FF4646] focus:border-transparent"
                         min="1"
                       />
                       <span className="text-gray-400">per day</span>
@@ -457,12 +450,14 @@ export default function HostCalendarPage() {
             </div>
 
             {/* Save Changes */}
-            <button className="w-full bg-[#FF2800] text-white py-3 rounded-xl font-medium hover:bg-[#FF2800]/90 transition-colors">
+            <button className="w-full bg-[#FF4646] text-white py-3 rounded-xl font-medium hover:bg-[#FF4646]/90 transition-colors">
               Save Changes
             </button>
           </div>
         )}
       </div>
     </div>
+    <HostBottomNav />
+    </>
   );
 } 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import HostBottomNav from '@/components/layout/HostBottomNav';
 import { CalendarDays, Car, Clock, Users, MapPin } from 'lucide-react';
 
 // Mock data for demo purposes - this would come from the API in production
@@ -65,7 +66,7 @@ export default function HostTodayPage() {
           </p>
           <a 
             href="/profile" 
-            className="inline-block px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90"
+            className="inline-block px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90"
           >
             Go to Profile
           </a>
@@ -75,7 +76,8 @@ export default function HostTodayPage() {
   }
   
   return (
-    <div className="min-h-screen bg-[#212121] pb-20">
+    <>
+    <div className="min-h-screen bg-[#212121] pb-24">
       {/* Header */}
       <header className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
         <div className="max-w-4xl mx-auto">
@@ -90,7 +92,7 @@ export default function HostTodayPage() {
             <button
               className={`py-4 px-1 font-medium text-sm border-b-2 ${
                 activeTab === 'today' 
-                  ? 'border-[#FF2800] text-[#FF2800]' 
+                  ? 'border-[#FF4646] text-[#FF4646]' 
                   : 'border-transparent text-gray-400 hover:text-gray-200'
               }`}
               onClick={() => setActiveTab('today')}
@@ -100,7 +102,7 @@ export default function HostTodayPage() {
             <button
               className={`py-4 px-1 font-medium text-sm border-b-2 ${
                 activeTab === 'upcoming' 
-                  ? 'border-[#FF2800] text-[#FF2800]' 
+                  ? 'border-[#FF4646] text-[#FF4646]' 
                   : 'border-transparent text-gray-400 hover:text-gray-200'
               }`}
               onClick={() => setActiveTab('upcoming')}
@@ -281,5 +283,7 @@ export default function HostTodayPage() {
         )}
       </div>
     </div>
+    <HostBottomNav />
+    </>
   );
 } 

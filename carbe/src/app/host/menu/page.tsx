@@ -3,6 +3,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import HostBottomNav from '@/components/layout/HostBottomNav';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { 
@@ -14,7 +15,6 @@ import {
   Shield, 
   Bell,
   ChevronRight,
-  ArrowLeft,
   LogOut,
   Car,
   BarChart3,
@@ -58,7 +58,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         <div className="flex items-center justify-between">
           <h3 className="font-medium text-white">{title}</h3>
           {badge && (
-            <span className="bg-[#FF2800] text-white text-xs px-2 py-1 rounded-full">
+            <span className="bg-[#FF4646] text-white text-xs px-2 py-1 rounded-full">
               {badge}
             </span>
           )}
@@ -130,21 +130,12 @@ export default function HostMenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#212121] pb-20">
-      {/* Header */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
+    <>
+    <div className="min-h-screen bg-[#212121] pb-24">
+      {/* Header - Simple title without back button */}
+      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
         <div className="max-w-md mx-auto">
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => router.back()}
-              className="mr-3 text-gray-300"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-lg font-semibold text-white">Menu</h1>
-          </div>
+          <h1 className="text-xl font-semibold text-white">Menu</h1>
         </div>
       </div>
 
@@ -276,5 +267,7 @@ export default function HostMenuPage() {
         </div>
       </div>
     </div>
+    <HostBottomNav />
+    </>
   );
 } 

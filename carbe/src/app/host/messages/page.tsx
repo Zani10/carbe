@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import HostBottomNav from '@/components/layout/HostBottomNav';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { 
-  ArrowLeft,
   Search,
   MoreVertical,
   Star,
@@ -99,7 +99,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onClick }) => (
           <div className="flex items-center space-x-1">
             <span className="text-xs text-gray-400">{message.timestamp}</span>
             {message.isUnread && (
-              <div className="w-2 h-2 bg-[#FF2800] rounded-full"></div>
+              <div className="w-2 h-2 bg-[#FF4646] rounded-full"></div>
             )}
           </div>
         </div>
@@ -160,26 +160,17 @@ export default function HostMessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#212121] pb-20">
-      {/* Header */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
+    <>
+    <div className="min-h-screen bg-[#212121] pb-24">
+      {/* Header - Simple title without back button */}
+      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => router.back()}
-                className="mr-3 text-gray-300"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h1 className="text-lg font-semibold text-white">Messages</h1>
-                {unreadCount > 0 && (
-                  <p className="text-sm text-gray-400">{unreadCount} unread</p>
-                )}
-              </div>
+            <div>
+              <h1 className="text-xl font-semibold text-white">Messages</h1>
+              {unreadCount > 0 && (
+                <p className="text-sm text-gray-400">{unreadCount} unread</p>
+              )}
             </div>
             <Button variant="ghost" size="sm" className="text-gray-300">
               <MoreVertical className="h-4 w-4" />
@@ -199,7 +190,7 @@ export default function HostMessagesPage() {
               placeholder="Search messages..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#2A2A2A] border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF2800]/50 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-[#2A2A2A] border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF4646]/50 focus:border-transparent"
             />
           </div>
 
@@ -209,7 +200,7 @@ export default function HostMessagesPage() {
               onClick={() => setFilter('all')}
               className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
                 filter === 'all' 
-                  ? 'bg-[#FF2800] text-white shadow-sm' 
+                  ? 'bg-[#FF4646] text-white shadow-sm' 
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
@@ -219,7 +210,7 @@ export default function HostMessagesPage() {
               onClick={() => setFilter('unread')}
               className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
                 filter === 'unread' 
-                  ? 'bg-[#FF2800] text-white shadow-sm' 
+                  ? 'bg-[#FF4646] text-white shadow-sm' 
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
@@ -272,5 +263,7 @@ export default function HostMessagesPage() {
         )}
       </div>
     </div>
+    <HostBottomNav />
+    </>
   );
 } 

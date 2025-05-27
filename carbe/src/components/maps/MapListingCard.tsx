@@ -32,7 +32,7 @@ const MapListingCard: React.FC<MapListingCardProps> = ({
     }).format(price);
   };
 
-  const handleScroll = () => {
+  const handleScroll = React.useCallback(() => {
     if (!scrollRef.current || isDragging) return;
     
     const scrollLeft = scrollRef.current.scrollLeft;
@@ -40,28 +40,30 @@ const MapListingCard: React.FC<MapListingCardProps> = ({
     const newIndex = Math.round(scrollLeft / cardWidth);
     
     if (newIndex !== selectedIndex && newIndex >= 0 && newIndex < cars.length) {
-      // Debounce the card change to avoid lag
-      setTimeout(() => {
-        onCardChange?.(newIndex);
-      }, 50);
+      // Immediate card change for smoother experience
+      onCardChange?.(newIndex);
     }
-  };
+  }, [isDragging, selectedIndex, cars.length, onCardChange]);
 
-  const scrollToCard = (index: number) => {
+  const scrollToCard = React.useCallback((index: number) => {
     if (!scrollRef.current) return;
     const cardWidth = 280; // Consistent with handle scroll
     scrollRef.current.scrollTo({
       left: index * cardWidth,
       behavior: 'smooth'
     });
-  };
+  }, []);
 
-  // Optimized scroll to selected card
+  // Optimized scroll to selected card with debouncing
   React.useEffect(() => {
     if (!isDragging) {
-      scrollToCard(selectedIndex);
+      const timeoutId = setTimeout(() => {
+        scrollToCard(selectedIndex);
+      }, 100); // Small delay to prevent conflicts
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [selectedIndex, isDragging]);
+  }, [selectedIndex, isDragging, scrollToCard]);
 
   if (!cars.length) return null;
 
@@ -86,12 +88,13 @@ const MapListingCard: React.FC<MapListingCardProps> = ({
         onScroll={handleScroll}
         onTouchStart={() => setIsDragging(true)}
         onTouchEnd={() => {
-          setIsDragging(false);
-          // Small delay to ensure smooth transition
-          setTimeout(() => setIsDragging(false), 100);
+          // Delay to prevent conflicts with scroll events
+          setTimeout(() => setIsDragging(false), 150);
         }}
         onMouseDown={() => setIsDragging(true)}
-        onMouseUp={() => setIsDragging(false)}
+        onMouseUp={() => {
+          setTimeout(() => setIsDragging(false), 100);
+        }}
       >
         {cars.map((car, index) => (
           <motion.div
