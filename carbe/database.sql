@@ -34,7 +34,9 @@ CREATE TABLE cars (
   images TEXT[],
   rating NUMERIC,
   lock_type TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+  is_available BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 CREATE TABLE bookings (
@@ -62,6 +64,14 @@ CREATE TABLE reviews (
   car_id UUID NOT NULL REFERENCES cars ON DELETE CASCADE,
   rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
   comment TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE TABLE geocode_cache (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  address TEXT NOT NULL UNIQUE,
+  lat NUMERIC NOT NULL,
+  lng NUMERIC NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -176,6 +186,17 @@ CREATE POLICY "Users can update their own reviews"
 CREATE POLICY "Users can delete their own reviews"
   ON reviews FOR DELETE
   USING (auth.uid() = user_id);
+
+-- Geocode cache policies
+ALTER TABLE geocode_cache ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view geocode cache"
+  ON geocode_cache FOR SELECT
+  USING (true);
+
+CREATE POLICY "Anyone can insert geocode cache"
+  ON geocode_cache FOR INSERT
+  WITH CHECK (true);
 
 -- Create function to update car rating when review is added or updated
 CREATE OR REPLACE FUNCTION update_car_rating()
@@ -295,6 +316,7 @@ CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
 CREATE INDEX IF NOT EXISTS idx_bookings_dates ON bookings(start_date, end_date);
 CREATE INDEX IF NOT EXISTS idx_car_availability_car_dates ON car_availability(car_id, start_date, end_date);
 CREATE INDEX IF NOT EXISTS idx_booking_reviews_car_id ON booking_reviews(car_id);
+CREATE INDEX IF NOT EXISTS idx_geocode_cache_address ON geocode_cache(address);
 
 -- Row Level Security (RLS) Policies
 

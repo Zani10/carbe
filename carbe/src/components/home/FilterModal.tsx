@@ -190,7 +190,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
       headerAction={
         <button 
           onClick={handleResetFilters} 
-          className="text-[#6b72f2] text-base font-medium hover:underline"
+          className="text-[#FF4646] text-base font-medium hover:underline"
         >
           Reset
         </button>
@@ -234,7 +234,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg text-white">Make</span>
-              <span className="text-[#6b72f2]">All makes</span>
+              <span className="text-[#FF4646]">All makes</span>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {CAR_BRANDS.slice(0, 8).map((brand) => (
@@ -254,7 +254,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg text-white">Years</span>
-              <span className="text-[#6b72f2]">All years</span>
+              <span className="text-[#FF4646]">All years</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {YEAR_RANGES.map((year) => (
@@ -273,7 +273,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg text-white">Number of seats</span>
-              <span className="text-[#6b72f2]">All seats</span>
+              <span className="text-[#FF4646]">All seats</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {SEAT_OPTIONS.map((seat) => (
@@ -292,7 +292,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg text-white">Transmission</span>
-              <span className="text-[#6b72f2]">All transmissions</span>
+              <span className="text-[#FF4646]">All transmissions</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {TRANSMISSION_TYPES.map((transmission) => (
@@ -339,7 +339,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
             ))}
           </div>
           
-          <button className="mt-4 text-[#6b72f2] flex items-center">
+          <button className="mt-4 text-[#FF4646] flex items-center">
             <span className="mr-1">Show more</span>
             <ChevronRight size={16} />
           </button>

@@ -25,7 +25,7 @@ export default function ExplorePage() {
   // Show a simple loading state while redirecting
   return (
     <div className="flex justify-center items-center min-h-screen bg-[#212121]">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF2800]"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#FF4646]"></div>
     </div>
   );
 } 

@@ -35,3 +35,22 @@ body {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+/* Hide scrollbar for horizontal swipe */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scrolling for better UX */
+.snap-x {
+  scroll-snap-type: x mandatory;
+}
+
+.snap-center {
+  scroll-snap-align: center;
+}

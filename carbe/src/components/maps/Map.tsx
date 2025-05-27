@@ -15,27 +15,42 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom car marker icon
-const carIcon = new L.DivIcon({
-  html: `
-    <div class="car-marker">
-      <div class="car-marker-inner">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 16.94V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.06"/>
-          <path d="M14 9V5.5A2.5 2.5 0 0 0 11.5 3h-2A2.5 2.5 0 0 0 7 5.5V9"/>
-          <path d="M2 12h20"/>
-          <path d="M7 12v0M17 12v0"/>
-          <circle cx="7" cy="16.94" r="2.94"/>
-          <circle cx="17" cy="16.94" r="2.94"/>
-        </svg>
+// Create price marker with active state (like Airbnb)
+const createPriceIcon = (price: number, isActive: boolean = false) => {
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const activeClass = isActive ? 'price-marker-active' : '';
+  const scale = isActive ? 1.15 : 1;
+  const zIndex = isActive ? 2000 : 1000; // Higher z-index for active markers
+
+  return new L.DivIcon({
+    html: `
+      <div class="price-marker ${activeClass}" style="transform: scale(${scale}); z-index: ${zIndex}; position: relative;">
+        <span class="price-text">${formatPrice(price)}</span>
       </div>
-    </div>
-  `,
-  className: '',
-  iconSize: [44, 44],
-  iconAnchor: [22, 22],
-  popupAnchor: [0, -22],
-});
+    `,
+    className: '',
+    iconSize: [60, 32],
+    iconAnchor: [30, 16],
+    popupAnchor: [0, -16],
+  });
+};
+
+// Add small random jitter to coordinates to prevent exact overlaps
+const addJitter = (coords: { lat: number; lng: number }) => {
+  const jitterAmount = 0.0002; // ~20 meters
+  return {
+    lat: coords.lat + (Math.random() - 0.5) * jitterAmount,
+    lng: coords.lng + (Math.random() - 0.5) * jitterAmount,
+  };
+};
 
 // User location marker icon
 const userIcon = new L.DivIcon({
@@ -51,61 +66,69 @@ const userIcon = new L.DivIcon({
 });
 
 // Component to handle map updates
-const MapUpdater: React.FC<{ center: Coordinates }> = ({ center }) => {
+const MapUpdater: React.FC<{ center: Coordinates; zoom: number }> = ({ center, zoom }) => {
   const map = useMap();
   
   useEffect(() => {
-    map.setView([center.lat, center.lng], map.getZoom());
-  }, [center, map]);
+    map.setView([center.lat, center.lng], zoom);
+    // Fix rendering issues by invalidating size
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+  }, [center, map, zoom]);
   
   return null;
 };
 
 interface MapProps {
   center: Coordinates;
+  zoom: number;
   listings: CarWithCoordinates[];
   userLocation: Coordinates | null;
   onMarkerClick: (car: CarWithCoordinates) => void;
+  activeId?: string | null;
 }
 
-const Map: React.FC<MapProps> = ({ center, listings, userLocation, onMarkerClick }) => {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('nl-NL', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
-
+const Map: React.FC<MapProps> = ({ center, zoom, listings, userLocation, onMarkerClick, activeId }) => {
   return (
     <>
       {/* Add custom styles for markers */}
       <style jsx global>{`
-        .car-marker {
-          width: 44px;
-          height: 44px;
-          position: relative;
+        .price-marker {
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 20px;
+          padding: 6px 12px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
           cursor: pointer;
-        }
-        
-        .car-marker-inner {
-          width: 44px;
-          height: 44px;
-          background: #10b981;
-          border: 3px solid white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
           transition: all 0.2s ease;
+          font-weight: 600;
+          font-size: 13px;
+          color: #222;
+          position: relative;
+          z-index: 1000;
         }
         
-        .car-marker:hover .car-marker-inner {
-          transform: scale(1.1);
-          background: #059669;
+        .price-marker:hover {
+          transform: scale(1.05);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+          z-index: 1001;
+        }
+        
+        .price-marker-active {
+          background: #FF4646 !important;
+          color: white !important;
+          border-color: #FF4646 !important;
+          box-shadow: 0 4px 12px rgba(255, 70, 70, 0.4) !important;
+        }
+        
+        .price-marker-active .price-text {
+          color: white !important;
+        }
+        
+        .price-text {
+          white-space: nowrap;
+          line-height: 1;
         }
         
         .user-marker {
@@ -117,7 +140,7 @@ const Map: React.FC<MapProps> = ({ center, listings, userLocation, onMarkerClick
         .user-marker-inner {
           width: 20px;
           height: 20px;
-          background: #3b82f6;
+          background: #FF4646;
           border: 3px solid white;
           border-radius: 50%;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -132,7 +155,7 @@ const Map: React.FC<MapProps> = ({ center, listings, userLocation, onMarkerClick
           right: 0;
           bottom: 0;
           border-radius: 50%;
-          background: rgba(59, 130, 246, 0.3);
+          background: rgba(255, 70, 70, 0.3);
           animation: pulse 2s infinite;
           z-index: 1;
         }
@@ -151,7 +174,7 @@ const Map: React.FC<MapProps> = ({ center, listings, userLocation, onMarkerClick
       
       <MapContainer
         center={[center.lat, center.lng]}
-        zoom={13}
+        zoom={zoom}
         className="w-full h-full"
         zoomControl={false}
         attributionControl={false}
@@ -161,7 +184,7 @@ const Map: React.FC<MapProps> = ({ center, listings, userLocation, onMarkerClick
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         
-        <MapUpdater center={center} />
+        <MapUpdater center={center} zoom={zoom} />
         
         {/* User location marker */}
         {userLocation && (
@@ -173,39 +196,24 @@ const Map: React.FC<MapProps> = ({ center, listings, userLocation, onMarkerClick
           </Marker>
         )}
         
-        {/* Car markers */}
-        {listings.map((car) => (
-          <Marker
-            key={car.id}
-            position={[car.lat, car.lng]}
-            icon={carIcon}
-            eventHandlers={{
-              click: () => onMarkerClick(car),
-            }}
-          >
-            <Popup>
-              <div className="p-2 min-w-[200px]">
-                <h3 className="font-semibold text-lg mb-1">
-                  {car.make} {car.model}
-                </h3>
-                <p className="text-gray-600 text-sm mb-2">{car.location}</p>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-green-600">
-                    {formatPrice(car.pricePerDay)}/day
-                  </span>
-                  {car.rating && (
-                    <div className="flex items-center gap-1">
-                      <svg className="w-4 h-4 fill-yellow-400 text-yellow-400" viewBox="0 0 20 20">
-                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                      </svg>
-                      <span className="text-sm">{car.rating.toFixed(1)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {/* Car markers with jitter */}
+        {listings.map((car) => {
+          const jitteredCoords = addJitter({ lat: car.lat, lng: car.lng });
+          const isActive = activeId === car.id;
+          
+          return (
+            <Marker
+              key={car.id}
+              position={[jitteredCoords.lat, jitteredCoords.lng]}
+              icon={createPriceIcon(car.pricePerDay, isActive)}
+              eventHandlers={{
+                click: () => onMarkerClick(car),
+              }}
+            >
+
+            </Marker>
+          );
+        })}
       </MapContainer>
     </>
   );

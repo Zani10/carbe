@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
+import RenterBottomNav from '@/components/layout/RenterBottomNav';
 import SignInForm from '@/components/forms/SignInForm';
 import SignUpForm from '@/components/forms/SignUpForm';
 import { 
@@ -46,7 +47,7 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-[#212121]">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#FF2800]"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#FF4646]"></div>
       </div>
     );
   }
@@ -93,7 +94,8 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#212121] pb-20">
+    <>
+    <div className="min-h-screen bg-[#212121] pb-24">
       {user ? (
         <div className="max-w-md mx-auto px-4 py-6">
           {/* Profile Header */}
@@ -120,7 +122,7 @@ export default function ProfilePage() {
             {!isCurrentlyInHostMode && !profile?.is_host && (
               <button 
                 onClick={handleSwitchMode}
-                className="w-full flex items-center justify-center px-4 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
+                className="w-full flex items-center justify-center px-4 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
               >
                 <Briefcase size={18} className="mr-2" />
                 Become a Host
@@ -197,7 +199,7 @@ export default function ProfilePage() {
             {(isCurrentlyInHostMode || profile?.is_host) && (
               <button 
                 onClick={handleSwitchMode}
-                className="w-full flex items-center justify-between p-4 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
+                className="w-full flex items-center justify-between p-4 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
               >
                 <div className="flex items-center">
                   <Briefcase size={20} className="mr-3" />
@@ -265,7 +267,7 @@ export default function ProfilePage() {
                 className={`px-6 py-3 text-sm font-medium rounded-md transition-colors duration-150
                   ${
                     showSignIn
-                      ? 'bg-[#FF2800] text-white shadow-sm'
+                      ? 'bg-[#FF4646] text-white shadow-sm'
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 onClick={() => setShowSignIn(true)}
@@ -277,7 +279,7 @@ export default function ProfilePage() {
                 className={`px-6 py-3 text-sm font-medium rounded-md transition-colors duration-150
                   ${
                     !showSignIn
-                      ? 'bg-[#FF2800] text-white shadow-sm'
+                      ? 'bg-[#FF4646] text-white shadow-sm'
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 onClick={() => setShowSignIn(false)}
@@ -291,6 +293,8 @@ export default function ProfilePage() {
         </div>
       )}
     </div>
+    <RenterBottomNav />
+    </>
   );
 }
 

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import RenterBottomNav from '@/components/layout/RenterBottomNav';
 import { 
   ArrowLeft,
   Calendar,
@@ -75,19 +76,22 @@ export default function RenterDashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#212121] flex items-center justify-center">
-        <div className="text-center px-4">
-          <Calendar className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-white mb-2">Sign in to view your trips</h2>
-          <p className="text-gray-400 mb-6">Track your bookings and past experiences</p>
-          <button 
-            onClick={() => router.push('/signin')}
-            className="px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
-          >
-            Sign In
-          </button>
+      <>
+        <div className="min-h-screen bg-[#212121] flex items-center justify-center pb-24">
+          <div className="text-center px-4">
+            <Calendar className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-white mb-2">Sign in to view your trips</h2>
+            <p className="text-gray-400 mb-6">Track your bookings and past experiences</p>
+            <button 
+              onClick={() => router.push('/signin')}
+              className="px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
+            >
+              Sign In
+            </button>
+          </div>
         </div>
-      </div>
+        <RenterBottomNav />
+      </>
     );
   }
 
@@ -152,7 +156,7 @@ export default function RenterDashboardPage() {
                     <span className="text-sm text-gray-400">{booking.rating}/5</span>
                   </div>
                 ) : (
-                  <button className="px-3 py-1 bg-[#FF2800] text-white text-sm rounded-lg hover:bg-[#FF2800]/90 transition-colors">
+                  <button className="px-3 py-1 bg-[#FF4646] text-white text-sm rounded-lg hover:bg-[#FF4646]/90 transition-colors">
                     Rate Trip
                   </button>
                 )}
@@ -164,7 +168,7 @@ export default function RenterDashboardPage() {
                 <button className="p-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors">
                   <MessageSquare className="h-4 w-4" />
                 </button>
-                <button className="px-3 py-1 bg-[#FF2800] text-white text-sm rounded-lg hover:bg-[#FF2800]/90 transition-colors">
+                <button className="px-3 py-1 bg-[#FF4646] text-white text-sm rounded-lg hover:bg-[#FF4646]/90 transition-colors">
                   View Details
                 </button>
               </div>
@@ -176,21 +180,16 @@ export default function RenterDashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#212121] pb-20">
-      {/* Header */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center">
-            <button 
-              onClick={() => router.back()}
-              className="mr-3 p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <h1 className="text-lg font-semibold text-white">My Trips</h1>
+    <>
+      <div className="min-h-screen bg-[#212121] pb-24">
+        {/* Header - Simple title without back button */}
+        <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-white">My Trips</h1>
+            </div>
           </div>
         </div>
-      </div>
 
       <div className="max-w-md mx-auto px-4 py-4">
         {/* Search Bar */}
@@ -201,7 +200,7 @@ export default function RenterDashboardPage() {
             placeholder="Search trips..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-[#2A2A2A] border border-gray-700/50 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF2800]/50 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 bg-[#2A2A2A] border border-gray-700/50 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF4646]/50 focus:border-transparent"
           />
         </div>
 
@@ -211,7 +210,7 @@ export default function RenterDashboardPage() {
             onClick={() => setActiveTab('upcoming')}
             className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors flex items-center justify-center ${
               activeTab === 'upcoming' 
-                ? 'bg-[#FF2800] text-white shadow-sm' 
+                ? 'bg-[#FF4646] text-white shadow-sm' 
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
@@ -222,7 +221,7 @@ export default function RenterDashboardPage() {
             onClick={() => setActiveTab('past')}
             className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors flex items-center justify-center ${
               activeTab === 'past' 
-                ? 'bg-[#FF2800] text-white shadow-sm' 
+                ? 'bg-[#FF4646] text-white shadow-sm' 
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
@@ -256,7 +255,7 @@ export default function RenterDashboardPage() {
                   </p>
                   <button 
                     onClick={() => router.push('/explore')}
-                    className="px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
+                    className="px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
                   >
                     Explore Cars
                   </button>
@@ -270,7 +269,7 @@ export default function RenterDashboardPage() {
                   </p>
                   <button 
                     onClick={() => router.push('/explore')}
-                    className="px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
+                    className="px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
                   >
                     Book Your First Trip
                   </button>
@@ -304,6 +303,8 @@ export default function RenterDashboardPage() {
           </div>
         )}
       </div>
+
+      <RenterBottomNav />
     </div>
   );
 } 

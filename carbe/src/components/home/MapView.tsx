@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { AnimatePresence } from 'framer-motion';
-import { CarWithCoordinates, getUserLocation, calculateDistance, Coordinates } from '@/lib/geocode';
-import MapListingCard from '../maps/MapListingCard';
+import { CarWithCoordinates, getUserLocation, Coordinates } from '@/lib/geocode';
 import MapSkeleton from '../ui/MapSkeleton';
 
 // Dynamic import to avoid SSR issues with Leaflet
@@ -20,33 +18,49 @@ const Map = dynamic(() => import('../maps/Map'), {
 interface MapViewProps {
   listings?: CarWithCoordinates[];
   isLoading?: boolean;
+  activeId?: string | null;
+  onMarkerClick?: (id: string) => void;
+  mapCenter?: { lat: number; lng: number; zoom?: number } | null;
 }
 
-const MapView: React.FC<MapViewProps> = ({ listings = [], isLoading = false }) => {
+const MapView: React.FC<MapViewProps> = ({ 
+  listings = [], 
+  isLoading = false, 
+  activeId, 
+  onMarkerClick,
+  mapCenter: externalMapCenter
+}) => {
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
-  const [selectedCar, setSelectedCar] = useState<CarWithCoordinates | null>(null);
-  const [mapCenter, setMapCenter] = useState<Coordinates>({ lat: 52.3676, lng: 4.9041 });
+  const [mapCenter, setMapCenter] = useState<Coordinates>({ lat: 50.8503, lng: 4.3517 }); // Brussels coordinates
+  const [mapZoom, setMapZoom] = useState<number>(13);
 
   // Get user location on mount
   useEffect(() => {
     getUserLocation().then((location) => {
       setUserLocation(location);
-      setMapCenter(location);
+      if (!externalMapCenter) {
+        setMapCenter(location);
+      }
     });
-  }, []);
+  }, [externalMapCenter]);
 
-  // Calculate distances for the selected car
-  const selectedCarDistance = useMemo(() => {
-    if (!selectedCar || !userLocation) return undefined;
-    return calculateDistance(userLocation, { lat: selectedCar.lat, lng: selectedCar.lng });
-  }, [selectedCar, userLocation]);
+  // Update map center and zoom when external mapCenter changes
+  useEffect(() => {
+    if (externalMapCenter) {
+      setMapCenter({ lat: externalMapCenter.lat, lng: externalMapCenter.lng });
+      if (externalMapCenter.zoom) {
+        setMapZoom(externalMapCenter.zoom);
+      }
+    }
+  }, [externalMapCenter]);
 
   const handleMarkerClick = (car: CarWithCoordinates) => {
-    setSelectedCar(car);
-  };
-
-  const handleCloseCard = () => {
-    setSelectedCar(null);
+    // Pan map to marker's coordinates
+    setMapCenter({ lat: car.lat, lng: car.lng });
+    // Notify parent about marker click
+    if (onMarkerClick) {
+      onMarkerClick(car.id);
+    }
   };
 
   // Show skeleton while loading or if no listings yet
@@ -58,21 +72,13 @@ const MapView: React.FC<MapViewProps> = ({ listings = [], isLoading = false }) =
     <div className="w-full h-full relative overflow-hidden">
       <Map
         center={mapCenter}
+        zoom={mapZoom}
         listings={listings}
         userLocation={userLocation}
         onMarkerClick={handleMarkerClick}
+        activeId={activeId}
       />
       
-      {/* Selected car panel */}
-      <AnimatePresence>
-        {selectedCar && (
-          <MapListingCard
-            car={selectedCar}
-            distance={selectedCarDistance}
-            onClose={handleCloseCard}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };
