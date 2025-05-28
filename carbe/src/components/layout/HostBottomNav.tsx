@@ -2,27 +2,30 @@
 
 import React from 'react';
 import {
-  LayoutDashboard,
+  BarChart3,
   Calendar,
   Car,
   MessageSquare,
-  Settings,
+  Menu,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
-interface HostNavItemProps {
+interface HostBottomNavItemProps {
   icon: React.ElementType;
   label: string;
   isActive?: boolean;
   onClick?: () => void;
+  isOutlineIcon?: boolean;
 }
 
-const HostNavItem: React.FC<HostNavItemProps> = ({
+const HostBottomNavItem: React.FC<HostBottomNavItemProps> = ({
   icon: Icon,
   label,
   isActive,
   onClick,
+  isOutlineIcon,
 }) => {
   return (
     <button
@@ -35,7 +38,7 @@ const HostNavItem: React.FC<HostNavItemProps> = ({
       <Icon 
         className="h-6 w-6" 
         strokeWidth={isActive ? 2.5 : 1.8}
-        fill={isActive ? 'none' : 'none'}
+        fill={isActive && !isOutlineIcon ? 'currentColor' : 'none'}
       />
       <span className={clsx("text-xs mt-1 font-medium", isActive ? "font-semibold" : "font-normal")}>{label}</span>
     </button>
@@ -45,14 +48,24 @@ const HostNavItem: React.FC<HostNavItemProps> = ({
 const HostBottomNav = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, isLoading } = useAuth();
   
   const navItems = [
-    { path: '/host/today', icon: LayoutDashboard, label: 'Today' },
-    { path: '/host/calendar', icon: Calendar, label: 'Calendar' },
-    { path: '/host/garage', icon: Car, label: 'Garage' },
-    { path: '/host/messages', icon: MessageSquare, label: 'Inbox' },
-    { path: '/host/menu', icon: Settings, label: 'Menu' },
+    { path: '/host/today', icon: BarChart3, label: 'Today', isOutlineIcon: true, requiresAuth: true },
+    { path: '/host/calendar', icon: Calendar, label: 'Calendar', isOutlineIcon: true, requiresAuth: true },
+    { path: '/host/garage', icon: Car, label: 'Garage', isOutlineIcon: true, requiresAuth: true },
+    { path: '/host/messages', icon: MessageSquare, label: 'Inbox', isOutlineIcon: true, requiresAuth: true },
+    { path: '/host/menu', icon: Menu, label: 'Menu', isOutlineIcon: true, requiresAuth: true },
   ];
+
+  const handleNavigation = (path: string, requiresAuth: boolean) => {
+    if (requiresAuth && !user && !isLoading) {
+      // If auth is required but no user is logged in, redirect to profile to show login form
+      router.push('/profile');
+    } else {
+      router.push(path);
+    }
+  };
 
   const getIsActive = (path: string): boolean => {
     return pathname === path || pathname?.startsWith(path + '/');
@@ -70,12 +83,13 @@ const HostBottomNav = () => {
         {/* Layer between the 2: Solid color, holds the content */}
         <div className="absolute inset-x-0 bottom-0 h-[89px] rounded-t-[80px] bg-[#292929] flex justify-center items-stretch gap-x-3 z-10">
           {navItems.map((item) => (
-            <HostNavItem
+            <HostBottomNavItem
               key={item.label}
               icon={item.icon}
               label={item.label}
               isActive={getIsActive(item.path)}
-              onClick={() => router.push(item.path)}
+              onClick={() => handleNavigation(item.path, item.requiresAuth)}
+              isOutlineIcon={item.isOutlineIcon}
             />
           ))}
         </div>

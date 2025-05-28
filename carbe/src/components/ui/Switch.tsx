@@ -59,9 +59,9 @@ const Switch: React.FC<SwitchProps> = ({
         disabled={disabled}
         onClick={onChange}
         className={clsx(
-          'relative inline-flex flex-shrink-0 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6b72f2]',
+          'relative inline-flex flex-shrink-0 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF4646]',
           disabled && 'opacity-50 cursor-not-allowed',
-          isChecked ? 'bg-[#6b72f2]' : 'bg-gray-700',
+          isChecked ? 'bg-[#FF4646]' : 'bg-gray-700',
           sizes[size].track
         )}
       >

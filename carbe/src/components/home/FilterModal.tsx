@@ -37,14 +37,18 @@ interface FilterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApplyFilters: (filters: FilterState) => void;
+  onResetFilters?: () => void;
+  initialFilters?: FilterState | null;
 }
 
 const FilterModal: React.FC<FilterModalProps> = ({
   isOpen,
   onClose,
   onApplyFilters,
+  onResetFilters,
+  initialFilters,
 }) => {
-  const [filters, setFilters] = useState<FilterState>({
+  const defaultFilters: FilterState = {
     vehicleTypes: ['cars'],
     brands: [],
     priceRange: [10, 500],
@@ -56,7 +60,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
     mileage: 100,
     deliveryOption: false,
     deluxeClass: false,
-  });
+  };
+
+  const [filters, setFilters] = useState<FilterState>(initialFilters || defaultFilters);
 
   const toggleArrayItem = (array: string[], item: string) => {
     if (array.includes(item)) {
@@ -148,19 +154,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
   };
 
   const handleResetFilters = () => {
-    setFilters({
-      vehicleTypes: ['cars'],
-      brands: [],
-      priceRange: [10, 500],
-      features: [],
-      ecoFriendly: [],
-      years: [],
-      seats: [],
-      transmission: [],
-      mileage: 100,
-      deliveryOption: false,
-      deluxeClass: false,
-    });
+    setFilters(defaultFilters);
+    if (onResetFilters) {
+      onResetFilters();
+    }
   };
 
   const activeFilterCount = (() => {
@@ -197,10 +194,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
       }
       height="90vh"
     >
-      <div className="pb-24">
+      <div className="pb-32">
         {/* Vehicle Type */}
         <FilterGroup title="Vehicle type">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {VEHICLE_TYPES.map((type) => (
               <FilterOption
                 key={type.id}
@@ -209,6 +206,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 icon={type.icon}
                 isSelected={filters.vehicleTypes.includes(type.id)}
                 onClick={() => handleVehicleTypeToggle(type.id)}
+                className={filters.vehicleTypes.includes(type.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
               />
             ))}
           </div>
@@ -244,7 +242,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   label={brand.name}
                   isSelected={filters.brands.includes(brand.id)}
                   onClick={() => handleBrandToggle(brand.id)}
-                  className="p-2"
+                  className={`p-2 ${filters.brands.includes(brand.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
                 />
               ))}
             </div>
@@ -264,6 +262,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   label={year.name}
                   isSelected={filters.years.includes(year.id)}
                   onClick={() => handleYearToggle(year.id)}
+                  className={filters.years.includes(year.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
                 />
               ))}
             </div>
@@ -283,6 +282,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   label={seat.name}
                   isSelected={filters.seats.includes(seat.id)}
                   onClick={() => handleSeatToggle(seat.id)}
+                  className={filters.seats.includes(seat.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
                 />
               ))}
             </div>
@@ -302,6 +302,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   label={transmission.name}
                   isSelected={filters.transmission.includes(transmission.id)}
                   onClick={() => handleTransmissionToggle(transmission.id)}
+                  className={filters.transmission.includes(transmission.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
                 />
               ))}
             </div>
@@ -310,7 +311,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
         {/* Eco-friendly */}
         <FilterGroup title="Eco-friendly">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {ECO_FRIENDLY_OPTIONS.map((option) => (
               <FilterOption
                 key={option.id}
@@ -319,6 +320,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 icon={option.icon}
                 isSelected={filters.ecoFriendly.includes(option.id)}
                 onClick={() => handleEcoFriendlyToggle(option.id)}
+                className={filters.ecoFriendly.includes(option.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
               />
             ))}
           </div>
@@ -326,7 +328,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
         {/* Features */}
         <FilterGroup title="Features">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             {CAR_FEATURES.slice(0, 6).map((feature) => (
               <FilterOption
                 key={feature.id}
@@ -335,11 +337,12 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 icon={feature.icon}
                 isSelected={filters.features.includes(feature.id)}
                 onClick={() => handleFeatureToggle(feature.id)}
+                className={filters.features.includes(feature.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
               />
             ))}
           </div>
           
-          <button className="mt-4 text-[#FF4646] flex items-center">
+          <button className="mt-4 text-[#FF4646] flex items-center hover:underline">
             <span className="mr-1">Show more</span>
             <ChevronRight size={16} />
           </button>
@@ -385,6 +388,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
             description="Exclusive cars for guests ages 25+"
           />
         </FilterGroup>
+      </div>
+
+      {/* Floating Apply Button - Always visible while scrolling */}
+      <div className="fixed bottom-20 right-4 z-50">
+        <Button 
+          onClick={handleApplyFilters}
+          className="bg-[#FF4646] hover:bg-[#FF3333] text-white px-6 py-3 rounded-full shadow-lg"
+        >
+          Apply Filters
+        </Button>
       </div>
 
       {/* Apply button - fixed at bottom */}

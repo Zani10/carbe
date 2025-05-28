@@ -22,7 +22,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
   onChange,
   formatValue = (value) => value.toString(),
   unit = '',
-  color = '#6b72f2',
+  color = '#FF4646',
 }) => {
   const [localMinValue, setLocalMinValue] = useState(minValue);
   const [localMaxValue, setLocalMaxValue] = useState(maxValue);

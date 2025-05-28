@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import SearchBar from '@/components/home/SearchBar';
 import MapView from '@/components/home/MapView';
 import CarCard from '@/components/car/CarCard';
@@ -11,6 +11,7 @@ import MapListingCard from '@/components/maps/MapListingCard';
 import RenterBottomNav from '@/components/layout/RenterBottomNav';
 import { useCars } from '@/hooks/useCars';
 import { geocodeAll, CarWithCoordinates } from '@/lib/geocode';
+import { FilterState } from '@/components/home/FilterModal';
 import Link from 'next/link';
 
 const SEARCHBAR_HEIGHT = 68;
@@ -23,6 +24,11 @@ export default function HomePage() {
   const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
   const [isFullMap, setIsFullMap] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
+  const [searchParams, setSearchParams] = useState<{
+    location: string;
+    dates: [Date | null, Date | null];
+    filters?: FilterState;
+  } | null>(null);
   
   const { cars, isLoading: carsLoading } = useCars();
 
@@ -55,12 +61,16 @@ export default function HomePage() {
   };
 
   // Function to cancel/close compact cards
-  const cancelSelection = () => {
+  const cancelSelection = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setSelectedListingId(null);
     setSelectedListingIndex(0);
-    // Go to fullscreen map mode instead of resetting zoom
-    api.start({ height: fullMapHeight });
-    setIsFullMap(true);
+    // Clear map center zoom to reset to default view
+    setMapCenter(null);
+    // Don't change the draggable section height - just remove the selection
   };
 
   const bind = useDrag(
@@ -120,8 +130,10 @@ export default function HomePage() {
   const handleSearch = (params: {
     location: string;
     dates: [Date | null, Date | null];
+    filters?: FilterState;
   }) => {
     console.log('Searching with params:', params);
+    setSearchParams(params);
   };
 
   const handleMarkerClick = (carId: string) => {
@@ -186,15 +198,39 @@ export default function HomePage() {
     <main className="relative w-full h-screen bg-[#212121] overflow-hidden">
       {/* SearchBar - Fixed at top */}
       <header className="fixed top-0 left-0 right-0 z-30 w-full">
-        <SearchBar onSearch={handleSearch} />
+        <SearchBar onSearch={handleSearch} isLoading={carsLoading || isGeocodingLoading} />
       </header>
+
+      {/* Search Summary - Show after search */}
+      {searchParams && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-[68px] left-0 right-0 z-20 bg-[#212121] px-4 py-2 border-b border-gray-800"
+        >
+          <div className="text-gray-300 text-sm">
+            Showing {cars.length} car{cars.length !== 1 ? 's' : ''} for{' '}
+            <span className="text-white font-medium">
+              {searchParams.location || 'Anywhere'}
+            </span>
+            {searchParams.dates[0] && searchParams.dates[1] && (
+              <>
+                {' '}from{' '}
+                <span className="text-white font-medium">
+                  {searchParams.dates[0].toLocaleDateString()} to {searchParams.dates[1].toLocaleDateString()}
+                </span>
+              </>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Map - Takes remaining space, clickable to expand when not fullscreen */}
       <animated.div 
         className={`absolute left-0 right-0 z-10 ${!isFullMap ? 'cursor-pointer' : ''}`}
         style={{
-          top: SEARCHBAR_HEIGHT,
-          height: height.to(h => screenHeight - h - SEARCHBAR_HEIGHT)
+          top: searchParams ? SEARCHBAR_HEIGHT + 40 : SEARCHBAR_HEIGHT, // Account for search summary
+          height: height.to(h => screenHeight - h - (searchParams ? SEARCHBAR_HEIGHT + 40 : SEARCHBAR_HEIGHT))
         }}
         onClick={!isFullMap ? expandToFullMap : undefined}
       >
@@ -228,13 +264,16 @@ export default function HomePage() {
             paddingTop: selectedListingId ? '16px' : (isFullMap ? '12px' : '16px'),
             paddingBottom: selectedListingId ? '12px' : (isFullMap ? '8px' : '12px')
           }}
-          onClick={selectedListingId ? cancelSelection : (isFullMap ? expandFromMinimal : undefined)}
+          onClick={!selectedListingId ? (isFullMap ? expandFromMinimal : undefined) : undefined}
         >
           <div className="w-14 h-1.5 bg-gray-400 hover:bg-gray-300 rounded-full mb-2 transition-colors"></div>
           
           {/* Show Cancel when compact cards are visible */}
           {selectedListingId ? (
-            <div className="text-[#FF4646] text-sm font-medium cursor-pointer hover:text-[#FF3333] transition-colors">
+            <div 
+              className="text-[#FF4646] text-sm font-medium cursor-pointer hover:text-[#FF3333] transition-colors z-50 relative"
+              onClick={cancelSelection}
+            >
               Cancel
             </div>
           ) : (

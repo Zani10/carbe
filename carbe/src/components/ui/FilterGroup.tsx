@@ -28,7 +28,7 @@ const FilterGroup: React.FC<FilterGroupProps> = ({
               <h3 className="text-2xl font-medium text-white flex items-center">
                 {title}
                 {count !== undefined && (
-                  <span className="ml-2 text-sm bg-[#6b72f2] text-white px-2 py-0.5 rounded-full">
+                  <span className="ml-2 text-sm bg-[#FF4646] text-white px-2 py-0.5 rounded-full">
                     {count}
                   </span>
                 )}

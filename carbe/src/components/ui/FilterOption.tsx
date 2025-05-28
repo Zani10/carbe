@@ -24,9 +24,9 @@ const FilterOption: React.FC<FilterOptionProps> = ({
       onClick={onClick}
       className={clsx(
         'flex flex-col items-center justify-center p-4 rounded-2xl transition-all',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6b72f2]',
-        isSelected 
-          ? 'bg-[#6b72f2] text-white border border-[#6b72f2]' 
+                'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF4646]',
+        isSelected
+          ? 'bg-[#FF4646] text-white border border-[#FF4646]' 
           : 'bg-[#212121] border border-gray-700 hover:border-gray-500 text-white',
         className
       )}
