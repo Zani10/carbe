@@ -67,7 +67,7 @@ export default function HostSetupPage() {
   useEffect(() => {
     if (isHostMode) {
       console.log('User is already a host, redirecting to host dashboard');
-      router.push('/dashboard/host/today');
+      router.push('/host/today');
     }
   }, [isHostMode, router]);
   

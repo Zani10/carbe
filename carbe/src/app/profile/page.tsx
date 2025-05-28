@@ -57,8 +57,14 @@ export default function ProfilePage() {
       // Switch to renter mode - go to main page
       router.push('/');
     } else {
-      // Switch to host mode - go to host dashboard
-      router.push('/host/today');
+      // Check if user is already a host
+      if (profile?.is_host) {
+        // User is already a host, go to host dashboard
+        router.push('/host/today');
+      } else {
+        // User is not a host yet, go to host setup
+        router.push('/host/setup');
+      }
     }
   };
 
