@@ -1,124 +1,127 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { User, Session } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 import { Profile } from '@/lib/auth';
 import { AuthError } from '@supabase/supabase-js';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isHostMode, setIsHostMode] = useState(false);
-  const router = useRouter();
 
-  useEffect(() => {
-    let mounted = true; // Prevent state updates if component unmounted
+  // Fetch user profile data
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    const fetchProfile = async (userId: string) => {
-      try {
-        // Check if the profile exists
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-        
-        if (error) {
-          console.error('Error fetching profile:', error);
-          return null;
-        }
-
-        if (!profile) {
-          // Profile doesn't exist, create it
-          console.log('Profile does not exist. Creating a new profile...');
+      if (error) {
+        // If profile doesn't exist, create it
+        if (error.code === 'PGRST116') {
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
               id: userId,
-              full_name: '', // Will be updated when user provides it
+              full_name: '',
               verified: false,
               is_host: false,
             })
             .select()
             .single();
-          
+
           if (createError) {
             console.error('Error creating profile:', createError);
             return null;
           }
 
-          console.log('Profile created successfully.');
           return newProfile;
         }
-
-        return profile;
-      } catch (error) {
-        console.error('Error in fetchProfile:', error);
-        return null;
+        throw error;
       }
-    };
 
-    const initializeAuth = async () => {
+      return data;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    // 1) Get initial session and profile (handles page refresh and tab switching)
+    const getInitialSession = async () => {
       try {
-        // Get current session
         const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
+        setUser(session?.user ?? null);
 
-        setSession(session);
-        
         if (session?.user) {
-          setUser(session.user);
-          
-          const profile = await fetchProfile(session.user.id);
-          if (mounted) {
-            setProfile(profile);
-            setIsHostMode(profile?.is_host || false);
-          }
+          const profileData = await fetchProfile(session.user.id);
+          setProfile(profileData);
+          setIsHostMode(profileData?.is_host || false);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('Error getting session:', error);
+        setUser(null);
+        setProfile(null);
+        setIsHostMode(false);
       } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
-    initializeAuth();
+    getInitialSession();
 
-    // Set up auth state change listener
+    // 2) Listen for auth changes (sign in/out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return;
+        console.log('Auth state changed:', event);
+        setUser(session?.user ?? null);
 
-        setSession(session);
-        setUser(session?.user || null);
-        
         if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
-          if (mounted) {
-            setProfile(profile);
-            setIsHostMode(profile?.is_host || false);
-          }
+          const profileData = await fetchProfile(session.user.id);
+          setProfile(profileData);
+          setIsHostMode(profileData?.is_host || false);
         } else {
-          if (mounted) {
-            setProfile(null);
-            setIsHostMode(false);
-          }
+          setProfile(null);
+          setIsHostMode(false);
         }
+        
+        setIsLoading(false);
       }
     );
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
+
+  // 3) Re-hydrate when tab becomes visible (fixes tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && user) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          setUser(session?.user ?? null);
+
+          if (session?.user) {
+            const profileData = await fetchProfile(session.user.id);
+            setProfile(profileData);
+            setIsHostMode(profileData?.is_host || false);
+          }
+        } catch (error) {
+          console.error('Error re-hydrating session:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
@@ -170,25 +173,11 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Clear local state
-      setUser(null);
-      setProfile(null);
-      setSession(null);
-      setIsHostMode(false);
-      
-      // Redirect to home page
-      router.push('/');
-      router.refresh();
-    } catch (err) {
-      console.error('Error signing out:', err);
+      setIsLoading(true);
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
     } finally {
       setIsLoading(false);
     }
@@ -265,7 +254,6 @@ export function useAuth() {
   return {
     user,
     profile,
-    session,
     isLoading,
     isHostMode,
     signIn,
@@ -275,6 +263,7 @@ export function useAuth() {
     updatePassword,
     updateProfile,
     toggleHostMode,
+    isAuthenticated: !!user
   };
 }
 

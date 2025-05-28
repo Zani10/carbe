@@ -9,7 +9,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Enhanced client with proper session persistence for tab switching
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,        // Store in localStorage
+    detectSessionInUrl: false,   // Avoid hash redirects
+    autoRefreshToken: true,      // Silent refresh when needed
+    storageKey: 'carbe.auth.token'
+  }
+});
 
 // Create a Supabase client for server-side usage (with service role key)
 // This should only be used in secure server contexts

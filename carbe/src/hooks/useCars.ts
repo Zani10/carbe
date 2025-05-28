@@ -40,6 +40,16 @@ export interface UseCarFilters {
   location?: string;
 }
 
+// Timeout wrapper to prevent stuck loaders
+async function fetchWithTimeout<T>(fn: () => Promise<T>, ms = 10000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Request timed out')), ms);
+    fn()
+      .then(res => { clearTimeout(timer); resolve(res); })
+      .catch(err => { clearTimeout(timer); reject(err); });
+  });
+}
+
 export function useCars(filters?: UseCarFilters) {
   const [cars, setCars] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,47 +60,51 @@ export function useCars(filters?: UseCarFilters) {
       setIsLoading(true);
       setError(null);
 
-      // Build query - ONLY fetch available cars with host info
-      let query = supabase
-        .from('cars')
-        .select(`
-          *,
-          profiles!owner_id (
-            id,
-            full_name,
-            profile_image,
-            created_at
-          )
-        `)
-        .eq('is_available', true) // Only available cars
-        .order('created_at', { ascending: false });
+      // Build query with timeout wrapper
+      const queryFn = async () => {
+        let query = supabase
+          .from('cars')
+          .select(`
+            *,
+            profiles!owner_id (
+              id,
+              full_name,
+              profile_image,
+              created_at
+            )
+          `)
+          .eq('is_available', true) // Only available cars
+          .order('created_at', { ascending: false });
 
-      // Apply filters
-      if (filters) {
-        if (filters.make) {
-          query = query.ilike('make', `%${filters.make}%`);
+        // Apply filters
+        if (filters) {
+          if (filters.make) {
+            query = query.ilike('make', `%${filters.make}%`);
+          }
+          if (filters.model) {
+            query = query.ilike('model', `%${filters.model}%`);
+          }
+          if (filters.priceMin !== undefined) {
+            query = query.gte('price_per_day', filters.priceMin);
+          }
+          if (filters.priceMax !== undefined) {
+            query = query.lte('price_per_day', filters.priceMax);
+          }
+          if (filters.transmission) {
+            query = query.eq('transmission', filters.transmission);
+          }
+          if (filters.fuelType) {
+            query = query.eq('fuel_type', filters.fuelType);
+          }
+          if (filters.location) {
+            query = query.ilike('location', `%${filters.location}%`);
+          }
         }
-        if (filters.model) {
-          query = query.ilike('model', `%${filters.model}%`);
-        }
-        if (filters.priceMin !== undefined) {
-          query = query.gte('price_per_day', filters.priceMin);
-        }
-        if (filters.priceMax !== undefined) {
-          query = query.lte('price_per_day', filters.priceMax);
-        }
-        if (filters.transmission) {
-          query = query.eq('transmission', filters.transmission);
-        }
-        if (filters.fuelType) {
-          query = query.eq('fuel_type', filters.fuelType);
-        }
-        if (filters.location) {
-          query = query.ilike('location', `%${filters.location}%`);
-        }
-      }
 
-      const { data, error: fetchError } = await query;
+        return query;
+      };
+
+      const { data, error: fetchError } = await fetchWithTimeout(queryFn);
 
       if (fetchError) {
         throw fetchError;
@@ -111,7 +125,7 @@ export function useCars(filters?: UseCarFilters) {
       setCars(transformedCars);
     } catch (err) {
       console.error('Error fetching cars:', err);
-      setError('Failed to fetch cars');
+      setError(err instanceof Error ? err.message : 'Failed to fetch cars');
       setCars([]);
     } finally {
       setIsLoading(false);
@@ -121,6 +135,19 @@ export function useCars(filters?: UseCarFilters) {
   useEffect(() => {
     fetchCars();
   }, [fetchCars]);
+
+  // Re-fetch when tab becomes visible (fixes tab switching issues)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && cars.length === 0 && !isLoading) {
+        console.log('Tab became visible, re-fetching cars...');
+        fetchCars();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [fetchCars, cars.length, isLoading]);
 
   return {
     cars,
