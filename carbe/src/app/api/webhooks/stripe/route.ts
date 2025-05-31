@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { PaymentStatus, BookingStatus } from '@/types/booking';
+import Stripe from 'stripe';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -43,12 +44,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-interface StripePaymentIntent {
-  id: string;
-  [key: string]: unknown;
-}
-
-async function handlePaymentSucceeded(paymentIntent: StripePaymentIntent) {
+async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   const { data: booking, error } = await supabase
     .from('bookings')
     .select('*')
@@ -73,7 +69,7 @@ async function handlePaymentSucceeded(paymentIntent: StripePaymentIntent) {
   console.log(`Payment succeeded for booking ${booking.id}`);
 }
 
-async function handlePaymentFailed(paymentIntent: StripePaymentIntent) {
+async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   const { data: booking, error } = await supabase
     .from('bookings')
     .select('*')
@@ -97,7 +93,7 @@ async function handlePaymentFailed(paymentIntent: StripePaymentIntent) {
   console.log(`Payment failed for booking ${booking.id}`);
 }
 
-async function handlePaymentCanceled(paymentIntent: StripePaymentIntent) {
+async function handlePaymentCanceled(paymentIntent: Stripe.PaymentIntent) {
   const { data: booking, error } = await supabase
     .from('bookings')
     .select('*')

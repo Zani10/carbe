@@ -3,6 +3,8 @@
 import { notFound } from 'next/navigation';
 import { useCarById } from '@/hooks/useCars';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/hooks/useAuth';
+import { useBooking } from '@/hooks/booking/useBooking';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Share, Heart } from 'lucide-react';
@@ -17,6 +19,7 @@ import PickupTab from '@/components/carDetail/Pickup/PickupTab';
 import StickyFooterBar from '@/components/carDetail/StickyFooterBar';
 import BookingFooter from '@/components/booking/BookingFooter';
 import DatePicker from '@/components/booking/DatePicker';
+import BookingSuccessOverlay from '@/components/booking/BookingSuccessOverlay';
 
 interface CarDetailPageProps {
   params: Promise<{
@@ -26,12 +29,18 @@ interface CarDetailPageProps {
 
 export default function CarDetailPage({ params }: CarDetailPageProps) {
   const router = useRouter();
+  const { user, profile } = useAuth();
+  const { createBooking, isCreating } = useBooking();
   const [id, setId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('Overview');
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [bookingResult, setBookingResult] = useState<{
+    totalAmount: number;
+  } | null>(null);
   
   const { isFavorite, toggleFavorite } = useFavorites();
   
@@ -86,15 +95,54 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
     setIsDatePickerOpen(false);
   };
 
-  const handleRequestBooking = () => {
-    if (!car || !selectedStartDate || !selectedEndDate) return;
+    const handleRequestBooking = async () => {
+    if (!car || !selectedStartDate || !selectedEndDate || isCreating) return;
     
-    // Navigate to booking page with selected dates
-    const searchParams = new URLSearchParams({
-      start_date: selectedStartDate.toISOString().split('T')[0],
-      end_date: selectedEndDate.toISOString().split('T')[0],
-    });
-    router.push(`/book/${car.id}?${searchParams.toString()}`);
+    // Check if user is authenticated
+    if (!user || !profile) {
+      toast.error('Please sign in to book a car');
+      router.push('/signin');
+      return;
+    }
+
+    // Calculate dates and pricing
+    const startDateStr = selectedStartDate.toISOString().split('T')[0];
+    const endDateStr = selectedEndDate.toISOString().split('T')[0];
+    const days = Math.ceil((selectedEndDate.getTime() - selectedStartDate.getTime()) / (1000 * 60 * 60 * 24));
+    const subtotal = days * car.price_per_day;
+    const serviceFee = Math.round(subtotal * 0.1); // 10% service fee
+    const totalAmount = subtotal + serviceFee;
+
+    try {
+      // Create the booking directly
+      const result = await createBooking({
+        car_id: car.id,
+        start_date: startDateStr,
+        end_date: endDateStr,
+        daily_rate: car.price_per_day,
+        subtotal,
+        service_fee: serviceFee,
+        total_amount: totalAmount,
+        special_requests: '',
+        requiresApproval: false, // Default to false, will add this field to car schema later
+      });
+
+      if (result) {
+        // Set booking result and show success overlay
+        setBookingResult({ totalAmount });
+        setShowSuccessOverlay(true);
+      }
+    } catch (error) {
+      console.error('Booking failed:', error);
+      toast.error('Failed to create booking. Please try again.');
+    }
+  };
+
+  const handleSuccessComplete = () => {
+    setShowSuccessOverlay(false);
+    setBookingResult(null);
+    // Redirect to renter dashboard
+    router.push('/dashboard/renter');
   };
 
   if (isLoading) {
@@ -299,6 +347,27 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
         initialStartDate={selectedStartDate || undefined}
         initialEndDate={selectedEndDate || undefined}
       />
+
+      {/* Success Overlay */}
+      {showSuccessOverlay && bookingResult && (
+        <BookingSuccessOverlay
+          isVisible={showSuccessOverlay}
+          onComplete={handleSuccessComplete}
+          carData={{
+            make: car.make,
+            model: car.model,
+            year: car.year,
+            image: car.images?.[0],
+            location: car.location || undefined,
+          }}
+          bookingData={{
+            startDate: selectedStartDate!.toISOString().split('T')[0],
+            endDate: selectedEndDate!.toISOString().split('T')[0],
+            totalAmount: bookingResult.totalAmount,
+          }}
+          duration={3500}
+        />
+      )}
     </div>
   );
 }

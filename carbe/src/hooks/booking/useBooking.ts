@@ -63,12 +63,16 @@ export function useBooking(): UseBookingReturn {
 
     setIsCreating(true);
     try {
-      const fullName = profile.full_name || '';
+      // Get user profile for the API call
+      console.log('🔍 Profile data:', profile);
+      const fullName = user.user_metadata?.full_name || profile?.full_name || '';
       const [firstName, ...lastNameParts] = fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
-      // Call API route instead of direct function
-      const response = await fetch('/api/bookings/create', {
+      console.log('👤 Parsed name:', { fullName, firstName, lastName });
+
+      // Call simple API route with user data
+      const response = await fetch('/api/bookings/create-simple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,8 +84,8 @@ export function useBooking(): UseBookingReturn {
             email: user.email || '',
             first_name: firstName || '',
             last_name: lastName || '',
-            phone: '', // Profile doesn't have phone field in current schema
-            license_number: '', // Profile doesn't have license field in current schema
+            phone: '', // TODO: Add phone field to profile
+            license_number: '', // TODO: Add license_number field to profile
           },
           requiresApproval: data.requiresApproval || false,
         }),
