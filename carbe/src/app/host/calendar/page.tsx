@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useBooking } from '@/hooks/booking/useBooking';
 import { useRouter } from 'next/navigation';
 import HostBottomNav from '@/components/layout/HostBottomNav';
 import Calendar from 'react-calendar';
@@ -13,32 +14,58 @@ import {
   Clock,
   AlertCircle,
   Check,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
-
-// Mock booked dates
-const bookedDates = [
-  new Date('2024-01-15'),
-  new Date('2024-01-16'),
-  new Date('2024-01-17'),
-  new Date('2024-01-22'),
-  new Date('2024-01-23'),
-];
-
-// Mock blocked dates (manually blocked by host)
-const blockedDates = [
-  new Date('2024-01-10'),
-  new Date('2024-01-11'),
-];
+import { format, isSameDay, parseISO } from 'date-fns';
+import { BookingWithCar } from '@/types/booking';
 
 export default function HostCalendarPage() {
   const { user, isHostMode } = useAuth();
   const router = useRouter();
+  const { getHostBookings, isLoading } = useBooking();
+  
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [activeTab, setActiveTab] = useState<'calendar' | 'settings'>('calendar');
   const [selectedPricing, setSelectedPricing] = useState<'default' | 'custom'>('default');
   const [customPrice, setCustomPrice] = useState('85');
+  const [bookings, setBookings] = useState<BookingWithCar[]>([]);
+  const [blockedDates, setBlockedDates] = useState<Date[]>([]);
+
+  useEffect(() => {
+    if (user && isHostMode) {
+      loadBookings();
+    }
+  }, [user, isHostMode]);
+
+  const loadBookings = async () => {
+    try {
+      const hostBookings = await getHostBookings();
+      setBookings(hostBookings);
+    } catch (error) {
+      console.error('Error loading bookings:', error);
+    }
+  };
+
+  const getBookedDates = (): Date[] => {
+    const dates: Date[] = [];
+    
+    bookings.forEach(booking => {
+      if (['confirmed', 'completed'].includes(booking.status)) {
+        const startDate = parseISO(booking.start_date);
+        const endDate = parseISO(booking.end_date);
+        
+        // Add all dates between start and end (inclusive)
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+          dates.push(new Date(currentDate));
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+    });
+    
+    return dates;
+  };
   
   if (!user || !isHostMode) {
     return (
@@ -59,7 +86,22 @@ export default function HostCalendarPage() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <>
+        <div className="min-h-screen bg-[#212121] flex items-center justify-center pb-24">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 text-[#FF4646] animate-spin mx-auto mb-4" />
+            <p className="text-gray-400">Loading calendar...</p>
+          </div>
+        </div>
+        <HostBottomNav />
+      </>
+    );
+  }
+
   const isDateBooked = (date: Date) => {
+    const bookedDates = getBookedDates();
     return bookedDates.some(bookedDate => isSameDay(date, bookedDate));
   };
 
@@ -110,13 +152,10 @@ export default function HostCalendarPage() {
     
     if (isDateBlocked(selectedDate)) {
       // Remove from blocked dates
-      const index = blockedDates.findIndex(d => isSameDay(d, selectedDate));
-      if (index > -1) {
-        blockedDates.splice(index, 1);
-      }
+      setBlockedDates(prev => prev.filter(d => !isSameDay(d, selectedDate)));
     } else if (isDateAvailable(selectedDate)) {
       // Add to blocked dates
-      blockedDates.push(selectedDate);
+      setBlockedDates(prev => [...prev, selectedDate]);
     }
     // Force re-render
     setSelectedDate(new Date(selectedDate));

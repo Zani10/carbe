@@ -2,10 +2,14 @@
 
 import { notFound, useRouter } from 'next/navigation';
 import { useCarById } from '@/hooks/useCars';
+import { useBooking } from '@/hooks/booking/useBooking';
+import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, MapPin, Clock, CreditCard } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Clock, Shield } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import Image from 'next/image';
 import DatePicker from '@/components/booking/DatePicker';
+import PaymentForm from '@/components/booking/PaymentForm';
 
 interface BookPageProps {
   params: Promise<{
@@ -15,11 +19,18 @@ interface BookPageProps {
 
 export default function BookPage({ params }: BookPageProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const { createBooking, isCreating } = useBooking();
+  
   const [id, setId] = useState<string>('');
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState<'dates' | 'details' | 'payment'>('dates');
+  
+  // Payment state
+  const [clientSecret, setClientSecret] = useState<string>('');
+  const [requiresApproval, setRequiresApproval] = useState<boolean>(false);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -37,7 +48,25 @@ export default function BookPage({ params }: BookPageProps) {
     });
   }, [params]);
 
+  // Pre-fill form with user data if available
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+      }));
+    }
+  }, [user]);
+
   const { car, isLoading, error } = useCarById(id);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!user && !isLoading) {
+      toast.error('Please sign in to book a car');
+      router.push('/signin');
+    }
+  }, [user, isLoading, router]);
 
   const calculateDays = () => {
     if (!selectedStartDate || !selectedEndDate) return 0;
@@ -75,16 +104,53 @@ export default function BookPage({ params }: BookPageProps) {
            formData.phone && formData.licenseNumber;
   };
 
-  const handleContinueToPayment = () => {
-    if (isFormValid()) {
-      setCurrentStep('payment');
+  const handleContinueToPayment = async () => {
+    if (!isFormValid() || !selectedStartDate || !selectedEndDate || !car) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      // Create booking with payment intent
+      const result = await createBooking({
+        car_id: car.id,
+        start_date: selectedStartDate.toISOString().split('T')[0],
+        end_date: selectedEndDate.toISOString().split('T')[0],
+        daily_rate: car.price_per_day,
+        subtotal: calculateSubtotal(),
+        service_fee: calculateServiceFee(),
+        total_amount: calculateTotal(),
+        special_requests: formData.specialRequests,
+        requiresApproval: false, // Default to false until schema is updated
+      });
+
+      if (result) {
+        setClientSecret(result.paymentIntent.client_secret);
+        setRequiresApproval(false); // Default to false until schema is updated
+        setCurrentStep('payment');
+      }
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast.error('Failed to create booking. Please try again.');
     }
   };
 
-  const handleBooking = () => {
-    // TODO: Implement actual booking logic
-    alert('Booking functionality will be implemented next!');
-    router.push('/dashboard/renter'); // Redirect to user dashboard
+  const handlePaymentSuccess = () => {
+    toast.success(
+      requiresApproval 
+        ? 'Payment authorized! Waiting for host approval.' 
+        : 'Booking confirmed! Check your email for details.'
+    );
+    
+    // Redirect to appropriate page
+    setTimeout(() => {
+      router.push(requiresApproval ? '/dashboard/renter' : '/confirm');
+    }, 2000);
+  };
+
+  const handlePaymentError = (error: string) => {
+    console.error('Payment error:', error);
+    toast.error(`Payment failed: ${error}`);
   };
 
   if (isLoading) {
@@ -97,6 +163,23 @@ export default function BookPage({ params }: BookPageProps) {
 
   if (error || !car) {
     notFound();
+  }
+
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-4">Please sign in to book a car</p>
+          <button
+            onClick={() => router.push('/signin')}
+            className="bg-[#FF2800] text-white px-6 py-2 rounded-lg hover:bg-[#E02400]"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -141,6 +224,7 @@ export default function BookPage({ params }: BookPageProps) {
                     <MapPin size={14} className="text-gray-400" />
                     <span className="text-sm text-gray-600">{car.location}</span>
                   </div>
+                  {/* Host approval indicator will be shown once schema is updated */}
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-lg">€{car.price_per_day}</p>
@@ -153,7 +237,7 @@ export default function BookPage({ params }: BookPageProps) {
             <div className="bg-white rounded-xl shadow-sm border p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold">1. Select Dates</h2>
-                {selectedStartDate && selectedEndDate && (
+                {selectedStartDate && selectedEndDate && currentStep !== 'payment' && (
                   <button
                     onClick={() => setIsDatePickerOpen(true)}
                     className="text-[#FF2800] text-sm font-medium hover:underline"
@@ -205,7 +289,8 @@ export default function BookPage({ params }: BookPageProps) {
                       type="text"
                       value={formData.firstName}
                       onChange={(e) => handleFormChange('firstName', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent"
+                      disabled={currentStep === 'payment'}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent disabled:bg-gray-100"
                       placeholder="John"
                     />
                   </div>
@@ -218,7 +303,8 @@ export default function BookPage({ params }: BookPageProps) {
                       type="text"
                       value={formData.lastName}
                       onChange={(e) => handleFormChange('lastName', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent"
+                      disabled={currentStep === 'payment'}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent disabled:bg-gray-100"
                       placeholder="Doe"
                     />
                   </div>
@@ -231,7 +317,8 @@ export default function BookPage({ params }: BookPageProps) {
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleFormChange('email', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent"
+                      disabled={currentStep === 'payment'}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent disabled:bg-gray-100"
                       placeholder="john@example.com"
                     />
                   </div>
@@ -244,7 +331,8 @@ export default function BookPage({ params }: BookPageProps) {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleFormChange('phone', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent"
+                      disabled={currentStep === 'payment'}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent disabled:bg-gray-100"
                       placeholder="+32 123 456 789"
                     />
                   </div>
@@ -257,7 +345,8 @@ export default function BookPage({ params }: BookPageProps) {
                       type="text"
                       value={formData.licenseNumber}
                       onChange={(e) => handleFormChange('licenseNumber', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent"
+                      disabled={currentStep === 'payment'}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent disabled:bg-gray-100"
                       placeholder="Your license number"
                     />
                   </div>
@@ -269,48 +358,55 @@ export default function BookPage({ params }: BookPageProps) {
                     <textarea
                       value={formData.specialRequests}
                       onChange={(e) => handleFormChange('specialRequests', e.target.value)}
+                      disabled={currentStep === 'payment'}
                       rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF2800] focus:border-transparent disabled:bg-gray-100"
                       placeholder="Any special requests or notes..."
                     />
                   </div>
                 </div>
 
-                <div className="mt-6">
-                  <button
-                    onClick={handleContinueToPayment}
-                    disabled={!isFormValid()}
-                    className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                      isFormValid()
-                        ? 'bg-[#FF2800] text-white hover:bg-[#E02400]'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    Continue to Payment
-                  </button>
-                </div>
+                {currentStep !== 'payment' && (
+                  <div className="mt-6">
+                    <button
+                      onClick={handleContinueToPayment}
+                      disabled={!isFormValid() || isCreating}
+                      className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                        isFormValid() && !isCreating
+                          ? 'bg-[#FF2800] text-white hover:bg-[#E02400]'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {isCreating ? 'Creating booking...' : 'Continue to Payment'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Step 3: Payment */}
-            {currentStep === 'payment' && (
+            {currentStep === 'payment' && clientSecret && (
               <div className="bg-white rounded-xl shadow-sm border p-6">
-                <h2 className="text-lg font-bold mb-4">3. Payment</h2>
+                <h2 className="text-lg font-bold mb-4">3. Secure Payment</h2>
                 
-                <div className="text-center py-8">
-                  <CreditCard size={48} className="text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold mb-2">Payment Integration</h3>
-                  <p className="text-gray-600 mb-6">
-                    Payment processing will be implemented with Stripe
-                  </p>
-                  
-                  <button
-                    onClick={handleBooking}
-                    className="bg-[#FF2800] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#E02400] transition-colors"
-                  >
-                    Complete Booking (Demo)
-                  </button>
-                </div>
+                {requiresApproval && (
+                  <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Shield size={16} className="text-yellow-600" />
+                      <p className="text-sm text-yellow-800">
+                        <strong>Host Approval Required:</strong> Your payment will be authorized but not charged until the host approves your booking.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                <PaymentForm
+                  clientSecret={clientSecret}
+                  amount={calculateTotal()}
+                  currency="EUR"
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
               </div>
             )}
           </div>
@@ -344,6 +440,14 @@ export default function BookPage({ params }: BookPageProps) {
                       🚗 Free cancellation up to 24 hours before pickup
                     </p>
                   </div>
+
+                  {requiresApproval && (
+                    <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
+                      <p className="text-yellow-800 text-sm">
+                        ⏱️ Host has 24 hours to approve your request
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8">

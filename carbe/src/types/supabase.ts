@@ -26,7 +26,11 @@ export interface Database {
           images: string[] | null
           rating: number | null
           lock_type: string | null
+          requires_approval: boolean
+          cancellation_policy: string
+          is_available: boolean
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -44,7 +48,11 @@ export interface Database {
           images?: string[] | null
           rating?: number | null
           lock_type?: string | null
+          requires_approval?: boolean
+          cancellation_policy?: string
+          is_available?: boolean
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -62,36 +70,82 @@ export interface Database {
           images?: string[] | null
           rating?: number | null
           lock_type?: string | null
+          requires_approval?: boolean
+          cancellation_policy?: string
+          is_available?: boolean
           created_at?: string
+          updated_at?: string
         }
       }
       bookings: {
         Row: {
           id: string
           car_id: string
-          user_id: string
+          renter_id: string
           start_date: string
           end_date: string
           status: string
+          payment_intent_id: string | null
+          payment_status: string
+          total_amount: number
+          daily_rate: number
+          subtotal: number
+          service_fee: number
+          special_requests: string | null
+          approval_deadline: string | null
+          snapshot_first_name: string
+          snapshot_last_name: string
+          snapshot_email: string
+          snapshot_phone: string
+          snapshot_license: string
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
           car_id: string
-          user_id: string
+          renter_id: string
           start_date: string
           end_date: string
-          status: string
+          status?: string
+          payment_intent_id?: string | null
+          payment_status?: string
+          total_amount: number
+          daily_rate: number
+          subtotal: number
+          service_fee: number
+          special_requests?: string | null
+          approval_deadline?: string | null
+          snapshot_first_name: string
+          snapshot_last_name: string
+          snapshot_email: string
+          snapshot_phone: string
+          snapshot_license: string
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           car_id?: string
-          user_id?: string
+          renter_id?: string
           start_date?: string
           end_date?: string
           status?: string
+          payment_intent_id?: string | null
+          payment_status?: string
+          total_amount?: number
+          daily_rate?: number
+          subtotal?: number
+          service_fee?: number
+          special_requests?: string | null
+          approval_deadline?: string | null
+          snapshot_first_name?: string
+          snapshot_last_name?: string
+          snapshot_email?: string
+          snapshot_phone?: string
+          snapshot_license?: string
           created_at?: string
+          updated_at?: string
         }
       }
       profiles: {
@@ -138,6 +192,29 @@ export interface Database {
           work?: string | null
           education?: string | null
           bio?: string | null
+          created_at?: string
+        }
+      }
+      geocode_cache: {
+        Row: {
+          id: string
+          address: string
+          lat: number
+          lng: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          address: string
+          lat: number
+          lng: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          address?: string
+          lat?: number
+          lng?: number
           created_at?: string
         }
       }
