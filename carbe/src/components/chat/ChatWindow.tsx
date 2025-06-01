@@ -109,22 +109,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Messages Container */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="flex-1 overflow-y-auto p-4 space-y-3"
       >
         {loading && messages.length === 0 ? (
           <MessageLoading count={3} />
         ) : messages.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-20">
             <MessageSquare className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Start the conversation</h3>
-            <p className="text-gray-400">
-              Send a message to begin chatting about the{' '}
-              {currentConversation.car && (
-                <>
-                  {currentConversation.car.year} {currentConversation.car.make} {currentConversation.car.model}
-                </>
-              )}
-            </p>
+            <h3 className="text-lg font-medium text-white mb-2">No messages yet</h3>
+            <p className="text-gray-400">Start the conversation below</p>
           </div>
         ) : (
           <>

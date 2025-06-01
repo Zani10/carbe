@@ -37,11 +37,16 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   return (
     <div
       onClick={onClick}
-      className="p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl cursor-pointer transition-all hover:bg-[#333333] hover:border-gray-600/50"
+      className={clsx(
+        'p-4 rounded-lg cursor-pointer transition-colors border',
+        hasUnread 
+          ? 'bg-[#2A2A2A] border-[#FF4646]/50' 
+          : 'bg-[#2A2A2A] border-gray-700/50 hover:border-gray-600'
+      )}
     >
-      <div className="flex items-start space-x-3">
+      <div className="flex items-center space-x-3">
         {/* Avatar */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 relative">
           {otherUser?.avatar_url ? (
             <img
               src={otherUser.avatar_url}
@@ -53,6 +58,11 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
               <User className="h-6 w-6 text-gray-300" />
             </div>
           )}
+          
+          {/* Unread indicator */}
+          {hasUnread && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FF4646] rounded-full"></div>
+          )}
         </div>
 
         {/* Content */}
@@ -61,11 +71,11 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
             <div className="flex items-center space-x-2">
               <h3 className={clsx(
                 'font-medium truncate',
-                hasUnread ? 'text-white' : 'text-gray-300'
+                hasUnread ? 'text-white' : 'text-gray-200'
               )}>
                 {otherUser?.full_name || 'Unknown User'}
               </h3>
-              <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">
+              <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">
                 {isHost ? 'Renter' : 'Host'}
               </span>
             </div>
@@ -77,7 +87,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
                 </span>
               )}
               {hasUnread && (
-                <div className="flex items-center justify-center min-w-[20px] h-5 bg-[#FF4646] text-white text-xs font-medium rounded-full px-2">
+                <div className="w-5 h-5 bg-[#FF4646] text-white text-xs font-bold rounded-full flex items-center justify-center">
                   {conversation.unread_count}
                 </div>
               )}
@@ -86,7 +96,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
 
           {/* Car Info */}
           {conversation.car && (
-            <div className="flex items-center text-xs text-gray-400 mb-2">
+            <div className="flex items-center text-xs text-gray-400 mb-1">
               <Car className="h-3 w-3 mr-1" />
               <span className="truncate">
                 {conversation.car.year} {conversation.car.make} {conversation.car.model}
@@ -98,14 +108,14 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
           {conversation.last_message ? (
             <p className={clsx(
               'text-sm truncate',
-              hasUnread ? 'text-gray-200 font-medium' : 'text-gray-400'
+              hasUnread ? 'text-gray-100' : 'text-gray-400'
             )}>
-              {conversation.last_message.message_type === 'image' && '📷 Image'}
+              {conversation.last_message.message_type === 'image' && '📷 Photo'}
               {conversation.last_message.message_type === 'file' && '📎 File'}
               {conversation.last_message.message_type === 'text' && conversation.last_message.content}
             </p>
           ) : (
-            <p className="text-sm text-gray-500 italic">No messages yet</p>
+            <p className="text-sm text-gray-500">No messages yet</p>
           )}
         </div>
       </div>

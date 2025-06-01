@@ -7,14 +7,12 @@ import clsx from 'clsx';
 interface MessageInputProps {
   onSendMessage: (content: string, file?: File) => Promise<void>;
   disabled?: boolean;
-  placeholder?: string;
   className?: string;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
   onSendMessage,
   disabled = false,
-  placeholder = 'Type a message...',
   className,
 }) => {
   const [message, setMessage] = useState('');
@@ -63,31 +61,24 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <div className={clsx('border-t border-gray-700/50 bg-[#2A2A2A] p-4', className)}>
+    <div className={clsx('border-t border-gray-700/50 bg-[#2A2A2A] p-3', className)}>
       {/* File Preview */}
       {selectedFile && (
-        <div className="mb-3 p-3 bg-[#1A1A1A] rounded-lg border border-gray-700/50">
+        <div className="mb-3 p-2 bg-[#1A1A1A] rounded-lg">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                {isImage(selectedFile) ? (
-                  <Image className="h-5 w-5 text-blue-400" />
-                ) : (
-                  <Paperclip className="h-5 w-5 text-gray-400" />
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-white truncate max-w-xs">
-                  {selectedFile.name}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
+            <div className="flex items-center space-x-2">
+              {isImage(selectedFile) ? (
+                <Image className="h-4 w-4 text-blue-400" />
+              ) : (
+                <Paperclip className="h-4 w-4 text-gray-400" />
+              )}
+              <span className="text-sm text-white truncate max-w-xs">
+                {selectedFile.name}
+              </span>
             </div>
             <button
               onClick={removeFile}
-              className="text-gray-400 hover:text-gray-200 transition-colors"
+              className="text-gray-400 hover:text-gray-200"
             >
               <X className="h-4 w-4" />
             </button>
@@ -96,46 +87,26 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       )}
 
       {/* Input Area */}
-      <div className="flex items-end space-x-3">
-        {/* File Upload Buttons */}
-        <div className="flex space-x-1">
-          <button
-            onClick={() => imageInputRef.current?.click()}
-            disabled={disabled || sending}
-            className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700/50 rounded-lg transition-colors disabled:opacity-50"
-            title="Upload image"
-          >
-            <Image className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || sending}
-            className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700/50 rounded-lg transition-colors disabled:opacity-50"
-            title="Upload file"
-          >
-            <Paperclip className="h-5 w-5" />
-          </button>
-        </div>
+      <div className="flex items-center space-x-2">
+        {/* File Upload Button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled || sending}
+          className="p-2 text-gray-400 hover:text-gray-200 transition-colors disabled:opacity-50"
+        >
+          <Paperclip className="h-4 w-4" />
+        </button>
 
         {/* Text Input */}
         <div className="flex-1">
-          <textarea
+          <input
+            type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={placeholder}
+            placeholder="Type a message..."
             disabled={disabled || sending}
-            rows={1}
-            className="w-full bg-[#1A1A1A] border border-gray-700/50 rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF4646]/50 focus:border-transparent resize-none disabled:opacity-50"
-            style={{
-              minHeight: '40px',
-              maxHeight: '120px',
-            }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
-            }}
+            className="w-full bg-[#1A1A1A] border border-gray-700/50 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:ring-1 focus:ring-[#FF4646]/50 focus:border-transparent disabled:opacity-50"
           />
         </div>
 
@@ -144,13 +115,13 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           onClick={handleSend}
           disabled={(!message.trim() && !selectedFile) || disabled || sending}
           className={clsx(
-            'p-2 rounded-xl transition-colors disabled:opacity-50',
+            'p-2 rounded-lg transition-colors disabled:opacity-50',
             (!message.trim() && !selectedFile) || disabled || sending
               ? 'bg-gray-700 text-gray-400'
               : 'bg-[#FF4646] text-white hover:bg-[#FF4646]/90'
           )}
         >
-          <Send className="h-5 w-5" />
+          <Send className="h-4 w-4" />
         </button>
       </div>
 

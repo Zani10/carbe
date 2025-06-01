@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, User, Car, Calendar, MoreVertical } from 'lucide-react';
+import { ArrowLeft, User, Car, MoreVertical } from 'lucide-react';
 import { Conversation } from '@/types/message';
 import clsx from 'clsx';
 
@@ -24,17 +24,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   const otherUser = isHost ? conversation.renter : conversation.host;
   const userRole = isHost ? 'Renter' : 'Host';
 
-  const formatDateRange = (startDate?: string, endDate?: string) => {
-    if (!startDate || !endDate) return null;
-    
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    const startMonth = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const endMonth = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    
-    return `${startMonth} - ${endMonth}`;
-  };
+
 
   return (
     <div className={clsx(
@@ -46,7 +36,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         {onBack && (
           <button
             onClick={onBack}
-            className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700/50 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-200 transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -73,34 +63,20 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             <h3 className="font-medium text-white truncate">
               {otherUser?.full_name || 'Unknown User'}
             </h3>
-            <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">
+            <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">
               {userRole}
             </span>
           </div>
           
-          {/* Car and Booking Info */}
-          <div className="flex items-center space-x-4 mt-1">
-            {conversation.car && (
-              <div className="flex items-center text-xs text-gray-400">
-                <Car className="h-3 w-3 mr-1" />
-                <span className="truncate">
-                  {conversation.car.year} {conversation.car.make} {conversation.car.model}
-                </span>
-              </div>
-            )}
-            
-            {conversation.booking && (
-              <div className="flex items-center text-xs text-gray-400">
-                <Calendar className="h-3 w-3 mr-1" />
-                <span>
-                  {formatDateRange(
-                    conversation.booking.start_date,
-                    conversation.booking.end_date
-                  )}
-                </span>
-              </div>
-            )}
-          </div>
+          {/* Car Info */}
+          {conversation.car && (
+            <div className="flex items-center text-xs text-gray-400 mt-0.5">
+              <Car className="h-3 w-3 mr-1" />
+              <span className="truncate">
+                {conversation.car.year} {conversation.car.make} {conversation.car.model}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -108,7 +84,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
       {onMenuClick && (
         <button
           onClick={onMenuClick}
-          className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700/50 rounded-lg transition-colors"
+          className="p-1.5 text-gray-400 hover:text-gray-200 transition-colors"
         >
           <MoreVertical className="h-5 w-5" />
         </button>
