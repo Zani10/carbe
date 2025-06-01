@@ -228,7 +228,7 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'Overview':
-        return <OverviewTab {...overviewData} />;
+        return <OverviewTab {...overviewData} carId={car.id} hostId={car.owner_id} />;
       case 'Details':
         return <DetailsTab />;
       case 'Host':
@@ -236,7 +236,7 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
       case 'Pickup':
         return <PickupTab />;
       default:
-        return <OverviewTab {...overviewData} />;
+        return <OverviewTab {...overviewData} carId={car.id} hostId={car.owner_id} />;
     }
   };
 

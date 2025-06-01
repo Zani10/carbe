@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import {
   Calendar,
-  MessageSquare,
   Phone,
   Key,
   FileText,
@@ -21,11 +20,12 @@ import { useBooking } from '@/hooks/booking/useBooking';
 import Button from '@/components/ui/Button';
 import BookingImageCarousel from '@/components/booking/BookingImageCarousel';
 import PickupLocationMap from '@/components/maps/PickupLocationMap';
+import MessageBookingButton from '@/components/booking/MessageBookingButton';
 
 interface BookingDetailsPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function BookingDetailsPage({ params }: BookingDetailsPageProps) {
@@ -33,11 +33,12 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
   const { getBookingDetails } = useBooking();
   const [booking, setBooking] = useState<BookingWithCar | null>(null);
   const [loading, setLoading] = useState(true);
+  const resolvedParams = use(params);
 
   useEffect(() => {
     const fetchBooking = async () => {
       try {
-        const bookingData = await getBookingDetails(params.id);
+        const bookingData = await getBookingDetails(resolvedParams.id);
         setBooking(bookingData);
       } catch (error) {
         console.error('Error fetching booking:', error);
@@ -47,7 +48,7 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
     };
 
     fetchBooking();
-  }, [params.id, getBookingDetails]);
+  }, [resolvedParams.id, getBookingDetails]);
 
   if (loading) {
     return (
@@ -179,13 +180,15 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button 
-                  className="flex items-center justify-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 text-left transition-colors"
-                  onClick={() => router.push(`/chat/${booking.id}`)}
-                >
-                  <MessageSquare className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm font-medium text-white">Message</span>
-                </button>
+                <MessageBookingButton
+                  carId={booking.cars.id}
+                  hostId={booking.cars.owner_id}
+                  renterId={booking.renter_id}
+                  bookingId={booking.id}
+                  variant="secondary"
+                  size="md"
+                  className="flex-1"
+                />
                 
                 <button className="flex items-center justify-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 text-left transition-colors">
                   <Phone className="h-4 w-4 text-gray-400" />

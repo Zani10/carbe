@@ -1,20 +1,43 @@
+'use client';
+
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import ChatWindow from '@/components/chat/ChatWindow';
+
 interface ChatPageProps {
   params: Promise<{
     conversationId: string;
   }>;
 }
 
-export default async function ChatPage({ params }: ChatPageProps) {
-  const { conversationId } = await params;
-  
-  return (
-    <div className="min-h-screen bg-[#212121] p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">Chat Conversation {conversationId}</h1>
-        <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-lg shadow p-6">
-          <p className="text-gray-400">Chat functionality coming soon...</p>
-        </div>
+export default function ChatPage({ params }: ChatPageProps) {
+  const router = useRouter();
+  const [conversationId, setConversationId] = React.useState<string>('');
+
+  React.useEffect(() => {
+    params.then((resolvedParams) => {
+      setConversationId(resolvedParams.conversationId);
+    });
+  }, [params]);
+
+  const handleBack = () => {
+    router.push('/chat');
+  };
+
+  if (!conversationId) {
+    return (
+      <div className="min-h-screen bg-[#212121] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen">
+      <ChatWindow
+        conversationId={conversationId}
+        onBack={handleBack}
+      />
     </div>
   );
 }

@@ -19,6 +19,7 @@ import {
 import { BookingWithCar, BookingStatus } from '@/types/booking';
 import { useBooking } from '@/hooks/booking/useBooking';
 import { toast } from 'react-hot-toast';
+import MessageBookingButton from './MessageBookingButton';
 
 interface HostBookingCardProps {
   booking: BookingWithCar;
@@ -232,15 +233,15 @@ export default function HostBookingCard({ booking, onStatusChange, compact = fal
            </div>
            
            <div className="flex items-center space-x-2">
-             <button 
-               className="p-2 bg-gray-700/50 text-gray-300 rounded-lg hover:bg-gray-600/50 transition-colors"
-               onClick={(e) => {
-                 e.stopPropagation();
-                 router.push(`/chat/${booking.id}`);
-               }}
-             >
-               <MessageSquare className="h-4 w-4" />
-             </button>
+             <MessageBookingButton
+               carId={booking.cars.id}
+               hostId={booking.cars.owner_id}
+               renterId={booking.renter_id}
+               bookingId={booking.id}
+               variant="icon"
+               size="md"
+               className="hover:bg-gray-600/50"
+             />
              
              <button
                onClick={(e) => {

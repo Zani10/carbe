@@ -2,6 +2,7 @@ import React from 'react';
 import CarHeader from '../CarHeader';
 import SpecsGrid from '../SpecsGrid';
 import DetailsSection from '../DetailsSection';
+import MessageHostButton from '../MessageHostButton';
 
 interface OverviewTabProps {
   carName: string;
@@ -16,6 +17,8 @@ interface OverviewTabProps {
     value: string;
     iconUrl?: string;
   }[];
+  carId?: string;
+  hostId?: string;
 }
 
 const OverviewTab: React.FC<OverviewTabProps> = ({
@@ -23,6 +26,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   description,
   specs,
   details,
+  carId,
+  hostId,
 }) => {
   return (
     <div className="space-y-6">
@@ -32,6 +37,19 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
       />
       <SpecsGrid specs={specs} />
       <DetailsSection details={details} />
+      
+      {/* Message Host Button */}
+      {carId && hostId && (
+        <div className="pt-4">
+          <MessageHostButton
+            carId={carId}
+            hostId={hostId}
+            carName={carName}
+            variant="secondary"
+            className="w-full"
+          />
+        </div>
+      )}
     </div>
   );
 };

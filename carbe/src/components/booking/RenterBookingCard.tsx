@@ -6,11 +6,11 @@ import {
   Calendar, 
   Car, 
   Clock, 
-  MessageSquare,
   Star,
   MapPin
 } from 'lucide-react';
 import { BookingWithCar, BookingStatus } from '@/types/booking';
+import MessageBookingButton from './MessageBookingButton';
 
 interface RenterBookingCardProps {
   booking: BookingWithCar;
@@ -169,15 +169,15 @@ export default function RenterBookingCard({ booking }: RenterBookingCardProps) {
                 )}
                 
                 {['confirmed', 'awaiting_approval'].includes(booking.status) && (
-                  <button 
-                    className="text-gray-400 hover:text-blue-400 transition-colors p-0.5"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/chat/${booking.id}`);
-                    }}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                  </button>
+                  <MessageBookingButton
+                    carId={booking.cars.id}
+                    hostId={booking.cars.owner_id}
+                    renterId={booking.renter_id}
+                    bookingId={booking.id}
+                    variant="icon"
+                    size="sm"
+                    className="text-gray-400 hover:text-blue-400 bg-transparent hover:bg-gray-700/50 p-0.5"
+                  />
                 )}
               </div>
 
