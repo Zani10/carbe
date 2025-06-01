@@ -3,17 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import Image from 'next/image';
 import {
   Calendar,
-  MapPin,
   MessageSquare,
   Phone,
-  Car,
   Key,
-  Smartphone,
   FileText,
-  Navigation,
   User,
   Shield,
   ChevronRight,
@@ -24,6 +19,8 @@ import {
 import { BookingWithCar } from '@/types/booking';
 import { useBooking } from '@/hooks/booking/useBooking';
 import Button from '@/components/ui/Button';
+import BookingImageCarousel from '@/components/booking/BookingImageCarousel';
+import PickupLocationMap from '@/components/maps/PickupLocationMap';
 
 interface BookingDetailsPageProps {
   params: {
@@ -73,13 +70,6 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
     );
   }
 
-  const isActive = () => {
-    const now = new Date();
-    const startDate = new Date(booking.start_date);
-    const endDate = new Date(booking.end_date);
-    return now >= startDate && now <= endDate;
-  };
-
   const formatTime = (dateString: string) => {
     return format(new Date(dateString), 'h:mm a');
   };
@@ -90,22 +80,23 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
 
   return (
     <div className="min-h-screen bg-[#212121]">
-      {/* Header */}
+      {/* Enhanced Header */}
       <div className="bg-[#2A2A2A] border-b border-gray-700/50">
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center space-x-4">
               <button 
                 onClick={() => router.back()}
-                className="flex items-center text-gray-400 hover:text-white mb-3 transition-colors"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700/50 hover:bg-gray-600/50 transition-colors"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Rides
+                <ArrowLeft className="h-5 w-5 text-white" />
               </button>
-              <h1 className="text-2xl font-bold text-white">Your Booking</h1>
-              <p className="text-gray-400">
-                {booking.cars.make} {booking.cars.model} • {booking.cars.year}
-              </p>
+              <div>
+                <h1 className="text-xl font-bold text-white">Your Booking</h1>
+                <p className="text-gray-400 text-sm">
+                  {booking.cars.make} {booking.cars.model}
+                </p>
+              </div>
             </div>
             {booking.status === 'confirmed' && (
               <div className="flex items-center space-x-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
@@ -117,35 +108,26 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Car Image & Basic Info */}
+            {/* Car Image Carousel */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 overflow-hidden">
-              <div className="aspect-[16/9] relative">
-                {booking.cars.images && booking.cars.images.length > 0 ? (
-                  <Image
-                    src={booking.cars.images[0]}
-                    alt={`${booking.cars.make} ${booking.cars.model}`}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                    <Car className="h-16 w-16 text-gray-600" />
-                  </div>
-                )}
-              </div>
+                             <BookingImageCarousel
+                 images={booking.cars.images || []}
+                 alt={`${booking.cars.make} ${booking.cars.model}`}
+                 className="aspect-[16/9]"
+               />
               <div className="p-6">
                 <h2 className="text-xl font-semibold text-white mb-2">
                   {booking.cars.make} {booking.cars.model}
                 </h2>
-                <p className="text-gray-400">{booking.cars.year} • Available for your trip</p>
+                <p className="text-gray-400">Available for your trip</p>
               </div>
             </div>
 
-            {/* Check-in & Check-out */}
+            {/* Trip Details */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Trip Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -176,36 +158,52 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
               </div>
             </div>
 
-            {/* Pickup & Return */}
+            {/* Enhanced Pickup & Return with Map */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Pickup & Return</h3>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <MapPin className="h-5 w-5 text-gray-400 mt-1" />
-                  <div className="flex-1">
-                    <p className="font-medium text-white">Contact host for pickup location</p>
-                    <p className="text-sm text-gray-400">Pickup and return location details</p>
-                  </div>
-                  <button className="flex items-center space-x-1 text-[#FF2800] hover:text-[#FF2800]/80 text-sm font-medium transition-colors">
-                    <Navigation className="h-4 w-4" />
-                    <span>Get Directions</span>
-                  </button>
+              <PickupLocationMap 
+                address="Damrak 70, 1012 LM Amsterdam, Netherlands"
+              />
+            </div>
+
+            {/* Host Information - Moved here */}
+            <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Host Information</h3>
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-gray-400" />
                 </div>
+                <div>
+                  <p className="font-semibold text-white">Car Host</p>
+                  <p className="text-sm text-gray-400">Host since 2022</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button 
+                  className="flex items-center justify-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 text-left transition-colors"
+                  onClick={() => router.push(`/chat/${booking.id}`)}
+                >
+                  <MessageSquare className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm font-medium text-white">Message</span>
+                </button>
+                
+                <button className="flex items-center justify-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 text-left transition-colors">
+                  <Phone className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm font-medium text-white">Call</span>
+                </button>
               </div>
             </div>
 
             {/* Vehicle Access */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Vehicle Access</h3>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                  <Key className="h-5 w-5 text-amber-400 mt-1" />
-                  <div className="flex-1">
-                    <p className="font-medium text-amber-300">Key Exchange Required</p>
-                    <p className="text-sm text-amber-200 mt-1">
-                      Contact the host to arrange key pickup. Their contact details are provided below.
-                    </p>
-                  </div>
+              <div className="flex items-start space-x-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <Key className="h-5 w-5 text-amber-400 mt-1" />
+                <div className="flex-1">
+                  <p className="font-medium text-amber-300">Key Exchange Required</p>
+                  <p className="text-sm text-amber-200 mt-1">
+                    Contact the host to arrange key pickup. Their contact details are provided above.
+                  </p>
                 </div>
               </div>
             </div>
@@ -216,27 +214,19 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <Shield className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-300">No smoking in the vehicle</p>
-                  </div>
+                  <p className="text-sm text-gray-300">No smoking in the vehicle</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <Shield className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-300">Return with same fuel level</p>
-                  </div>
+                  <p className="text-sm text-gray-300">Return with same fuel level</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <Shield className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-300">Report any damages immediately</p>
-                  </div>
+                  <p className="text-sm text-gray-300">Report any damages immediately</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <Shield className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-300">Maximum speed limit as per local laws</p>
-                  </div>
+                  <p className="text-sm text-gray-300">Maximum speed limit as per local laws</p>
                 </div>
               </div>
             </div>
@@ -252,40 +242,6 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Host Info */}
-            <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Host Information</h3>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-gray-400" />
-                </div>
-                <div>
-                  <p className="font-semibold text-white">Car Host</p>
-                  <p className="text-sm text-gray-400">Host since 2022</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <button 
-                  className="w-full flex items-center justify-between p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 text-left transition-colors"
-                  onClick={() => router.push(`/chat/${booking.id}`)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <MessageSquare className="h-5 w-5 text-gray-400" />
-                    <span className="text-sm font-medium text-white">Message host</span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                </button>
-                
-                <button className="w-full flex items-center justify-between p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 text-left transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Phone className="h-5 w-5 text-gray-400" />
-                    <span className="text-sm font-medium text-white">Call host</span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                </button>
-              </div>
-            </div>
-
             {/* Payment Summary */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Payment Summary</h3>

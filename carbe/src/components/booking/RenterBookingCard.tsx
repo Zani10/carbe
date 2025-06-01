@@ -7,7 +7,6 @@ import {
   Car, 
   Clock, 
   MessageSquare,
-  AlertCircle,
   Star,
   MapPin
 } from 'lucide-react';
@@ -198,7 +197,7 @@ export default function RenterBookingCard({ booking }: RenterBookingCardProps) {
             <div className="flex items-center space-x-2">
               <Clock className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
               <span className="text-xs font-medium text-amber-400">
-                You'll hear back within 24 hours
+                You&apos;ll hear back within 24 hours
               </span>
             </div>
           </div>
