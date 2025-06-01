@@ -1,15 +1,28 @@
 'use client';
 
-import { useState } from 'react';
-import { MapPin, Navigation, Copy, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { MapPin, Navigation, Copy, ExternalLink, Loader2 } from 'lucide-react';
+
+// Dynamically import the map to avoid SSR issues
+const DynamicMap = dynamic(() => import('./PickupMapRenderer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-48 bg-gray-800 rounded-xl border border-gray-700/50 flex items-center justify-center">
+      <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+    </div>
+  ),
+});
 
 interface PickupLocationMapProps {
   address?: string;
+  coordinates?: { lat: number; lng: number };
   className?: string;
 }
 
 export default function PickupLocationMap({ 
-  address = "Contact host for pickup location", 
+  address = "Contact host for pickup location",
+  coordinates = { lat: 52.3676, lng: 4.9041 }, // Default Amsterdam center 
   className = '' 
 }: PickupLocationMapProps) {
   const [copied, setCopied] = useState(false);
@@ -50,33 +63,12 @@ export default function PickupLocationMap({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Map Placeholder */}
-      <div className="relative h-48 bg-gray-800 rounded-xl overflow-hidden border border-gray-700/50">
-        {/* Map placeholder with marker */}
-        <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 flex items-center justify-center relative">
-          {/* Grid pattern overlay for map feel */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="w-full h-full" style={{
-              backgroundImage: `
-                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px'
-            }} />
-          </div>
-          
-          {/* Center marker */}
-          <div className="relative z-10 flex items-center justify-center">
-            <div className="w-8 h-8 bg-[#FF2800] rounded-full flex items-center justify-center shadow-lg animate-pulse">
-              <MapPin className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          
-          {/* Map attribution style text */}
-          <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-            Map view
-          </div>
-        </div>
+      {/* Leaflet Map */}
+      <div className="relative h-48 rounded-xl overflow-hidden border border-gray-700/50">
+        <DynamicMap 
+          center={coordinates}
+          address={address}
+        />
       </div>
 
       {/* Address and Actions */}

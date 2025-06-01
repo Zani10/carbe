@@ -92,7 +92,7 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
                 <ArrowLeft className="h-5 w-5 text-white" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-white">Your Booking</h1>
+                <h1 className="text-xl font-bold text-white">Your Ride</h1>
                 <p className="text-gray-400 text-sm">
                   {booking.cars.make} {booking.cars.model}
                 </p>
@@ -163,6 +163,7 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
               <h3 className="text-lg font-semibold text-white mb-4">Pickup & Return</h3>
               <PickupLocationMap 
                 address="Damrak 70, 1012 LM Amsterdam, Netherlands"
+                coordinates={{ lat: 52.3738, lng: 4.8910 }}
               />
             </div>
 
@@ -242,6 +243,22 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Important Info - Moved before Payment Summary */}
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-amber-300 mb-2">Important</h4>
+                  <ul className="text-sm text-amber-200 space-y-1">
+                    <li>• Bring a valid driver&apos;s license</li>
+                    <li>• Arrive on time for pickup</li>
+                    <li>• Contact host if you&apos;re running late</li>
+                    <li>• Take photos before and after</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             {/* Payment Summary */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Payment Summary</h3>
@@ -259,22 +276,6 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
                     <span className="font-semibold text-white">Total paid</span>
                     <span className="font-semibold text-white">€{booking.total_amount}</span>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Important Info */}
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6">
-              <div className="flex items-start space-x-3">
-                <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="font-semibold text-amber-300 mb-2">Important</h4>
-                  <ul className="text-sm text-amber-200 space-y-1">
-                    <li>• Bring a valid driver&apos;s license</li>
-                    <li>• Arrive on time for pickup</li>
-                    <li>• Contact host if you&apos;re running late</li>
-                    <li>• Take photos before and after</li>
-                  </ul>
                 </div>
               </div>
             </div>
