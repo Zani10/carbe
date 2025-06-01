@@ -50,10 +50,9 @@ const MapUpdater: React.FC<{ center: { lat: number; lng: number } }> = ({ center
 
 interface PickupMapRendererProps {
   center: { lat: number; lng: number };
-  address: string;
 }
 
-const PickupMapRenderer: React.FC<PickupMapRendererProps> = ({ center, address }) => {
+const PickupMapRenderer: React.FC<PickupMapRendererProps> = ({ center }) => {
   return (
     <>
       {/* Custom styles for pickup marker */}

@@ -57,6 +57,7 @@ export interface BookingWithCar extends Booking {
     model: string;
     year: number;
     images: string[];
+    location: string | null;
     requires_approval: boolean;
     cancellation_policy: CancellationPolicy;
     owner_id: string;

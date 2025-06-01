@@ -19,6 +19,13 @@
   }
 }
 
+/* Prevent over-scrolling and elastic bounce */
+html, body {
+  overscroll-behavior: none;
+  height: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
