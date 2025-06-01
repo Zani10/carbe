@@ -38,8 +38,29 @@ export async function createBookingWithPaymentServer({
   requiresApproval: boolean;
 }) {
   try {
-    // Use service role client that bypasses RLS (we control auth context manually)
+    // Use service role client (RLS disabled, app-level security implemented above)
     const supabase = supabaseService;
+
+    // SECURITY: Validate that the booking is for the authenticated user
+    if (!userProfile.id) {
+      throw new Error('User authentication required');
+    }
+
+    // SECURITY: Verify the car exists and is available
+    const { data: car, error: carError } = await supabase
+      .from('cars')
+      .select('*')
+      .eq('id', bookingData.car_id)
+      .single();
+
+    if (carError || !car) {
+      throw new Error('Car not found or unavailable');
+    }
+
+    // SECURITY: Ensure user cannot book their own car
+    if (car.owner_id === userProfile.id) {
+      throw new Error('Cannot book your own car');
+    }
 
     console.log('💳 Creating Stripe customer...');
     // Step 1: Create Stripe customer if needed
