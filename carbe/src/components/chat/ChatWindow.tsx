@@ -100,16 +100,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <div className={clsx('h-full flex flex-col bg-[#212121]', className)}>
       {/* Chat Header */}
-      <ChatHeader
-        conversation={currentConversation}
-        currentUserId={user.id}
-        onBack={onBack}
-      />
+      <div className="flex-shrink-0">
+        <ChatHeader
+          conversation={currentConversation}
+          currentUserId={user.id}
+          onBack={onBack}
+        />
+      </div>
 
       {/* Messages Container */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-3"
+        className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0"
       >
         {loading && messages.length === 0 ? (
           <MessageLoading count={3} />
@@ -145,15 +147,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
 
       {/* Message Input */}
-      <MessageInput
-        onSendMessage={handleSendMessage}
-        disabled={loading}
-        placeholder={
-          currentConversation.car
-            ? `Message about ${currentConversation.car.year} ${currentConversation.car.make} ${currentConversation.car.model}...`
-            : 'Type a message...'
-        }
-      />
+      <div className="flex-shrink-0">
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          disabled={loading}
+        />
+      </div>
     </div>
   );
 };

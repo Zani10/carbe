@@ -50,9 +50,9 @@ export default function ChatPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#212121] pb-24">
+      <div className="h-screen flex flex-col bg-[#212121]">
         {/* Header */}
-        <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
+        <div className="flex-shrink-0 bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
           <div className="max-w-md mx-auto">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-xl font-semibold text-white">Messages</h1>
@@ -76,41 +76,47 @@ export default function ChatPage() {
         </div>
 
         {/* Conversations Container */}
-        <div className="max-w-md mx-auto px-4 py-4">
-          <ConversationList
-            conversations={filteredConversations}
-            currentUserId={user.id}
-            loading={loading}
-          />
-          
-          {/* No Results */}
-          {searchQuery && filteredConversations.length === 0 && !loading && (
-            <div className="text-center py-12">
-              <Search className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">No conversations found</h3>
-              <p className="text-gray-400">Try different search terms</p>
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="max-w-md mx-auto px-4 py-4">
+            <ConversationList
+              conversations={filteredConversations}
+              currentUserId={user.id}
+              loading={loading}
+            />
+            
+            {/* No Results */}
+            {searchQuery && filteredConversations.length === 0 && !loading && (
+              <div className="text-center py-12">
+                <Search className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No conversations found</h3>
+                <p className="text-gray-400">Try different search terms</p>
+              </div>
+            )}
 
-          {/* Empty State */}
-          {conversations.length === 0 && !loading && (
-            <div className="text-center py-20">
-              <MessageSquare className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">No conversations yet</h3>
-              <p className="text-gray-400 mb-6">
-                Start a conversation by messaging a host
-              </p>
-              <button
-                onClick={() => router.push('/explore')}
-                className="px-6 py-3 bg-[#FF4646] text-white rounded-lg hover:bg-[#FF4646]/90 transition-colors font-medium"
-              >
-                Explore Cars
-              </button>
-            </div>
-          )}
+            {/* Empty State */}
+            {conversations.length === 0 && !loading && (
+              <div className="text-center py-20">
+                <MessageSquare className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No conversations yet</h3>
+                <p className="text-gray-400 mb-6">
+                  Start a conversation by messaging a host
+                </p>
+                <button
+                  onClick={() => router.push('/explore')}
+                  className="px-6 py-3 bg-[#FF4646] text-white rounded-lg hover:bg-[#FF4646]/90 transition-colors font-medium"
+                >
+                  Explore Cars
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="flex-shrink-0">
+          <RenterBottomNav />
         </div>
       </div>
-      <RenterBottomNav />
     </>
   );
 }

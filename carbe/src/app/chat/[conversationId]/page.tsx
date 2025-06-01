@@ -33,10 +33,11 @@ export default function ChatPage({ params }: ChatPageProps) {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="h-screen flex flex-col">
       <ChatWindow
         conversationId={conversationId}
         onBack={handleBack}
+        className="flex-1"
       />
     </div>
   );
