@@ -33,17 +33,7 @@ export default function ChatPage() {
   return (
     <>
       <div className="min-h-screen bg-[#212121] pb-24">
-        {/* Header - Simple title without back button */}
-        <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
-          <div className="max-w-md mx-auto">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold text-white">Messages</h1>
-              <button className="p-2 text-gray-400 hover:text-gray-200 rounded-lg transition-colors">
-                <Search className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* Header removed */}
 
         <div className="max-w-md mx-auto px-4 py-8">
           {/* Coming Soon Content */}

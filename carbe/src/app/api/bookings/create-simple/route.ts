@@ -12,11 +12,19 @@ export async function POST(request: NextRequest) {
       requiresApproval 
     });
 
-    // Validate required fields
-    if (!bookingData || !userProfile) {
+    // SECURITY: Validate required fields and user authentication
+    if (!bookingData || !userProfile || !userProfile.id) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields or authentication' },
         { status: 400 }
+      );
+    }
+
+    // SECURITY: Ensure renter_id matches authenticated user
+    if (bookingData.renter_id && bookingData.renter_id !== userProfile.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized: renter_id mismatch' },
+        { status: 403 }
       );
     }
 

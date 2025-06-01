@@ -5,23 +5,23 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBooking } from '@/hooks/booking/useBooking';
 import { format, isToday, startOfToday, endOfToday } from 'date-fns';
 import HostBottomNav from '@/components/layout/HostBottomNav';
+import HostBookingCard from '@/components/booking/HostBookingCard';
 import { 
   CalendarDays, 
   Car, 
   Clock, 
-  Users, 
-  MapPin, 
-  CheckCircle,
+  Euro,
+  TrendingUp,
   AlertCircle,
   Loader2
 } from 'lucide-react';
-import { BookingWithCar, BookingStatus } from '@/types/booking';
+import { BookingWithCar } from '@/types/booking';
 
 export default function HostTodayPage() {
   const { user, isHostMode } = useAuth();
   const { getHostBookings, isLoading } = useBooking();
   
-  const [activeTab, setActiveTab] = useState('today');
+  const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'upcoming'>('active');
   const [bookings, setBookings] = useState<BookingWithCar[]>([]);
   const [stats, setStats] = useState({
     todayEarnings: 0,
@@ -68,7 +68,7 @@ export default function HostTodayPage() {
     );
 
     const pendingBookings = allBookings.filter(booking => 
-      booking.status === 'awaiting_approval'
+      booking.status === 'awaiting_approval' || booking.status === 'pending'
     );
 
     setStats({
@@ -106,133 +106,40 @@ export default function HostTodayPage() {
       .slice(0, 10); // Limit to next 10 bookings
   };
 
-  const getStatusIcon = (status: BookingStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'awaiting_approval':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-blue-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
-    }
+  const getPendingApprovals = () => {
+    return bookings.filter(booking => 
+      booking.status === 'awaiting_approval' || booking.status === 'pending'
+    ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   };
 
-  const getStatusText = (status: BookingStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return 'Confirmed';
-      case 'awaiting_approval':
-        return 'Needs Approval';
-      case 'completed':
-        return 'Completed';
-      case 'pending':
-        return 'Pending';
-      default:
-        return status;
-    }
-  };
-
-  const getStatusColor = (status: BookingStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-900/50 text-green-300 border border-green-700/50';
-      case 'awaiting_approval':
-        return 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/50';
-      case 'completed':
-        return 'bg-blue-900/50 text-blue-300 border border-blue-700/50';
-      default:
-        return 'bg-gray-900/50 text-gray-300 border border-gray-700/50';
-    }
-  };
-
-  const BookingCard = ({ booking }: { booking: BookingWithCar }) => (
-    <div className="border border-gray-700/50 bg-[#1F1F1F] rounded-xl p-4 hover:bg-[#252525] transition-colors">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center">
-          <Car className="text-gray-400 mr-2" size={18} />
-          <span className="font-medium text-white">
-            {booking.cars.make} {booking.cars.model} ({booking.cars.year})
-          </span>
+  const StatCard = ({ icon: Icon, value, subtitle, trend }: {
+    icon: React.ComponentType<{ className?: string }>;
+    value: string | number;
+    subtitle: string;
+    trend?: 'up' | 'down' | 'neutral';
+  }) => (
+    <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="w-12 h-12 bg-gradient-to-br from-[#FF4646]/10 to-[#FF4646]/20 rounded-xl flex items-center justify-center">
+          <Icon className="h-6 w-6 text-[#FF4646]" />
         </div>
-        <div className="flex items-center space-x-2">
-          {getStatusIcon(booking.status)}
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
-            {getStatusText(booking.status)}
-          </span>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="flex items-center">
-          <Clock size={16} className="text-gray-500 mr-2" />
-          <div className="text-sm">
-            <div className="text-gray-200">
-              {format(new Date(booking.start_date), 'MMM d • HH:mm')}
-            </div>
-            <div className="text-gray-400">Pickup</div>
+        {trend && (
+          <div className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            trend === 'up' ? 'bg-green-900/50 text-green-400' : 
+            trend === 'down' ? 'bg-red-900/50 text-red-400' : 
+            'bg-gray-800/50 text-gray-400'
+          }`}>
+            <TrendingUp className="h-3 w-3 mr-1" />
+            {trend === 'up' ? '+12%' : trend === 'down' ? '-5%' : '±0%'}
           </div>
-        </div>
-        
-        <div className="flex items-center">
-          <Clock size={16} className="text-gray-500 mr-2" />
-          <div className="text-sm">
-            <div className="text-gray-200">
-              {format(new Date(booking.end_date), 'MMM d • HH:mm')}
-            </div>
-            <div className="text-gray-400">Return</div>
-          </div>
-        </div>
+        )}
       </div>
-      
-      <div className="flex items-center mt-3">
-        <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-          <Users size={16} className="text-gray-400" />
-        </div>
-        <div className="ml-3">
-          <div className="text-sm font-medium text-white">
-            {booking.snapshot_first_name} {booking.snapshot_last_name}
-          </div>
-          <div className="text-xs text-gray-400">{booking.snapshot_email}</div>
-        </div>
+      <div className="space-y-1">
+        <div className="text-2xl font-bold text-white">{value}</div>
+        <div className="text-sm text-gray-400">{subtitle}</div>
       </div>
-      
-      <div className="mt-3 pt-3 border-t border-gray-700/50 flex justify-between items-center">
-        <div className="flex items-center text-sm text-gray-400">
-          <MapPin size={16} className="mr-1" />
-          {'Location not specified'}
-        </div>
-        <div className="font-medium text-white">€{booking.total_amount}</div>
-      </div>
-
-      {booking.special_requests && (
-        <div className="mt-3 p-2 bg-gray-800/50 rounded-lg">
-          <p className="text-xs text-gray-400 mb-1">Special Requests:</p>
-          <p className="text-sm text-gray-300">{booking.special_requests}</p>
-        </div>
-      )}
     </div>
   );
-  
-  if (!user || !isHostMode) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#212121] p-4">
-        <div className="bg-[#2A2A2A] p-8 rounded-2xl shadow-md max-w-md w-full text-center border border-gray-700/50">
-          <h2 className="text-2xl font-bold text-white mb-4">Host Access Required</h2>
-          <p className="text-gray-300 mb-6">
-            You need to be in host mode to access this page.
-          </p>
-          <a 
-            href="/profile" 
-            className="inline-block px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90"
-          >
-            Go to Profile
-          </a>
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -240,127 +147,189 @@ export default function HostTodayPage() {
         <div className="min-h-screen bg-[#212121] flex items-center justify-center pb-24">
           <div className="text-center">
             <Loader2 className="h-8 w-8 text-[#FF4646] animate-spin mx-auto mb-4" />
-            <p className="text-gray-400">Loading host dashboard...</p>
+            <p className="text-gray-400">Loading your dashboard...</p>
           </div>
         </div>
         <HostBottomNav />
       </>
     );
   }
-  
-  const todaysBookings = getTodaysBookings();
-  const upcomingBookings = getUpcomingBookings();
-  
+
+  const renderActiveTabContent = () => {
+    switch (activeTab) {
+      case 'active':
+        const todaysBookings = getTodaysBookings();
+        return (
+          <div className="space-y-4">
+            {todaysBookings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CalendarDays className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">No active bookings</h3>
+                <p className="text-gray-400 max-w-xs mx-auto">
+                  No bookings happening today. Check pending approvals or upcoming reservations.
+                </p>
+              </div>
+            ) : (
+              todaysBookings.map((booking) => (
+                <HostBookingCard 
+                  key={booking.id} 
+                  booking={booking} 
+                  onStatusChange={loadHostData}
+                  compact={false}
+                />
+              ))
+            )}
+          </div>
+        );
+
+      case 'pending':
+        const pendingApprovals = getPendingApprovals();
+        return (
+          <div className="space-y-4">
+            {pendingApprovals.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Clock className="h-8 w-8 text-green-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">All caught up!</h3>
+                <p className="text-gray-400 max-w-xs mx-auto">
+                  No pending booking requests at this time.
+                </p>
+              </div>
+            ) : (
+              pendingApprovals.map((booking) => (
+                <HostBookingCard 
+                  key={booking.id} 
+                  booking={booking} 
+                  onStatusChange={loadHostData}
+                  compact={false}
+                />
+              ))
+            )}
+          </div>
+        );
+
+      case 'upcoming':
+        const upcomingBookings = getUpcomingBookings();
+        return (
+          <div className="space-y-4">
+            {upcomingBookings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Car className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">No upcoming bookings</h3>
+                <p className="text-gray-400 max-w-xs mx-auto">
+                  Your cars are available for new bookings.
+                </p>
+              </div>
+            ) : (
+              upcomingBookings.map((booking) => (
+                <HostBookingCard 
+                  key={booking.id} 
+                  booking={booking} 
+                  onStatusChange={loadHostData}
+                  compact={true}
+                />
+              ))
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
       <div className="min-h-screen bg-[#212121] pb-24">
         {/* Header */}
-        <header className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-4">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold text-white">Host Dashboard</h1>
-          </div>
-        </header>
-        
-        {/* Tabs */}
-        <div className="bg-[#2A2A2A] border-b border-gray-700/50">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="flex space-x-8">
-              <button
-                className={`py-4 px-1 font-medium text-sm border-b-2 ${
-                  activeTab === 'today' 
-                    ? 'border-[#FF4646] text-[#FF4646]' 
-                    : 'border-transparent text-gray-400 hover:text-gray-200'
-                }`}
-                onClick={() => setActiveTab('today')}
-              >
-                Today ({todaysBookings.length})
-              </button>
-              <button
-                className={`py-4 px-1 font-medium text-sm border-b-2 ${
-                  activeTab === 'upcoming' 
-                    ? 'border-[#FF4646] text-[#FF4646]' 
-                    : 'border-transparent text-gray-400 hover:text-gray-200'
-                }`}
-                onClick={() => setActiveTab('upcoming')}
-              >
-                Upcoming ({upcomingBookings.length})
-              </button>
+        <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-semibold text-white">Host Dashboard</h1>
+              <div className="text-right">
+                <div className="text-sm text-gray-400">Today</div>
+                <div className="text-lg font-bold text-white">{format(new Date(), 'MMM d')}</div>
+              </div>
             </div>
           </div>
         </div>
-      
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {activeTab === 'today' ? (
-          <>
-            <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-semibold text-white mb-4">Today&apos;s Schedule</h2>
-              
-              {todaysBookings.length === 0 ? (
-                <div className="text-center py-12">
-                  <CalendarDays size={48} className="mx-auto text-gray-600 mb-4" />
-                  <p className="text-gray-400">You have no bookings scheduled for today.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {todaysBookings.map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
-                  ))}
-                </div>
+
+        <div className="max-w-md mx-auto px-4 py-6">
+          {/* Stats Grid */}
+                     <div className="grid grid-cols-2 gap-4 mb-8">
+             <StatCard
+               icon={Euro}
+               value={`€${stats.todayEarnings}`}
+               subtitle="From confirmed bookings"
+               trend="up"
+             />
+             <StatCard
+               icon={CalendarDays}
+               value={stats.thisWeekBookings}
+               subtitle="Bookings confirmed"
+               trend="up"
+             />
+             <StatCard
+               icon={AlertCircle}
+               value={stats.pendingApprovals}
+               subtitle="Need your review"
+               trend="neutral"
+             />
+             <StatCard
+               icon={TrendingUp}
+               value={`€${stats.thisMonthEarnings}`}
+               subtitle="This month&apos;s total"
+               trend="up"
+             />
+           </div>
+
+          {/* Tabs */}
+          <div className="flex mb-6 bg-[#1A1A1A] rounded-xl p-1">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`flex-1 py-3 px-4 text-center rounded-lg transition-all duration-200 font-medium text-sm ${
+                activeTab === 'active'
+                  ? 'bg-[#FF4646] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Active ({getTodaysBookings().length})
+            </button>
+            <button
+              onClick={() => setActiveTab('pending')}
+              className={`flex-1 py-3 px-4 text-center rounded-lg transition-all duration-200 font-medium text-sm relative ${
+                activeTab === 'pending'
+                  ? 'bg-[#FF4646] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Pending ({stats.pendingApprovals})
+              {stats.pendingApprovals > 0 && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
               )}
-            </div>
-            
-            <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">Quick Stats</h2>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-[#1F1F1F] border border-gray-700/50 rounded-xl p-4">
-                  <div className="text-sm text-gray-400 mb-1">Today&apos;s Earnings</div>
-                  <div className="text-2xl font-bold text-white">€{stats.todayEarnings}</div>
-                </div>
-                
-                <div className="bg-[#1F1F1F] border border-gray-700/50 rounded-xl p-4">
-                  <div className="text-sm text-gray-400 mb-1">This Week</div>
-                  <div className="text-2xl font-bold text-white">{stats.thisWeekBookings}</div>
-                  <div className="text-xs text-gray-500">bookings</div>
-                </div>
-                
-                <div className="bg-[#1F1F1F] border border-gray-700/50 rounded-xl p-4">
-                  <div className="text-sm text-gray-400 mb-1">Pending</div>
-                  <div className="text-2xl font-bold text-yellow-400">{stats.pendingApprovals}</div>
-                  <div className="text-xs text-gray-500">approvals</div>
-                </div>
-                
-                <div className="bg-[#1F1F1F] border border-gray-700/50 rounded-xl p-4">
-                  <div className="text-sm text-gray-400 mb-1">This Month</div>
-                  <div className="text-2xl font-bold text-green-400">€{stats.thisMonthEarnings}</div>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">Upcoming Bookings</h2>
-              
-              {upcomingBookings.length === 0 ? (
-                <div className="text-center py-12">
-                  <CalendarDays size={48} className="mx-auto text-gray-600 mb-4" />
-                  <p className="text-gray-400">No upcoming bookings found.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {upcomingBookings.map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
+            </button>
+            <button
+              onClick={() => setActiveTab('upcoming')}
+              className={`flex-1 py-3 px-4 text-center rounded-lg transition-all duration-200 font-medium text-sm ${
+                activeTab === 'upcoming'
+                  ? 'bg-[#FF4646] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Upcoming ({getUpcomingBookings().length})
+            </button>
+          </div>
+
+          {/* Content */}
+          {renderActiveTabContent()}
+        </div>
       </div>
-    </div>
-    <HostBottomNav />
+      <HostBottomNav />
     </>
   );
 } 

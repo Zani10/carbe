@@ -73,7 +73,7 @@ export async function getHostPendingBookings(hostId: string) {
         )
       `)
       .in('car_id', carIds)
-      .eq('status', 'awaiting_approval')
+      .in('status', ['pending', 'awaiting_approval'])
       .order('created_at', { ascending: true });
 
     if (error) {

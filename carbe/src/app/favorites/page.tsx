@@ -50,19 +50,9 @@ export default function FavoritesPage() {
   return (
     <>
       <div className="min-h-screen bg-[#212121] pb-24">
-        {/* Header - Simple title without back button */}
-        <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
-          <div className="max-w-md mx-auto">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold text-white">Saved Cars</h1>
-              <span className="text-sm text-gray-400">
-                {filteredFavorites.length} saved
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* Header removed */}
 
-        <div className="max-w-md mx-auto px-4 py-4">
+        <div className="max-w-md mx-auto px-4 py-6">
           {/* Search Bar */}
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />

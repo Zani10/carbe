@@ -127,8 +127,8 @@ export default function BookPage({ params }: BookPageProps) {
       if (result) {
         setClientSecret(result.paymentIntent.client_secret);
         setRequiresApproval(false); // Default to false until schema is updated
-        setCurrentStep('payment');
-      }
+      setCurrentStep('payment');
+    }
     } catch (error) {
       console.error('Error creating booking:', error);
       toast.error('Failed to create booking. Please try again.');
@@ -367,19 +367,19 @@ export default function BookPage({ params }: BookPageProps) {
                 </div>
 
                 {currentStep !== 'payment' && (
-                  <div className="mt-6">
-                    <button
-                      onClick={handleContinueToPayment}
+                <div className="mt-6">
+                  <button
+                    onClick={handleContinueToPayment}
                       disabled={!isFormValid() || isCreating}
-                      className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                    className={`w-full py-3 rounded-lg font-medium transition-colors ${
                         isFormValid() && !isCreating
-                          ? 'bg-[#FF2800] text-white hover:bg-[#E02400]'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
+                        ? 'bg-[#FF2800] text-white hover:bg-[#E02400]'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
                       {isCreating ? 'Creating booking...' : 'Continue to Payment'}
-                    </button>
-                  </div>
+                  </button>
+                </div>
                 )}
               </div>
             )}
