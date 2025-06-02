@@ -1,202 +1,203 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CalendarData, DateCellData } from '@/types/calendar';
-import { formatDateToString, isWeekendDay, calculateWeekendMarkup } from '@/lib/calendar/dateUtils';
-import { getMockCalendarData } from '@/lib/calendar/mockData';
+import { CalendarData, CalendarMetrics, BulkOperation } from '@/types/calendar';
+import { supabase } from '@/lib/supabase';
 
-interface UseCalendarDataReturn {
-  calendarData: CalendarData | null;
+interface UseCalendarDataResult {
+  data?: CalendarData;
   loading: boolean;
   error: string | null;
-  selectedDates: Date[];
-  bulkMode: boolean;
+  metrics?: CalendarMetrics;
+  updateAvailability: (dates: string[], status: 'available' | 'blocked', carIds: string[]) => Promise<void>;
+  updatePricing: (date: string, price: number, carIds: string[], isWeekendOverride?: boolean) => Promise<void>;
+  bulkUpdate: (operation: BulkOperation) => Promise<void>;
   refreshData: () => Promise<void>;
-  toggleDateSelection: (date: Date) => void;
-  setBulkMode: (enabled: boolean) => void;
-  clearSelection: () => void;
-  updateAvailability: (dates: string[], status: 'available' | 'blocked', carId: string) => Promise<void>;
-  updatePricing: (date: string, price: number, carId: string, isWeekendOverride?: boolean) => Promise<void>;
-  bulkUpdatePricing: (dates: string[], price: number, carId: string) => Promise<void>;
-  getDateCellData: (date: Date, carId: string) => DateCellData;
 }
 
-export const useCalendarData = (carId: string | 'all', month: Date): UseCalendarDataReturn => {
-  const [calendarData, setCalendarData] = useState<CalendarData | null>(null);
+export function useCalendarData(
+  displayMonth: string,
+  selectedCarIds: string[]
+): UseCalendarDataResult {
+  const [data, setData] = useState<CalendarData | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [bulkMode, setBulkMode] = useState(false);
+  const [metrics, setMetrics] = useState<CalendarMetrics | undefined>();
 
-  const fetchCalendarData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // For demo purposes, use mock data
-      // TODO: Replace with actual API call once database is set up
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-      const data: CalendarData = getMockCalendarData(month);
-      setCalendarData(data);
-      
-      /* Uncomment when ready to use real API:
-      const monthString = month.toISOString().substring(0, 7); // YYYY-MM
+
       const params = new URLSearchParams({
-        month: monthString,
-        ...(carId !== 'all' && { carId })
+        month: displayMonth,
+        carIds: selectedCarIds.join(',')
       });
+
+      // Get the current session to send the access token
+      const { data: { session } } = await supabase.auth.getSession();
       
-      const response = await fetch(`/api/host/calendar?${params}`);
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if we have a session
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch(`/api/host/calendar?${params}`, { headers });
+      
       if (!response.ok) {
         throw new Error('Failed to fetch calendar data');
       }
-      
-      const data: CalendarData = await response.json();
-      setCalendarData(data);
-      */
+
+      const result = await response.json();
+      setData(result.calendarData);
+      setMetrics(result.metrics);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
     }
-  }, [carId, month]);
+  }, [displayMonth, selectedCarIds]);
 
-  useEffect(() => {
-    fetchCalendarData();
-  }, [fetchCalendarData]);
-
-  const toggleDateSelection = useCallback((date: Date) => {
-    if (!bulkMode) return;
-    
-    setSelectedDates(prev => {
-      const isSelected = prev.some(d => d.getTime() === date.getTime());
-      if (isSelected) {
-        return prev.filter(d => d.getTime() !== date.getTime());
-      } else {
-        return [...prev, date];
-      }
-    });
-  }, [bulkMode]);
-
-  const clearSelection = useCallback(() => {
-    setSelectedDates([]);
-  }, []);
-
-  const updateAvailability = useCallback(async (dates: string[], status: 'available' | 'blocked', targetCarId: string) => {
+  const updateAvailability = useCallback(async (
+    dates: string[],
+    status: 'available' | 'blocked',
+    carIds: string[]
+  ) => {
     try {
       const response = await fetch('/api/host/calendar/availability', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carId: targetCarId, dates, status })
+        body: JSON.stringify({
+          carIds,
+          dates,
+          status
+        })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to update availability');
       }
-      
-      await fetchCalendarData();
+
+      // Optimistically update local state
+      if (data) {
+        const newData = { ...data };
+        carIds.forEach(carId => {
+          if (!newData.availability[carId]) {
+            newData.availability[carId] = {};
+          }
+          dates.forEach(date => {
+            newData.availability[carId][date] = status;
+          });
+        });
+        setData(newData);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update availability');
+      throw err;
     }
-  }, [fetchCalendarData]);
+  }, [data]);
 
-  const updatePricing = useCallback(async (date: string, price: number, targetCarId: string, isWeekendOverride = false) => {
+  const updatePricing = useCallback(async (
+    date: string,
+    price: number,
+    carIds: string[],
+    isWeekendOverride = false
+  ) => {
     try {
       const response = await fetch('/api/host/calendar/pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carId: targetCarId, date, priceOverride: price, isWeekendOverride })
+        body: JSON.stringify({
+          carIds,
+          date,
+          priceOverride: price,
+          isWeekendOverride
+        })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to update pricing');
       }
-      
-      await fetchCalendarData();
+
+      // Optimistically update local state
+      if (data) {
+        const newData = { ...data };
+        carIds.forEach(carId => {
+          if (!newData.pricingOverrides[carId]) {
+            newData.pricingOverrides[carId] = {};
+          }
+          newData.pricingOverrides[carId][date] = price;
+        });
+        setData(newData);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update pricing');
+      throw err;
     }
-  }, [fetchCalendarData]);
+  }, [data]);
 
-  const bulkUpdatePricing = useCallback(async (dates: string[], price: number, targetCarId: string) => {
+  const bulkUpdate = useCallback(async (operation: BulkOperation) => {
     try {
-      const response = await fetch('/api/host/calendar/pricing/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carId: targetCarId, dates, priceOverride: price })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to bulk update pricing');
+      if (operation.type === 'availability') {
+        await updateAvailability(
+          operation.dates,
+          operation.value as 'available' | 'blocked',
+          operation.carIds
+        );
+      } else if (operation.type === 'pricing') {
+        const response = await fetch('/api/host/calendar/pricing/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            carIds: operation.carIds,
+            dates: operation.dates,
+            priceOverride: operation.value,
+            isWeekendOverride: operation.isWeekendOverride || false
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to bulk update pricing');
+        }
+
+        // Optimistically update local state
+        if (data) {
+          const newData = { ...data };
+          operation.carIds.forEach(carId => {
+            if (!newData.pricingOverrides[carId]) {
+              newData.pricingOverrides[carId] = {};
+            }
+            operation.dates.forEach(date => {
+              newData.pricingOverrides[carId][date] = operation.value as number;
+            });
+          });
+          setData(newData);
+        }
       }
-      
-      await fetchCalendarData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to bulk update pricing');
+      setError(err instanceof Error ? err.message : 'Failed to perform bulk update');
+      throw err;
     }
-  }, [fetchCalendarData]);
+  }, [data, updateAvailability]);
 
-  const getDateCellData = useCallback((date: Date, targetCarId: string): DateCellData => {
-    if (!calendarData) {
-      return {
-        date,
-        status: 'available',
-        price: 85, // default
-        hasOverride: false,
-        isWeekend: isWeekendDay(date),
-        booking: undefined
-      };
-    }
+  const refreshData = useCallback(async () => {
+    await fetchData();
+  }, [fetchData]);
 
-    const dateString = formatDateToString(date);
-    
-    // Find availability
-    const availability = calendarData.availability.find(
-      a => a.date === dateString && (targetCarId === 'all' || a.car_id === targetCarId)
-    );
-    
-    // Find pricing override
-    const pricingOverride = calendarData.pricingOverrides.find(
-      p => p.date === dateString && (targetCarId === 'all' || p.car_id === targetCarId)
-    );
-    
-    // Find booking
-    const booking = calendarData.bookings.find(
-      b => b.car_id === targetCarId && 
-      new Date(b.start_date) <= date && 
-      new Date(b.end_date) >= date
-    );
-    
-    const isWeekend = isWeekendDay(date);
-    let price = calendarData.basePrice;
-    
-    if (pricingOverride) {
-      price = pricingOverride.price_override;
-    } else if (isWeekend) {
-      price = calculateWeekendMarkup(calendarData.basePrice);
-    }
-    
-    return {
-      date,
-      status: availability?.status || (booking ? 'booked' : 'available'),
-      price,
-      hasOverride: !!pricingOverride,
-      isWeekend,
-      booking
-    };
-  }, [calendarData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return {
-    calendarData,
+    data,
     loading,
     error,
-    selectedDates,
-    bulkMode,
-    refreshData: fetchCalendarData,
-    toggleDateSelection,
-    setBulkMode,
-    clearSelection,
+    metrics,
     updateAvailability,
     updatePricing,
-    bulkUpdatePricing,
-    getDateCellData
+    bulkUpdate,
+    refreshData
   };
-}; 
+} 

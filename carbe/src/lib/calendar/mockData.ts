@@ -1,4 +1,4 @@
-import { CalendarData, CalendarBooking } from '@/types/calendar';
+import { CalendarData, CalendarBooking, BookingRequest } from '@/types/calendar';
 import { format } from 'date-fns';
 
 export const getMockCalendarData = (month: Date): CalendarData => {
@@ -84,10 +84,85 @@ export const getMockCalendarData = (month: Date): CalendarData => {
     }
   ];
 
+  // Transform availability array to object structure
+  const availabilityByCarAndDate: { [carId: string]: { [date: string]: 'available' | 'blocked' | 'pending' | 'booked' } } = {};
+  
+  // Initialize with default 'available' status for car '1'
+  availabilityByCarAndDate['1'] = {};
+  
+  // Add blocked dates
+  availability.forEach(record => {
+    if (!availabilityByCarAndDate[record.car_id]) {
+      availabilityByCarAndDate[record.car_id] = {};
+    }
+    availabilityByCarAndDate[record.car_id][record.date] = record.status;
+  });
+
+  // Add booked dates from bookings
+  mockBookings.forEach(booking => {
+    if (booking.status === 'confirmed') {
+      const startDate = new Date(booking.start_date);
+      const endDate = new Date(booking.end_date);
+      
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = format(d, 'yyyy-MM-dd');
+        if (!availabilityByCarAndDate[booking.car_id]) {
+          availabilityByCarAndDate[booking.car_id] = {};
+        }
+        availabilityByCarAndDate[booking.car_id][dateStr] = 'booked';
+      }
+    } else if (booking.status === 'pending') {
+      const startDate = new Date(booking.start_date);
+      const endDate = new Date(booking.end_date);
+      
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = format(d, 'yyyy-MM-dd');
+        if (!availabilityByCarAndDate[booking.car_id]) {
+          availabilityByCarAndDate[booking.car_id] = {};
+        }
+        availabilityByCarAndDate[booking.car_id][dateStr] = 'pending';
+      }
+    }
+  });
+
+  // Transform pricing overrides array to object structure
+  const pricingOverridesByCarAndDate: { [carId: string]: { [date: string]: number } } = {};
+  
+  pricingOverrides.forEach(override => {
+    if (!pricingOverridesByCarAndDate[override.car_id]) {
+      pricingOverridesByCarAndDate[override.car_id] = {};
+    }
+    pricingOverridesByCarAndDate[override.car_id][override.date] = override.price_override;
+  });
+
+  // Group pending requests by date
+  const pendingRequestsByDate: { [date: string]: BookingRequest[] } = {};
+  mockBookings
+    .filter(booking => booking.status === 'pending')
+    .forEach(booking => {
+      const startDate = booking.start_date;
+      if (!pendingRequestsByDate[startDate]) {
+        pendingRequestsByDate[startDate] = [];
+      }
+      pendingRequestsByDate[startDate].push({
+        id: booking.id,
+        car_id: booking.car_id,
+        start_date: booking.start_date,
+        end_date: booking.end_date,
+        guest_name: booking.guest_name,
+        guest_email: booking.guest_email,
+        daily_rate: booking.daily_rate,
+        total_amount: booking.total_amount,
+        nights: Math.ceil((new Date(booking.end_date).getTime() - new Date(booking.start_date).getTime()) / (1000 * 60 * 60 * 24)),
+        status: 'pending' as const
+      });
+    });
+
   return {
-    availability,
-    pricingOverrides,
-    bookings: mockBookings,
-    basePrice: 85
+    availability: availabilityByCarAndDate,
+    pricingOverrides: pricingOverridesByCarAndDate,
+    basePriceByCar: { '1': 85, '2': 95 },
+    pendingRequestsByDate,
+    bookings: mockBookings
   };
 }; 

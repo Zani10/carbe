@@ -6,58 +6,77 @@ export async function POST(request: NextRequest) {
     const supabase = createApiRouteSupabaseClient(request);
     
     // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { carId, dates, status } = body;
+    const { carIds, dates, status } = await request.json();
 
-    if (!carId || !dates || !Array.isArray(dates) || !status) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: carId, dates, status' 
-      }, { status: 400 });
-    }
-
-    if (!['available', 'blocked'].includes(status)) {
-      return NextResponse.json({ 
-        error: 'Status must be either "available" or "blocked"' 
-      }, { status: 400 });
+    if (!carIds || !dates || !status) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Verify car ownership
-    const { data: car, error: carError } = await supabase
+    const { data: userCars, error: carsError } = await supabase
       .from('cars')
       .select('id')
-      .eq('id', carId)
       .eq('owner_id', user.id)
-      .single();
+      .in('id', carIds);
 
-    if (carError || !car) {
-      return NextResponse.json({ error: 'Car not found or access denied' }, { status: 404 });
+    if (carsError || !userCars?.length) {
+      return NextResponse.json({ error: 'Invalid car selection' }, { status: 400 });
     }
 
-    // For now, we'll store this as a simple JSON in user preferences
-    // In production, you'd create proper database tables
-    
-    // This is a mock implementation - you would typically:
-    // 1. Create a host_calendar_availability table
-    // 2. Insert/update records for each date
-    // 3. Handle conflicts with existing bookings
-    
-    // Mock response for successful update
-    const result = {
-      updated_dates: dates,
-      car_id: carId,
-      status: status,
-      message: `Successfully ${status === 'blocked' ? 'blocked' : 'unblocked'} ${dates.length} date(s)`
-    };
+    const ownedCarIds = userCars.map(car => car.id);
 
-    return NextResponse.json(result);
+    // Process each car and date combination
+    const operations = [];
+    for (const carId of ownedCarIds) {
+      for (const date of dates) {
+        if (status === 'available') {
+          // Delete availability record to make it available
+          operations.push(
+            supabase
+              .from('host_calendar_availability')
+              .delete()
+              .eq('car_id', carId)
+              .eq('date', date)
+          );
+        } else if (status === 'blocked') {
+          // Upsert availability record
+          operations.push(
+            supabase
+              .from('host_calendar_availability')
+              .upsert({
+                car_id: carId,
+                date: date,
+                status: 'blocked'
+              })
+          );
+        }
+      }
+    }
+
+    // Execute all operations
+    const results = await Promise.all(operations);
+    
+    // Check for errors
+    for (const result of results) {
+      if (result.error) {
+        console.error('Availability update error:', result.error);
+        return NextResponse.json({ error: 'Failed to update availability' }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('Availability update error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Availability API error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 } 
