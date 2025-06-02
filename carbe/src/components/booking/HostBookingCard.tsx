@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { 
   Calendar, 
   Car, 
   Clock, 
-  MessageSquare,
   CheckCircle,
   User,
   X,
@@ -28,7 +26,6 @@ interface HostBookingCardProps {
 }
 
 export default function HostBookingCard({ booking, onStatusChange, compact = false }: HostBookingCardProps) {
-  const router = useRouter();
   const { approveBooking, isApproving } = useBooking();
   const [showDetails, setShowDetails] = useState(false);
   const [processingAction, setProcessingAction] = useState<'approve' | 'reject' | null>(null);

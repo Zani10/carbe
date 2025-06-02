@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { MapPin, Navigation, Copy, ExternalLink, Loader2 } from 'lucide-react';
 
@@ -67,7 +67,6 @@ export default function PickupLocationMap({
       <div className="relative h-48 rounded-xl overflow-hidden border border-gray-700/50">
         <DynamicMap 
           center={coordinates}
-          address={address}
         />
       </div>
 
