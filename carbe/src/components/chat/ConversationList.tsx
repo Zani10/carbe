@@ -38,85 +38,82 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
     <div
       onClick={onClick}
       className={clsx(
-        'p-4 rounded-lg cursor-pointer transition-colors border',
+        'relative rounded-xl cursor-pointer transition-all duration-200 hover:bg-[#2A2A2A]/80',
         hasUnread 
-          ? 'bg-[#2A2A2A] border-[#FF4646]/50' 
-          : 'bg-[#2A2A2A] border-gray-700/50 hover:border-gray-600'
+          ? 'bg-[#2A2A2A] border-l-4 border-[#FF4646]' 
+          : 'bg-[#2A2A2A]/50 hover:bg-[#2A2A2A]'
       )}
     >
-      <div className="flex items-center space-x-3">
-        {/* Avatar */}
-        <div className="flex-shrink-0 relative">
-          {otherUser?.avatar_url ? (
-            <img
-              src={otherUser.avatar_url}
-              alt={otherUser.full_name || 'User'}
-              className="h-12 w-12 rounded-full object-cover"
-            />
-          ) : (
-            <div className="h-12 w-12 bg-gray-700 rounded-full flex items-center justify-center">
-              <User className="h-6 w-6 text-gray-300" />
-            </div>
-          )}
-          
-          {/* Unread indicator */}
-          {hasUnread && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FF4646] rounded-full"></div>
-          )}
-        </div>
+      <div className="p-4">
+        <div className="flex items-center space-x-3">
+          {/* Avatar */}
+          <div className="flex-shrink-0 relative">
+            {otherUser?.avatar_url ? (
+              <img
+                src={otherUser.avatar_url}
+                alt={otherUser.full_name || 'User'}
+                className="h-12 w-12 rounded-full object-cover"
+              />
+            ) : (
+              <div className="h-12 w-12 bg-[#404040] rounded-full flex items-center justify-center">
+                <User className="h-6 w-6 text-gray-400" />
+              </div>
+            )}
+            
+            {/* Unread indicator */}
+            {hasUnread && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FF4646] rounded-full"></div>
+            )}
+          </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-2">
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
               <h3 className={clsx(
-                'font-medium truncate',
+                'font-medium text-base truncate',
                 hasUnread ? 'text-white' : 'text-gray-200'
               )}>
                 {otherUser?.full_name || 'Unknown User'}
               </h3>
-              <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">
-                {isHost ? 'Renter' : 'Host'}
-              </span>
+              
+              <div className="flex items-center space-x-2">
+                {conversation.last_message_at && (
+                  <span className="text-xs text-gray-500">
+                    {formatTimestamp(conversation.last_message_at)}
+                  </span>
+                )}
+                {hasUnread && (
+                  <div className="w-5 h-5 bg-[#FF4646] text-white text-xs font-medium rounded-full flex items-center justify-center">
+                    {conversation.unread_count}
+                  </div>
+                )}
+              </div>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              {conversation.last_message_at && (
-                <span className="text-xs text-gray-400">
-                  {formatTimestamp(conversation.last_message_at)}
+
+            {/* Car Info */}
+            {conversation.car && (
+              <div className="flex items-center text-xs text-gray-400 mb-1">
+                <Car className="h-3 w-3 mr-1.5" />
+                <span className="truncate">
+                  {conversation.car.year} {conversation.car.make} {conversation.car.model}
                 </span>
-              )}
-              {hasUnread && (
-                <div className="w-5 h-5 bg-[#FF4646] text-white text-xs font-bold rounded-full flex items-center justify-center">
-                  {conversation.unread_count}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Last Message */}
+            {conversation.last_message ? (
+              <p className={clsx(
+                'text-sm truncate',
+                hasUnread ? 'text-gray-300' : 'text-gray-500'
+              )}>
+                {conversation.last_message.message_type === 'image' && '📷 Photo'}
+                {conversation.last_message.message_type === 'file' && '📎 File'}
+                {conversation.last_message.message_type === 'text' && conversation.last_message.content}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500 italic">Start the conversation...</p>
+            )}
           </div>
-
-          {/* Car Info */}
-          {conversation.car && (
-            <div className="flex items-center text-xs text-gray-400 mb-1">
-              <Car className="h-3 w-3 mr-1" />
-              <span className="truncate">
-                {conversation.car.year} {conversation.car.make} {conversation.car.model}
-              </span>
-            </div>
-          )}
-
-          {/* Last Message */}
-          {conversation.last_message ? (
-            <p className={clsx(
-              'text-sm truncate',
-              hasUnread ? 'text-gray-100' : 'text-gray-400'
-            )}>
-              {conversation.last_message.message_type === 'image' && '📷 Photo'}
-              {conversation.last_message.message_type === 'file' && '📎 File'}
-              {conversation.last_message.message_type === 'text' && conversation.last_message.content}
-            </p>
-          ) : (
-            <p className="text-sm text-gray-500">No messages yet</p>
-          )}
         </div>
       </div>
     </div>
@@ -124,9 +121,9 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
 };
 
 const ConversationListSkeleton: React.FC = () => (
-  <div className="space-y-3">
-    {Array.from({ length: 3 }).map((_, index) => (
-      <div key={index} className="p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl animate-pulse">
+  <div className="space-y-2">
+    {Array.from({ length: 4 }).map((_, index) => (
+      <div key={index} className="p-4 bg-[#2A2A2A]/50 rounded-xl animate-pulse">
         <div className="flex items-start space-x-3">
           <div className="h-12 w-12 bg-gray-600 rounded-full"></div>
           <div className="flex-1">
@@ -170,15 +167,17 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   if (conversations.length === 0) {
     return (
-      <div className={clsx('text-center py-12', className)}>
-        <MessageSquare className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+      <div className={clsx('text-center py-16', className)}>
+        <div className="w-16 h-16 bg-[#2A2A2A] rounded-full flex items-center justify-center mx-auto mb-4">
+          <MessageSquare className="h-8 w-8 text-gray-400" />
+        </div>
         <h3 className="text-lg font-medium text-white mb-2">No conversations yet</h3>
         <p className="text-gray-400 mb-6">
           Start a conversation by asking about a car you&apos;re interested in
         </p>
         <button
           onClick={() => router.push('/explore')}
-          className="px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
+          className="px-6 py-3 bg-[#FF4646] text-white rounded-lg hover:bg-[#FF4646]/90 transition-colors font-medium"
         >
           Explore Cars
         </button>
@@ -187,7 +186,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   }
 
   return (
-    <div className={clsx('space-y-3', className)}>
+    <div className={clsx('space-y-2', className)}>
       {conversations.map((conversation) => (
         <ConversationItem
           key={conversation.id}
