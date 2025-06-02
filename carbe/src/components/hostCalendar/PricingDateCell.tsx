@@ -33,7 +33,7 @@ export default function PricingDateCell({
       relative w-12 h-16 flex flex-col items-center justify-center text-xs
       cursor-pointer transition-all duration-200 rounded-lg border
       ${!isCurrentMonth ? 'opacity-30' : ''}
-      ${isSelected ? 'ring-2 ring-[#FF2800] ring-offset-2 ring-offset-[#121212]' : ''}
+      ${isSelected ? 'ring-2 ring-[#FF4646] ring-offset-2 ring-offset-[#121212]' : ''}
       ${isWeekend ? 'bg-[#1F1F1F]' : 'bg-transparent'}
       ${isToday ? 'ring-1 ring-white' : ''}
       border-gray-700 hover:bg-[#2A2A2A]
@@ -87,12 +87,12 @@ export default function PricingDateCell({
 
       {/* Today Indicator */}
       {isToday && (
-        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#FF2800] rounded-full" />
+        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#FF4646] rounded-full" />
       )}
 
       {/* Selection Overlay */}
       {isSelected && (
-        <div className="absolute inset-0 bg-[#FF2800] opacity-30 rounded-lg" />
+        <div className="absolute inset-0 bg-[#FF4646] opacity-30 rounded-lg" />
       )}
     </div>
   );

@@ -1,13 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Bell,
-  ChevronDown,
-  Check
-} from 'lucide-react';
-import { format } from 'date-fns';
+import React, { useState } from 'react';
+import { Car, Settings } from 'lucide-react';
 import { Vehicle, CalendarMetrics } from '@/types/calendar';
+import { format, parse } from 'date-fns';
 
 interface CalendarHeaderProps {
   displayMonth: string;
@@ -15,8 +9,10 @@ interface CalendarHeaderProps {
   selectedCarIds: string[];
   metrics?: CalendarMetrics;
   selectedDatesCount: number;
+  activeTab: 'availability' | 'pricing';
   onMonthChange: (direction: 'prev' | 'next') => void;
   onVehicleChange: (vehicleIds: string[]) => void;
+  onTabChange: (tab: 'availability' | 'pricing') => void;
   onClearSelection: () => void;
 }
 
@@ -26,199 +22,293 @@ export default function CalendarHeader({
   selectedCarIds,
   metrics,
   selectedDatesCount,
+  activeTab,
   onMonthChange,
   onVehicleChange,
+  onTabChange,
   onClearSelection
 }: CalendarHeaderProps) {
-  const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showVehicleModal, setShowVehicleModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  const monthDate = new Date(displayMonth + '-01');
-  const isAllVehicles = selectedCarIds.length === vehicles.length;
+  const monthDate = parse(displayMonth, 'yyyy-MM', new Date());
+  const monthName = format(monthDate, 'MMMM yyyy');
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowVehicleDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const totalVehicleCount = vehicles.length;
 
   const handleVehicleToggle = (vehicleId: string) => {
-    if (isAllVehicles && vehicleId === 'all') {
-      return; // Already all selected
-    }
+    const newSelection = selectedCarIds.includes(vehicleId)
+      ? selectedCarIds.filter(id => id !== vehicleId)
+      : [...selectedCarIds, vehicleId];
     
-    if (vehicleId === 'all') {
-      onVehicleChange(vehicles.map(v => v.id));
+    onVehicleChange(newSelection);
+  };
+
+  const handleSelectAllVehicles = () => {
+    if (selectedCarIds.length === vehicles.length) {
+      // If all selected, deselect all except first one
+      onVehicleChange([vehicles[0]?.id].filter(Boolean));
     } else {
-      const newSelection = selectedCarIds.includes(vehicleId)
-        ? selectedCarIds.filter(id => id !== vehicleId)
-        : [...selectedCarIds, vehicleId];
-      
-      if (newSelection.length === 0) {
-        // Don't allow deselecting all
-        return;
-      }
-      
-      onVehicleChange(newSelection);
+      // Select all
+      onVehicleChange(vehicles.map(v => v.id));
     }
   };
 
-  const getVehicleLabel = () => {
-    if (isAllVehicles) {
-      return `All Vehicles (${vehicles.length})`;
+
+
+  // Generate month options for settings modal
+  const monthOptions = [];
+  for (let i = -6; i <= 6; i++) {
+    const optionDate = new Date(monthDate);
+    optionDate.setMonth(monthDate.getMonth() + i);
+    monthOptions.push({
+      value: format(optionDate, 'yyyy-MM'),
+      label: format(optionDate, 'MMMM yyyy')
+    });
+  }
+
+  const handleMonthSelect = (monthValue: string) => {
+    const currentMonth = parse(displayMonth, 'yyyy-MM', new Date());
+    const targetMonth = parse(monthValue, 'yyyy-MM', new Date());
+    
+    if (targetMonth > currentMonth) {
+      onMonthChange('next');
+    } else if (targetMonth < currentMonth) {
+      onMonthChange('prev');
     }
-    if (selectedCarIds.length === 1) {
-      const vehicle = vehicles.find(v => v.id === selectedCarIds[0]);
-      return vehicle ? `${vehicle.make} ${vehicle.model}` : 'Unknown Vehicle';
-    }
-    return `${selectedCarIds.length} Vehicles Selected`;
   };
 
   return (
-    <div className="mb-8">
-      {/* Pending Requests Banner */}
-      {metrics && metrics.pendingRequestsCount > 0 && (
-        <div className="mb-6 bg-gradient-to-r from-[#FF8C00]/10 to-[#FFB347]/10 border border-[#FF8C00]/30 rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Bell className="h-5 w-5 text-[#FF8C00] mr-3" />
-              <div>
-                <p className="text-white font-semibold text-sm">
-                  {metrics.pendingRequestsCount} new booking request{metrics.pendingRequestsCount > 1 ? 's' : ''}
-                </p>
-                <p className="text-[#FF8C00] text-xs">Respond quickly to maintain your rating</p>
-              </div>
-            </div>
-            <button className="px-4 py-2 bg-[#FF8C00] text-white rounded-lg text-sm font-medium hover:bg-[#FF8C00]/90 transition-colors">
-              View Requests
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-white text-2xl font-semibold">Calendar</h1>
-        
-        <div className="flex items-center space-x-6">
-          {/* Revenue Metric */}
-          <div className="text-right">
-            <div className="text-white text-lg font-medium">
-              €{metrics?.totalRevenue?.toLocaleString() || '0'}
-            </div>
-            <div className="text-gray-400 text-xs">This month</div>
-          </div>
-          
-          {/* Notification Bell */}
-          <div className="relative">
-            <Bell className="h-6 w-6 text-white" />
-            {metrics && metrics.pendingRequestsCount > 0 && (
-              <div className="absolute -top-2 -right-2 bg-[#FF8C00] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                {metrics.pendingRequestsCount}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Month Navigation */}
-      <div className="flex items-center justify-center mb-6">
-        <button
-          onClick={() => onMonthChange('prev')}
-          className="p-2 text-white hover:text-gray-300 transition-colors"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        
-        <div className="mx-8">
-          <h2 className="text-white text-lg font-medium text-center">
-            {format(monthDate, 'MMMM yyyy')}
-          </h2>
-        </div>
-        
-        <button
-          onClick={() => onMonthChange('next')}
-          className="p-2 text-white hover:text-gray-300 transition-colors"
-        >
-          <ChevronRight className="h-6 w-6" />
-        </button>
-      </div>
-
-      {/* Vehicle Selector & Bulk Actions */}
-      <div className="flex items-center justify-between">
-        {/* Vehicle Dropdown */}
-        <div className="relative" ref={dropdownRef}>
+    <>
+      {/* Ultra-Clean Header */}
+      <div className="flex items-center justify-between py-4 mb-6">
+        {/* Left: Tabs */}
+        <div className="flex items-center space-x-1">
           <button
-            onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
-            className="flex items-center space-x-2 bg-[#181818] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#222222] transition-colors"
+            onClick={() => onTabChange('availability')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              activeTab === 'availability'
+                ? 'bg-gray-800/50 text-white'
+                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
+            }`}
           >
-            <span>{getVehicleLabel()}</span>
-            <ChevronDown className={`h-4 w-4 transition-transform ${showVehicleDropdown ? 'rotate-180' : ''}`} />
+            Availability
           </button>
-
-          {showVehicleDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-64 bg-[#181818] border border-gray-700 rounded-lg shadow-xl z-50">
-              <div className="p-2">
-                {/* All Vehicles Option */}
-                <button
-                  onClick={() => handleVehicleToggle('all')}
-                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/50 transition-colors"
-                >
-                  <span className="text-white font-medium">All Vehicles ({vehicles.length})</span>
-                  {isAllVehicles && <Check className="h-4 w-4 text-[#FF2800]" />}
-                </button>
-                
-                <div className="border-t border-gray-700 my-2" />
-                
-                {/* Individual Vehicles */}
-                {vehicles.map((vehicle) => (
-                  <button
-                    key={vehicle.id}
-                    onClick={() => handleVehicleToggle(vehicle.id)}
-                    className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/50 transition-colors"
-                  >
-                    <div className="text-left">
-                      <div className="text-white font-medium">{vehicle.make} {vehicle.model}</div>
-                      <div className="text-gray-400 text-sm">{vehicle.type} • €{vehicle.base_price}/night</div>
-                    </div>
-                    {selectedCarIds.includes(vehicle.id) && (
-                      <Check className="h-4 w-4 text-[#FF2800]" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <button
+            onClick={() => onTabChange('pricing')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              activeTab === 'pricing'
+                ? 'bg-gray-800/50 text-white'
+                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
+            }`}
+          >
+            Pricing
+          </button>
         </div>
 
-        {/* Bulk Actions */}
-        <div className="flex items-center space-x-3">
+        {/* Center: Empty for clean look */}
+        <div className="w-8"></div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center space-x-2">
+          {/* Clear Selection */}
           {selectedDatesCount > 0 && (
             <button
               onClick={onClearSelection}
-              className="text-gray-400 hover:text-white text-sm transition-colors"
+              className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
             >
               Clear ({selectedDatesCount})
             </button>
           )}
-          
+
+          {/* Vehicle Selector */}
           <button
-            disabled={selectedDatesCount === 0}
-            className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${
-              selectedDatesCount > 0
-                ? 'bg-[#FF2800] hover:bg-[#FF2800]/90'
-                : 'bg-gray-600 cursor-not-allowed opacity-50'
-            }`}
+            onClick={() => setShowVehicleModal(true)}
+            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
           >
-            Bulk Edit
+            <Car className="w-5 h-5" />
+          </button>
+
+          {/* Settings */}
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
+          >
+            <Settings className="w-5 h-5" />
           </button>
         </div>
       </div>
-    </div>
+
+      {/* Vehicle Selection Modal */}
+      {showVehicleModal && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+            onClick={() => setShowVehicleModal(false)}
+          />
+          
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md mx-4">
+            <div className="bg-[#212121] rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
+              {/* Header */}
+              <div className="p-6 border-b border-gray-700/30">
+                <h3 className="text-lg font-semibold text-white">Select Vehicles</h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  Choose which vehicles to show in your calendar
+                </p>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                {/* Select All Option */}
+                <button
+                  onClick={handleSelectAllVehicles}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-800/50 transition-colors rounded-lg border-b border-gray-700/30 mb-4 pb-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-medium">
+                      All Vehicles ({totalVehicleCount})
+                    </span>
+                    <div className={`w-5 h-5 rounded border-2 ${
+                      selectedCarIds.length === vehicles.length
+                        ? 'bg-[#FF4646] border-[#FF4646]'
+                        : 'border-gray-500'
+                    }`}>
+                      {selectedCarIds.length === vehicles.length && (
+                        <svg className="w-3 h-3 text-white ml-0.5 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Individual Vehicles */}
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {vehicles.map(vehicle => (
+                    <button
+                      key={vehicle.id}
+                      onClick={() => handleVehicleToggle(vehicle.id)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-800/50 transition-colors rounded-lg"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-white font-medium">{vehicle.name}</div>
+                          <div className="text-gray-400 text-sm">€{vehicle.base_price}/day</div>
+                        </div>
+                        <div className={`w-5 h-5 rounded border-2 ${
+                          selectedCarIds.includes(vehicle.id)
+                            ? 'bg-[#FF4646] border-[#FF4646]'
+                            : 'border-gray-500'
+                        }`}>
+                          {selectedCarIds.includes(vehicle.id) && (
+                            <svg className="w-3 h-3 text-white ml-0.5 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-700/30">
+                <button
+                  onClick={() => setShowVehicleModal(false)}
+                  className="w-full py-3 bg-[#FF4646] text-white rounded-xl font-semibold hover:bg-[#FF4646]/90 transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+            onClick={() => setShowSettingsModal(false)}
+          />
+          
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm mx-4">
+            <div className="bg-[#212121] rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
+              {/* Header */}
+              <div className="p-6 border-b border-gray-700/30">
+                <h3 className="text-lg font-semibold text-white">Calendar Settings</h3>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-4">
+                {/* Revenue Display */}
+                <div className="p-4 bg-gray-800/30 rounded-xl">
+                  <div className="text-sm text-gray-400 mb-1">This month&apos;s revenue</div>
+                  <div className="text-xl font-bold text-white">
+                    €{metrics?.totalRevenue || 720}
+                  </div>
+                </div>
+
+                {/* Quick Month Jump */}
+                <div>
+                  <label className="block text-white font-medium mb-2 text-sm">
+                    Jump to Month
+                  </label>
+                  <select
+                    value={displayMonth}
+                    onChange={(e) => handleMonthSelect(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-[#FF4646] transition-colors"
+                  >
+                    {monthOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Performance Stats */}
+                {metrics && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Occupancy Rate</span>
+                      <span className="text-white font-medium">
+                        {Math.round((metrics.occupancyRate || 0) * 100)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Average Rate</span>
+                      <span className="text-white font-medium">
+                        €{metrics.averageRate || 85}
+                      </span>
+                    </div>
+                    {metrics.pendingRequestsCount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 text-sm">Pending Requests</span>
+                        <span className="text-[#FF4646] font-medium">
+                          {metrics.pendingRequestsCount}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-700/30">
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="w-full py-3 bg-gray-800/50 text-white rounded-xl font-medium hover:bg-gray-800/70 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 } 

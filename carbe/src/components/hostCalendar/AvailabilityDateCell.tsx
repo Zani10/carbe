@@ -30,46 +30,49 @@ export default function AvailabilityDateCell({
 
   const getCellStyles = () => {
     const baseStyles = `
-      relative w-12 h-12 flex items-center justify-center text-sm font-medium 
-      cursor-pointer transition-all duration-200 rounded-lg
+      relative w-12 h-16 flex flex-col items-center justify-center text-xs
+      cursor-pointer transition-all duration-200 rounded-lg border
       ${!isCurrentMonth ? 'opacity-30' : ''}
-      ${isSelected ? 'ring-2 ring-[#FF2800] ring-offset-2 ring-offset-[#121212]' : ''}
+      ${isSelected ? 'ring-2 ring-[#FF4646] ring-offset-2 ring-offset-[#121212]' : ''}
+      ${isWeekend ? 'bg-[#1F1F1F]' : 'bg-transparent'}
+      ${isToday ? 'ring-1 ring-white' : ''}
+      border-gray-700 hover:bg-[#2A2A2A]
     `;
 
+    return baseStyles;
+  };
+
+  const getStatusColor = () => {
     switch (status) {
       case 'available':
-        return `${baseStyles} 
-          bg-transparent hover:bg-[#2A2A2A] 
-          ${isWeekend ? 'text-white font-semibold' : 'text-white'}
-          ${isToday ? 'ring-1 ring-white' : ''}
-        `;
-      
+        return 'text-gray-300';
       case 'blocked':
-        return `${baseStyles} 
-          bg-[#2A2A2A] text-[#A0A0A0] 
-          ${isToday ? 'ring-1 ring-gray-400' : ''}
-        `;
-      
+        return 'text-[#FF4646]';
       case 'pending':
-        return `${baseStyles} 
-          bg-[#007380] text-white hover:bg-[#008A9A]
-          ${isToday ? 'ring-1 ring-white' : ''}
-        `;
-      
+        return 'text-[#007380]';
       case 'booked':
-        return `${baseStyles} 
-          bg-[#00A680] text-white cursor-not-allowed
-          ${isToday ? 'ring-1 ring-white' : ''}
-        `;
-      
+        return 'text-[#00A680]';
       case 'mixed':
-        return `${baseStyles} 
-          bg-gradient-to-br from-[#2A2A2A] to-[#007380] text-white
-          ${isToday ? 'ring-1 ring-white' : ''}
-        `;
-      
+        return 'text-yellow-400';
       default:
-        return baseStyles;
+        return 'text-gray-300';
+    }
+  };
+
+  const getStatusDisplay = () => {
+    switch (status) {
+      case 'available':
+        return '';
+      case 'blocked':
+        return 'Blocked';
+      case 'pending':
+        return 'Pending';
+      case 'booked':
+        return 'Booked';
+      case 'mixed':
+        return 'Mixed';
+      default:
+        return '';
     }
   };
 
@@ -82,18 +85,18 @@ export default function AvailabilityDateCell({
       title={`${format(date, 'MMM d, yyyy')} - ${status}`}
     >
       {/* Date Number */}
-      <span className="relative z-10">
+      <span className={`text-sm font-medium ${isWeekend ? 'text-white font-semibold' : 'text-white'} mb-1`}>
         {dayNumber}
       </span>
 
-      {/* Today Indicator */}
-      {isToday && (
-        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#FF2800] rounded-full" />
-      )}
+      {/* Status */}
+      <span className={`text-xs ${getStatusColor()}`}>
+        {getStatusDisplay()}
+      </span>
 
       {/* Blocked Icon */}
       {status === 'blocked' && (
-        <Ban className="absolute bottom-1 right-1 w-3 h-3 text-[#CCCCCC]" />
+        <Ban className="absolute -top-1 -right-1 w-3 h-3 text-[#FF4646]" />
       )}
 
       {/* Pending Request Badge */}
@@ -103,9 +106,14 @@ export default function AvailabilityDateCell({
         </div>
       )}
 
+      {/* Today Indicator */}
+      {isToday && (
+        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#FF4646] rounded-full" />
+      )}
+
       {/* Selection Overlay */}
       {isSelected && (
-        <div className="absolute inset-0 bg-[#FF2800] opacity-30 rounded-lg" />
+        <div className="absolute inset-0 bg-[#FF4646] opacity-30 rounded-lg" />
       )}
     </div>
   );

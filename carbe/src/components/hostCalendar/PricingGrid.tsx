@@ -142,13 +142,6 @@ export default function PricingGrid({
 
   return (
     <div className="space-y-6" onMouseUp={onDragEnd} onMouseLeave={onDragEnd}>
-      {/* Pricing Overview */}
-      <PricingOverview
-        basePrice={selectedCarIds.length === 1 ? basePrices[0] : averageBasePrice}
-        weekendPrice={weekendPrice}
-        isMultipleCars={selectedCarIds.length > 1}
-      />
-
       {/* Weekday Headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {weekDays.map((day, index) => (
@@ -156,7 +149,7 @@ export default function PricingGrid({
             key={day}
             className={`h-10 flex items-center justify-center text-xs font-semibold ${
               index >= 5 // Saturday and Sunday
-                ? 'text-[#FF2800]' 
+                ? 'text-[#FF4646]' 
                 : 'text-gray-400'
             }`}
           >
@@ -187,17 +180,7 @@ export default function PricingGrid({
         })}
       </div>
 
-      {/* Bulk Edit Button */}
-      {selectedDates.length > 0 && (
-        <div className="flex justify-center">
-          <button
-            onClick={handleBulkEdit}
-            className="px-6 py-3 bg-[#FF2800] text-white rounded-lg font-medium hover:bg-[#FF2800]/90 transition-colors"
-          >
-            Set Price for {selectedDates.length} Date{selectedDates.length > 1 ? 's' : ''}
-          </button>
-        </div>
-      )}
+
 
       {/* Price Override Popover */}
       {showPricePopover && (

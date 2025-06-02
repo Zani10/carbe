@@ -137,7 +137,7 @@ export default function AvailabilityGrid({
             key={day}
             className={`h-10 flex items-center justify-center text-xs font-semibold ${
               index >= 5 // Saturday and Sunday
-                ? 'text-[#FF2800]' 
+                ? 'text-[#FF4646]' 
                 : 'text-gray-400'
             }`}
           >
@@ -168,42 +168,9 @@ export default function AvailabilityGrid({
         })}
       </div>
 
-      {/* Legend */}
-      <div className="border-t border-gray-700/30 pt-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-transparent border border-gray-600 rounded mr-2" />
-            <span className="text-gray-400">Available</span>
-          </div>
-          
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-[#2A2A2A] rounded mr-2" />
-            <span className="text-gray-400">Blocked</span>
-          </div>
-          
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-[#007380] rounded mr-2" />
-            <span className="text-gray-400">Pending Request</span>
-          </div>
-          
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-[#00A680] rounded mr-2" />
-            <span className="text-gray-400">Booked</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Bulk Edit Button */}
-      {selectedDates.length > 0 && (
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={handleBulkEdit}
-            className="px-6 py-3 bg-[#FF2800] text-white rounded-lg font-medium hover:bg-[#FF2800]/90 transition-colors"
-          >
-            Edit {selectedDates.length} Date{selectedDates.length > 1 ? 's' : ''}
-          </button>
-        </div>
-      )}
+
+
 
       {/* Modals */}
       {showBlockModal && (
