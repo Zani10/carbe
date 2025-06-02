@@ -32,7 +32,6 @@ export default function CalendarHeader({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const monthDate = parse(displayMonth, 'yyyy-MM', new Date());
-  const monthName = format(monthDate, 'MMMM yyyy');
 
   const totalVehicleCount = vehicles.length;
 
@@ -143,69 +142,65 @@ export default function CalendarHeader({
       {showVehicleModal && (
         <>
           <div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
             onClick={() => setShowVehicleModal(false)}
           />
           
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md mx-4">
-            <div className="bg-[#212121] rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
+          <div className="fixed bottom-0 left-0 right-0 z-50 mx-4 mb-4">
+            <div className="bg-[#1A1A1A] rounded-2xl shadow-2xl border border-gray-700/30 overflow-hidden max-w-sm mx-auto">
               {/* Header */}
-              <div className="p-6 border-b border-gray-700/30">
-                <h3 className="text-lg font-semibold text-white">Select Vehicles</h3>
-                <p className="text-sm text-gray-400 mt-1">
-                  Choose which vehicles to show in your calendar
+              <div className="p-4 text-center border-b border-gray-700/20">
+                <h3 className="text-lg font-medium text-white">Select Vehicles</h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  {selectedCarIds.length} of {totalVehicleCount} selected
                 </p>
               </div>
 
               {/* Content */}
-              <div className="p-6">
+              <div className="p-4">
                 {/* Select All Option */}
                 <button
                   onClick={handleSelectAllVehicles}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-800/50 transition-colors rounded-lg border-b border-gray-700/30 mb-4 pb-4"
+                  className="w-full flex items-center justify-between p-3 hover:bg-gray-800/30 transition-colors rounded-xl mb-3"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-medium">
-                      All Vehicles ({totalVehicleCount})
-                    </span>
-                    <div className={`w-5 h-5 rounded border-2 ${
-                      selectedCarIds.length === vehicles.length
-                        ? 'bg-[#FF4646] border-[#FF4646]'
-                        : 'border-gray-500'
-                    }`}>
-                      {selectedCarIds.length === vehicles.length && (
-                        <svg className="w-3 h-3 text-white ml-0.5 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
+                  <span className="text-white font-medium text-sm">
+                    All Vehicles
+                  </span>
+                  <div className={`w-4 h-4 rounded border ${
+                    selectedCarIds.length === vehicles.length
+                      ? 'bg-[#FF4646] border-[#FF4646]'
+                      : 'border-gray-600'
+                  } flex items-center justify-center`}>
+                    {selectedCarIds.length === vehicles.length && (
+                      <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
                   </div>
                 </button>
 
                 {/* Individual Vehicles */}
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-1 max-h-48 overflow-y-auto">
                   {vehicles.map(vehicle => (
                     <button
                       key={vehicle.id}
                       onClick={() => handleVehicleToggle(vehicle.id)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-800/50 transition-colors rounded-lg"
+                      className="w-full flex items-center justify-between p-3 hover:bg-gray-800/30 transition-colors rounded-xl"
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-white font-medium">{vehicle.name}</div>
-                          <div className="text-gray-400 text-sm">€{vehicle.base_price}/day</div>
-                        </div>
-                        <div className={`w-5 h-5 rounded border-2 ${
-                          selectedCarIds.includes(vehicle.id)
-                            ? 'bg-[#FF4646] border-[#FF4646]'
-                            : 'border-gray-500'
-                        }`}>
-                          {selectedCarIds.includes(vehicle.id) && (
-                            <svg className="w-3 h-3 text-white ml-0.5 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
+                      <div className="flex-1 text-left">
+                        <div className="text-white text-sm font-medium">{vehicle.name}</div>
+                        <div className="text-gray-400 text-xs">€{vehicle.base_price}/day</div>
+                      </div>
+                      <div className={`w-4 h-4 rounded border ${
+                        selectedCarIds.includes(vehicle.id)
+                          ? 'bg-[#FF4646] border-[#FF4646]'
+                          : 'border-gray-600'
+                      } flex items-center justify-center ml-3`}>
+                        {selectedCarIds.includes(vehicle.id) && (
+                          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
                       </div>
                     </button>
                   ))}
@@ -213,10 +208,10 @@ export default function CalendarHeader({
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-gray-700/30">
+              <div className="p-4 border-t border-gray-700/20">
                 <button
                   onClick={() => setShowVehicleModal(false)}
-                  className="w-full py-3 bg-[#FF4646] text-white rounded-xl font-semibold hover:bg-[#FF4646]/90 transition-colors"
+                  className="w-full py-2.5 bg-[#FF4646] text-white rounded-xl text-sm font-medium hover:bg-[#FF4646]/90 transition-colors"
                 >
                   Done
                 </button>

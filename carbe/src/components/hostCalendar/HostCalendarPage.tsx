@@ -2,11 +2,13 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import CalendarHeader from './CalendarHeader';
-
 import AvailabilityGrid from './AvailabilityGrid';
 import PricingGrid from './PricingGrid';
-import FloatingActionModal from './FloatingActionModal';
+import MinimalSelectionBar from './MinimalSelectionBar';
+import InlinePriceEditor from './InlinePriceEditor';
 import SwipeContainer from './SwipeContainer';
+import AnimatedMonthDisplay from './AnimatedMonthDisplay';
+import AnimatedCalendarGrid from './AnimatedCalendarGrid';
 import { useCalendarData } from '@/hooks/useCalendarData';
 import { CalendarFilters, BulkOperation, Vehicle } from '@/types/calendar';
 import { format } from 'date-fns';
@@ -22,9 +24,7 @@ export default function HostCalendarPage() {
   });
 
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
-  const [showFloatingModal, setShowFloatingModal] = useState(false);
   const [hideBottomNav, setHideBottomNav] = useState(false);
 
   // Fetch user's vehicles
@@ -128,41 +128,33 @@ export default function HostCalendarPage() {
   }, []);
 
   const handleDateClick = useCallback((date: string) => {
-    if (!isDragSelecting) {
-      setSelectedDates(prev => {
-        const newSelection = prev.includes(date) 
-          ? prev.filter(d => d !== date)
-          : [...prev, date];
-        
-        // Show floating modal and hide bottom nav when dates are selected
-        if (newSelection.length > 0 && !showFloatingModal) {
-          setShowFloatingModal(true);
-          setHideBottomNav(true);
-        } else if (newSelection.length === 0) {
-          setShowFloatingModal(false);
-          setHideBottomNav(false);
-        }
-        
-        return newSelection;
-      });
-    }
-  }, [isDragSelecting, showFloatingModal]);
-
-  const handleDragStart = useCallback((date: string) => {
-    setIsDragSelecting(true);
-    setSelectedDates([date]);
+    setSelectedDates(prev => {
+      const newSelection = prev.includes(date) 
+        ? prev.filter(d => d !== date)
+        : [...prev, date];
+      
+      // Hide bottom nav when dates are selected
+      if (newSelection.length > 0) {
+        setHideBottomNav(true);
+      } else {
+        setHideBottomNav(false);
+      }
+      
+      return newSelection;
+    });
   }, []);
 
-  const handleDragEnter = useCallback((date: string) => {
-    if (isDragSelecting) {
-      setSelectedDates(prev => 
-        prev.includes(date) ? prev : [...prev, date]
-      );
-    }
-  }, [isDragSelecting]);
+  // Simplified handlers for mobile (no drag selection)
+  const handleDragStart = useCallback(() => {
+    // Do nothing - no drag selection on mobile
+  }, []);
+
+  const handleDragEnter = useCallback(() => {
+    // Do nothing - no drag selection on mobile  
+  }, []);
 
   const handleDragEnd = useCallback(() => {
-    setIsDragSelecting(false);
+    // Do nothing - no drag selection on mobile
   }, []);
 
   const handleBulkOperation = useCallback(async (operation: BulkOperation) => {
@@ -177,7 +169,6 @@ export default function HostCalendarPage() {
 
   const handleClearSelection = useCallback(() => {
     setSelectedDates([]);
-    setShowFloatingModal(false);
     setHideBottomNav(false);
   }, []);
 
@@ -295,50 +286,68 @@ export default function HostCalendarPage() {
         onSwipeLeft={handleSwipeLeft}
         onSwipeRight={handleSwipeRight}
       >
-        {filters.activeTab === 'availability' ? (
-          <AvailabilityGrid
-            displayMonth={filters.displayMonth}
-            selectedCarIds={filters.selectedCarIds}
-            calendarData={calendarData}
-            selectedDates={selectedDates}
-            isDragSelecting={isDragSelecting}
-            onDateClick={handleDateClick}
-            onDragStart={handleDragStart}
-            onDragEnter={handleDragEnter}
-            onDragEnd={handleDragEnd}
-            onBulkOperation={handleBulkOperation}
-            onUpdateAvailability={updateAvailability}
-          />
-        ) : (
-          <PricingGrid
-            displayMonth={filters.displayMonth}
-            selectedCarIds={filters.selectedCarIds}
-            calendarData={calendarData}
-            selectedDates={selectedDates}
-            isDragSelecting={isDragSelecting}
-            onDateClick={handleDateClick}
-            onDragStart={handleDragStart}
-            onDragEnter={handleDragEnter}
-            onDragEnd={handleDragEnd}
-            onBulkOperation={handleBulkOperation}
-            onUpdatePricing={updatePricing}
-          />
-        )}
+        <AnimatedCalendarGrid
+          displayMonth={filters.displayMonth}
+          isLoading={loading}
+        >
+          {filters.activeTab === 'availability' ? (
+            <AvailabilityGrid
+              displayMonth={filters.displayMonth}
+              selectedCarIds={filters.selectedCarIds}
+              calendarData={calendarData}
+              selectedDates={selectedDates}
+              isDragSelecting={false}
+              onDateClick={handleDateClick}
+              onDragStart={handleDragStart}
+              onDragEnter={handleDragEnter}
+              onDragEnd={handleDragEnd}
+              onBulkOperation={handleBulkOperation}
+              onUpdateAvailability={updateAvailability}
+            />
+          ) : (
+            <PricingGrid
+              displayMonth={filters.displayMonth}
+              selectedCarIds={filters.selectedCarIds}
+              calendarData={calendarData}
+              selectedDates={selectedDates}
+              isDragSelecting={false}
+              onDateClick={handleDateClick}
+              onDragStart={handleDragStart}
+              onDragEnter={handleDragEnter}
+              onDragEnd={handleDragEnd}
+              onBulkOperation={handleBulkOperation}
+              onUpdatePricing={updatePricing}
+            />
+          )}
+        </AnimatedCalendarGrid>
       </SwipeContainer>
 
-      {/* Floating Action Modal */}
-      <FloatingActionModal
-        isOpen={showFloatingModal}
-        selectedDatesCount={selectedDates.length}
-        selectedDates={selectedDates}
-        selectedCarIds={filters.selectedCarIds}
-        onClose={() => {
-          setShowFloatingModal(false);
-          setSelectedDates([]);
-          setHideBottomNav(false);
-        }}
-        onBulkOperation={handleBulkOperation}
-        defaultTab={filters.activeTab}
+      {/* Minimal Selection Interface - Positioned directly under calendar */}
+      <div className="mt-6">
+        {filters.activeTab === 'availability' ? (
+          <MinimalSelectionBar
+            selectedDatesCount={selectedDates.length}
+            selectedDates={selectedDates}
+            selectedCarIds={filters.selectedCarIds}
+            activeTab={filters.activeTab}
+            onBulkOperation={handleBulkOperation}
+            onClear={handleClearSelection}
+          />
+        ) : (
+          <InlinePriceEditor
+            selectedDatesCount={selectedDates.length}
+            selectedDates={selectedDates}
+            selectedCarIds={filters.selectedCarIds}
+            onBulkOperation={handleBulkOperation}
+            onClear={handleClearSelection}
+          />
+        )}
+      </div>
+
+      {/* Animated Month Display */}
+      <AnimatedMonthDisplay 
+        displayMonth={filters.displayMonth}
+        isLoading={loading}
       />
       </div>
     </>

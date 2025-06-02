@@ -108,9 +108,12 @@ export async function GET(request: NextRequest) {
 
     console.log('Calendar API: All cars verified, fetching calendar data');
 
-    // Get month boundaries
+    // Get month boundaries - properly calculate end date
     const startDate = `${month}-01`;
-    const endDate = `${month}-31`; // Simplified for now
+    const year = parseInt(month.split('-')[0]);
+    const monthNum = parseInt(month.split('-')[1]);
+    const daysInMonth = new Date(year, monthNum, 0).getDate();
+    const endDate = `${month}-${String(daysInMonth).padStart(2, '0')}`;
 
     // Fetch availability data
     const { data: availabilityData, error: availabilityError } = await supabase
@@ -207,14 +210,14 @@ export async function GET(request: NextRequest) {
       availability,
       pricingOverrides,
       basePriceByCar,
-      pendingRequestsByDate: {}, // Will be populated based on bookings
+      pendingRequestsByDate: {},
       bookings: bookingsData?.map(booking => ({
         id: booking.id,
         car_id: booking.car_id,
         start_date: booking.start_date,
         end_date: booking.end_date,
         status: booking.status,
-        daily_rate: booking.daily_rate || 0,
+        daily_rate: booking.daily_rate || 85,
         guest_name: booking.snapshot_first_name || 'Unknown',
         guest_email: booking.snapshot_email || '',
         total_amount: booking.total_amount || 0
@@ -222,15 +225,19 @@ export async function GET(request: NextRequest) {
     };
 
     // Calculate basic metrics
-    const totalRevenue = 720; // Mock data for now
+    const totalDays = ownedCarIds.length * 30; // rough estimate
+    const bookedDays = Object.values(availability).reduce((total, carAvailability) => {
+      return total + Object.values(carAvailability).filter(status => status === 'booked').length;
+    }, 0);
+
     const metrics: CalendarMetrics = {
-      totalRevenue,
+      totalRevenue: bookedDays * 85, // simplified
       pendingRequestsCount: bookingsData?.filter(b => b.status === 'pending').length || 0,
-      occupancyRate: 0.65, // Mock data
-      averageRate: 85 // Mock data
+      occupancyRate: totalDays > 0 ? bookedDays / totalDays : 0,
+      averageRate: Object.values(basePriceByCar).reduce((a, b) => a + b, 0) / Object.values(basePriceByCar).length || 85
     };
 
-    console.log('Calendar API: Returning calendar data');
+    console.log('Calendar API: Returning data successfully');
     return NextResponse.json({
       calendarData,
       metrics
@@ -239,10 +246,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Calendar API: Unexpected error:', error);
     return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

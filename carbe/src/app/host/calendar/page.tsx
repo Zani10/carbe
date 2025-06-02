@@ -11,11 +11,24 @@ export default function CalendarPage() {
   const { user, isHostMode } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSelecting, setIsSelecting] = useState(false);
 
   useEffect(() => {
     // Simulate loading check
     const timer = setTimeout(() => setIsLoading(false), 100);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Listen for selection mode changes
+  useEffect(() => {
+    const handleSelectionModeChange = (event: CustomEvent) => {
+      setIsSelecting(event.detail.isSelecting);
+    };
+
+    window.addEventListener('selectionModeChange', handleSelectionModeChange as EventListener);
+    return () => {
+      window.removeEventListener('selectionModeChange', handleSelectionModeChange as EventListener);
+    };
   }, []);
 
   // Check authentication
@@ -47,7 +60,9 @@ export default function CalendarPage() {
             <p className="text-gray-400">Loading calendar...</p>
           </div>
         </div>
+        <div className={`transition-opacity duration-300 ${isSelecting ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <HostBottomNav />
+      </div>
       </>
     );
   }

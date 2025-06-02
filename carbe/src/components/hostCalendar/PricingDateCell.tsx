@@ -7,7 +7,7 @@ interface PricingDateCellProps {
   isCurrentMonth: boolean;
   isWeekend: boolean;
   isSelected: boolean;
-  price: number | 'multiple';
+  price: number | 'multiple' | null;
   hasOverride: boolean;
   onClick: (event: React.MouseEvent) => void;
   onMouseDown: () => void;

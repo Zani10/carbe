@@ -1,21 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiRouteSupabaseClient } from '@/lib/supabase/server';
+import { createApiRouteSupabaseClientFromCookies } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createApiRouteSupabaseClient(request);
+    let supabase;
+    let user = null;
+    let authMethod = 'unknown';
     
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Try cookie-based auth first
+    try {
+      supabase = await createApiRouteSupabaseClientFromCookies();
+      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
+      
+      if (cookieUser && !cookieError) {
+        user = cookieUser;
+        authMethod = 'cookies';
+        console.log('Availability API: Authenticated via cookies');
+      }
+    } catch (cookieAuthError) {
+      console.log('Availability API: Cookie auth failed:', cookieAuthError);
     }
+    
+    // Try authorization header if cookie auth failed
+    if (!user) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        console.log('Availability API: Trying authorization header');
+        
+        supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        
+        const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(token);
+        
+        if (tokenUser && !tokenError) {
+          user = tokenUser;
+          authMethod = 'bearer_token';
+          console.log('Availability API: Authenticated via bearer token');
+        } else {
+          console.log('Availability API: Bearer token auth failed:', tokenError);
+        }
+      }
+    }
+    
+    if (!user) {
+      console.log('Availability API: No authentication method worked');
+      return NextResponse.json({ 
+        error: 'No authenticated user',
+        debug: {
+          cookieCount: request.cookies.getAll().length,
+          hasAuthHeader: !!request.headers.get('authorization'),
+          authMethod
+        }
+      }, { status: 401 });
+    }
+
+    console.log('Availability API: User ID:', user.id, 'Auth method:', authMethod);
 
     const { carIds, dates, status } = await request.json();
 
     if (!carIds || !dates || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Ensure supabase client is available
+    if (!supabase) {
+      return NextResponse.json({ 
+        error: 'Supabase client not initialized',
+        debug: { authMethod }
+      }, { status: 500 });
     }
 
     // Verify car ownership

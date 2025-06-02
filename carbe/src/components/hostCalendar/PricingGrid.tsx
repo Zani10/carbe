@@ -77,10 +77,23 @@ export default function PricingGrid({
     // Determine unified price
     if (carPrices.length === 0) {
       price = 85; // default
-    } else if (carPrices.every(p => p === carPrices[0])) {
+    } else if (carPrices.length === 1) {
+      // Single car - show its price
       price = carPrices[0];
     } else {
-      price = 'multiple';
+      // Multiple cars - show average price instead of "Mixed"
+      const avgPrice = Math.round(carPrices.reduce((a, b) => a + b, 0) / carPrices.length);
+      
+      // Only show "Mixed" if there's a significant price difference (>20%)
+      const minPrice = Math.min(...carPrices);
+      const maxPrice = Math.max(...carPrices);
+      const priceVariance = (maxPrice - minPrice) / minPrice;
+      
+      if (priceVariance > 0.2) {
+        price = 'multiple';
+      } else {
+        price = avgPrice;
+      }
     }
 
     return {
@@ -97,17 +110,8 @@ export default function PricingGrid({
   const handleCellClick = (date: Date, event: React.MouseEvent) => {
     const cellData = getCellData(date);
     
-    if (selectedDates.length === 0) {
-      // Single click - show price override popover
-      const rect = (event.target as HTMLElement).getBoundingClientRect();
-      setShowPricePopover({
-        date: cellData.dateStr,
-        position: { x: rect.left + rect.width / 2, y: rect.top }
-      });
-    } else {
-      // Add to selection for bulk operation
-      onDateClick(cellData.dateStr);
-    }
+    // Mobile-first: always add to selection for bulk operation
+    onDateClick(cellData.dateStr);
   };
 
   const handleCellMouseDown = (date: Date) => {
@@ -143,23 +147,23 @@ export default function PricingGrid({
   return (
     <div className="space-y-6" onMouseUp={onDragEnd} onMouseLeave={onDragEnd}>
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-1 mb-3">
         {weekDays.map((day, index) => (
           <div
             key={day}
-            className={`h-10 flex items-center justify-center text-xs font-semibold ${
+            className={`h-8 flex items-center justify-center text-xs font-medium ${
               index >= 5 // Saturday and Sunday
                 ? 'text-[#FF4646]' 
                 : 'text-gray-400'
             }`}
           >
-            {day.toUpperCase()}
+            {day}
           </div>
         ))}
       </div>
       
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1 mb-6 select-none">
+      <div className="grid grid-cols-7 gap-1 mb-8 select-none">
         {calendarDays.map((date) => {
           const cellData = getCellData(date);
           
@@ -179,8 +183,6 @@ export default function PricingGrid({
           );
         })}
       </div>
-
-
 
       {/* Price Override Popover */}
       {showPricePopover && (

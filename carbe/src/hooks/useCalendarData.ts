@@ -32,7 +32,7 @@ export function useCalendarData(
         carIds: selectedCarIds.join(',')
       });
 
-      // Get the current session to send the access token
+      // Get the current session to send the access token (same as vehicles API)
       const { data: { session } } = await supabase.auth.getSession();
       
       const headers: HeadersInit = {
@@ -66,9 +66,21 @@ export function useCalendarData(
     carIds: string[]
   ) => {
     try {
+      // Get the current session to send the access token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if we have a session
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch('/api/host/calendar/availability', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           carIds,
           dates,
@@ -106,9 +118,21 @@ export function useCalendarData(
     isWeekendOverride = false
   ) => {
     try {
+      // Get the current session to send the access token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if we have a session
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch('/api/host/calendar/pricing', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           carIds,
           date,
@@ -147,9 +171,21 @@ export function useCalendarData(
           operation.carIds
         );
       } else if (operation.type === 'pricing') {
+        // Get the current session to send the access token
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        
+        // Add authorization header if we have a session
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
+
         const response = await fetch('/api/host/calendar/pricing/bulk', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             carIds: operation.carIds,
             dates: operation.dates,

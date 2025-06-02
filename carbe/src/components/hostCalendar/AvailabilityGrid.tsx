@@ -91,20 +91,14 @@ export default function AvailabilityGrid({
     const cellData = getCellData(date);
     
     if (cellData.status === 'pending' && cellData.bookingRequests.length > 0) {
-      // Show booking request sheet
+      // Show booking request sheet for pending bookings
       setSelectedBookingRequest(cellData.bookingRequests[0]);
       return;
     }
 
     if (cellData.status !== 'booked' && cellData.status !== 'pending') {
-      if (selectedDates.length === 0) {
-        // Single click - toggle availability immediately
-        const newStatus = cellData.status === 'available' ? 'blocked' : 'available';
-        onUpdateAvailability([cellData.dateStr], newStatus, selectedCarIds);
-      } else {
-        // Add to selection for bulk operation
-        onDateClick(cellData.dateStr);
-      }
+      // Mobile-first: always add to selection for bulk operation
+      onDateClick(cellData.dateStr);
     }
   };
 
@@ -131,23 +125,23 @@ export default function AvailabilityGrid({
   return (
     <div className="mb-6" onMouseUp={onDragEnd} onMouseLeave={onDragEnd}>
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-1 mb-3">
         {weekDays.map((day, index) => (
           <div
             key={day}
-            className={`h-10 flex items-center justify-center text-xs font-semibold ${
+            className={`h-8 flex items-center justify-center text-xs font-medium ${
               index >= 5 // Saturday and Sunday
                 ? 'text-[#FF4646]' 
                 : 'text-gray-400'
             }`}
           >
-            {day.toUpperCase()}
+            {day}
           </div>
         ))}
       </div>
       
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1 mb-6 select-none">
+      <div className="grid grid-cols-7 gap-1 mb-8 select-none">
         {calendarDays.map((date) => {
           const cellData = getCellData(date);
           
@@ -167,10 +161,6 @@ export default function AvailabilityGrid({
           );
         })}
       </div>
-
-
-
-
 
       {/* Modals */}
       {showBlockModal && (
