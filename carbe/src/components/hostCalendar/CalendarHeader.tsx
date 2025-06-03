@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Car, Settings } from 'lucide-react';
+import { Car, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Vehicle, CalendarMetrics } from '@/types/calendar';
 import { format, parse } from 'date-fns';
+import { motion } from 'framer-motion';
 
 interface CalendarHeaderProps {
   displayMonth: string;
@@ -9,11 +10,8 @@ interface CalendarHeaderProps {
   selectedCarIds: string[];
   metrics?: CalendarMetrics;
   selectedDatesCount: number;
-  activeTab: 'availability' | 'pricing';
   onMonthChange: (direction: 'prev' | 'next') => void;
   onVehicleChange: (vehicleIds: string[]) => void;
-  onTabChange: (tab: 'availability' | 'pricing') => void;
-  onClearSelection: () => void;
 }
 
 export default function CalendarHeader({
@@ -22,11 +20,8 @@ export default function CalendarHeader({
   selectedCarIds,
   metrics,
   selectedDatesCount,
-  activeTab,
   onMonthChange,
-  onVehicleChange,
-  onTabChange,
-  onClearSelection
+  onVehicleChange
 }: CalendarHeaderProps) {
   const [showVehicleModal, setShowVehicleModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -79,51 +74,42 @@ export default function CalendarHeader({
 
   return (
     <>
-      {/* Ultra-Clean Header */}
+      {/* Simplified Header */}
       <div className="flex items-center justify-between py-4 mb-6">
-        {/* Left: Tabs */}
-        <div className="flex items-center space-x-1">
+        {/* Left: Month Navigation */}
+        <div className="flex items-center space-x-4">
           <button
-            onClick={() => onTabChange('availability')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === 'availability'
-                ? 'bg-gray-800/50 text-white'
-                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
-            }`}
+            onClick={() => onMonthChange('prev')}
+            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
           >
-            Availability
+            <ChevronLeft className="w-5 h-5" />
           </button>
+          
+          <h2 className="text-xl font-semibold text-white">
+            {format(parse(displayMonth, 'yyyy-MM', new Date()), 'MMMM yyyy')}
+          </h2>
+          
           <button
-            onClick={() => onTabChange('pricing')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === 'pricing'
-                ? 'bg-gray-800/50 text-white'
-                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
-            }`}
+            onClick={() => onMonthChange('next')}
+            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
           >
-            Pricing
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Center: Empty for clean look */}
-        <div className="w-8"></div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center space-x-2">
-          {/* Clear Selection */}
-          {selectedDatesCount > 0 && (
-            <button
-              onClick={onClearSelection}
-              className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              Clear ({selectedDatesCount})
-            </button>
-          )}
-
+        {/* Right: Actions with Fade Effect */}
+        <motion.div 
+          className="flex items-center space-x-2"
+          animate={{ 
+            opacity: selectedDatesCount > 0 ? 0 : 1 
+          }}
+          transition={{ duration: 0.1 }}
+        >
           {/* Vehicle Selector */}
           <button
             onClick={() => setShowVehicleModal(true)}
             className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
+            disabled={selectedDatesCount > 0}
           >
             <Car className="w-5 h-5" />
           </button>
@@ -132,10 +118,11 @@ export default function CalendarHeader({
           <button
             onClick={() => setShowSettingsModal(true)}
             className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
+            disabled={selectedDatesCount > 0}
           >
             <Settings className="w-5 h-5" />
           </button>
-        </div>
+        </motion.div>
       </div>
 
       {/* Vehicle Selection Modal */}

@@ -25,7 +25,6 @@ interface AvailabilityDateCellProps {
 export default function AvailabilityDateCell({
   date,
   isCurrentMonth,
-  isWeekend,
   isSelected,
   status,
   pendingCount,
@@ -38,9 +37,11 @@ export default function AvailabilityDateCell({
   const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
   const getCellStyles = () => {
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    
     // Handle connected booking spans
     if (status === 'booked' && booking) {
-      let bookingStyles = 'bg-gray-100 text-gray-800 ';
+      let bookingStyles = 'bg-gradient-to-r from-[#059669] to-[#10B981] text-white shadow-sm '; // Satisfying green gradient for booked
       
       if (booking.isStart && booking.isEnd) {
         // Single day booking
@@ -52,73 +53,43 @@ export default function AvailabilityDateCell({
         // End of multi-day booking
         bookingStyles += 'rounded-r-lg';
       } else if (booking.isMiddle) {
-        // Middle of multi-day booking
-        bookingStyles += ''; // No rounding
+        // Middle of multi-day booking - no borders or rounding
+        bookingStyles += '';
       }
       
       return `relative w-12 h-16 flex items-center justify-center text-sm cursor-pointer transition-all duration-200 ${!isCurrentMonth ? 'opacity-30' : ''} ${bookingStyles}`;
     }
 
-    // Regular cell styling (original design)
+    // Regular cell styling (reverted to original)
     const baseStyles = `
       relative w-12 h-16 flex flex-col items-center justify-center text-xs
       cursor-pointer transition-all duration-200 rounded-lg border
       ${!isCurrentMonth ? 'opacity-30' : ''}
-      ${isSelected ? 'ring-2 ring-[#FF4646] ring-offset-2 ring-offset-[#121212]' : ''}
-      ${isWeekend ? 'bg-[#1F1F1F]' : 'bg-transparent'}
-      ${isToday ? 'ring-1 ring-white' : ''}
-      border-gray-700 hover:bg-[#2A2A2A]
+      ${isSelected ? 'bg-[#FF4646]/30 border-2 border-[#FF4646] ring-1 ring-[#FF4646]/50' : ''}
+      ${isWeekend && !isSelected ? 'bg-[#1F1F1F]' : ''}
+      ${!isWeekend && !isSelected ? 'bg-transparent' : ''}
+      ${isToday && !isSelected ? 'border-white border-2' : ''}
+      ${!isToday && !isSelected ? 'border-gray-700' : ''}
+      hover:bg-[#2A2A2A]
     `;
 
     return baseStyles;
   };
 
-  const getStatusColor = () => {
-    switch (status) {
-      case 'available':
-        return 'text-gray-300';
-      case 'blocked':
-        return 'text-[#FF4646]';
-      case 'pending':
-        return 'text-[#007380]';
-      case 'booked':
-        return 'text-[#00A680]';
-      case 'mixed':
-        return 'text-yellow-400';
-      default:
-        return 'text-gray-300';
-    }
-  };
 
-  const getStatusDisplay = () => {
-    switch (status) {
-      case 'available':
-        return '';
-      case 'blocked':
-        return 'Blocked';
-      case 'pending':
-        return 'Pending';
-      case 'booked':
-        return 'Booked';
-      case 'mixed':
-        return 'Mixed';
-      default:
-        return '';
-    }
-  };
 
   // Render booked cell with guest info
   if (status === 'booked' && booking) {
     return (
-      <div className={getCellStyles()}>
+      <div className={getCellStyles()} style={{ marginLeft: booking.isMiddle || booking.isEnd ? '-1px' : '0' }}>
         {/* Guest Avatar (only on start date) */}
         {booking.isStart && (
-          <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold z-10">
+          <div className="absolute left-1.5 top-1/2 transform -translate-y-1/2 w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold z-10">
             {booking.guest_avatar ? (
               <img 
                 src={booking.guest_avatar} 
                 alt={booking.guest_name}
-                className="w-6 h-6 rounded-full object-cover"
+                className="w-5 h-5 rounded-full object-cover"
               />
             ) : (
               booking.guest_name.charAt(0).toUpperCase()
@@ -128,15 +99,13 @@ export default function AvailabilityDateCell({
 
         {/* Booking text (only on start date or single day) */}
         {(booking.isStart || (booking.isStart && booking.isEnd)) && (
-          <span className="text-xs font-medium text-gray-700 ml-8">
+          <span className="text-xs font-medium text-white ml-7">
             Booked
           </span>
         )}
 
         {/* Date number (always visible) */}
-        <span className={`absolute top-1 right-1 text-xs ${
-          booking.isStart ? 'text-gray-600' : 'text-gray-500'
-        }`}>
+        <span className={`absolute top-1 right-1 text-xs text-white font-medium`}>
           {dayNumber}
         </span>
       </div>
@@ -153,18 +122,30 @@ export default function AvailabilityDateCell({
       title={`${format(date, 'MMM d, yyyy')} - ${status}`}
     >
       {/* Date Number */}
-      <span className={`text-sm font-medium ${isWeekend ? 'text-white font-semibold' : 'text-white'} mb-1`}>
+      <span className="text-sm font-medium text-white mb-1">
         {dayNumber}
       </span>
 
-      {/* Status */}
-      <span className={`text-xs ${getStatusColor()}`}>
-        {getStatusDisplay()}
-      </span>
+      {/* Price Line - Only for non-booked cells */}
+      {status !== 'booked' && (
+        <span className="text-xs text-gray-400">€75</span>
+      )}
 
-      {/* Blocked Icon */}
+      {/* Status Indicators */}
+      {status === 'available' && (
+        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-sm" />
+      )}
+      
       {status === 'blocked' && (
-        <Ban className="absolute -top-1 -right-1 w-3 h-3 text-[#FF4646]" />
+        <Ban className="absolute top-1 right-1 w-2.5 h-2.5 text-[#FF4646]" />
+      )}
+      
+      {status === 'pending' && (
+        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse shadow-sm" />
+      )}
+      
+      {status === 'mixed' && (
+        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-yellow-400 shadow-sm" />
       )}
 
       {/* Pending Request Badge */}
@@ -172,16 +153,6 @@ export default function AvailabilityDateCell({
         <div className="absolute -top-1 -right-1 bg-[#FF8C00] text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
           {pendingCount > 1 ? pendingCount : '!'}
         </div>
-      )}
-
-      {/* Today Indicator */}
-      {isToday && (
-        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#FF4646] rounded-full" />
-      )}
-
-      {/* Selection Overlay */}
-      {isSelected && (
-        <div className="absolute inset-0 bg-[#FF4646] opacity-30 rounded-lg" />
       )}
     </div>
   );

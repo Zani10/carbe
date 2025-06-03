@@ -116,16 +116,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Execute all operations
+    console.log('Availability API: Executing', operations.length, 'operations');
     const results = await Promise.all(operations);
     
     // Check for errors
-    for (const result of results) {
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
       if (result.error) {
-        console.error('Availability update error:', result.error);
-        return NextResponse.json({ error: 'Failed to update availability' }, { status: 500 });
+        console.error(`Availability update error for operation ${i}:`, result.error);
+        console.error('Operation details:', { carId: ownedCarIds[Math.floor(i / dates.length)], date: dates[i % dates.length], status });
+        return NextResponse.json({ 
+          error: 'Failed to update availability', 
+          details: result.error.message 
+        }, { status: 500 });
       }
     }
 
+    console.log('Availability API: All operations completed successfully');
     return NextResponse.json({ success: true });
 
   } catch (error) {

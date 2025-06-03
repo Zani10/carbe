@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart3,
   Calendar,
@@ -49,6 +49,20 @@ const HostBottomNav = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  // Listen for selection mode changes from calendar
+  useEffect(() => {
+    const handleSelectionModeChange = (event: CustomEvent) => {
+      setIsSelectionMode(event.detail.isSelecting);
+    };
+
+    window.addEventListener('selectionModeChange', handleSelectionModeChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('selectionModeChange', handleSelectionModeChange as EventListener);
+    };
+  }, []);
   
   const navItems = [
     { path: '/host/today', icon: BarChart3, label: 'Today', isOutlineIcon: true, requiresAuth: true },
@@ -72,7 +86,11 @@ const HostBottomNav = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none">
+    <div 
+      className={`fixed bottom-0 left-0 right-0 z-30 flex justify-center pointer-events-none transition-opacity duration-300 ${
+        isSelectionMode ? 'opacity-30' : 'opacity-100'
+      }`}
+    >
       <div className="relative w-full max-w-[437px] pointer-events-auto shadow-[0px_-5px_25px_-5px_rgba(0,0,0,0.2),_0px_-3px_10px_-7px_rgba(0,0,0,0.15)]">
         {/* Layer in the back: Angular gradient attempt */}
         <div 

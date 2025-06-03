@@ -16,7 +16,6 @@ interface AvailabilityGridProps {
   onDragEnter: (date: string) => void;
   onDragEnd: () => void;
   onBulkOperation: (operation: BulkOperation) => void;
-  onUpdateAvailability: (dates: string[], status: 'available' | 'blocked', carIds: string[]) => Promise<void>;
 }
 
 export default function AvailabilityGrid({
@@ -29,8 +28,7 @@ export default function AvailabilityGrid({
   onDragStart,
   onDragEnter,
   onDragEnd,
-  onBulkOperation,
-  onUpdateAvailability
+  onBulkOperation
 }: AvailabilityGridProps) {
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [selectedBookingRequest, setSelectedBookingRequest] = useState<BookingRequest | null>(null);
@@ -116,11 +114,7 @@ export default function AvailabilityGrid({
     }
   };
 
-  const handleBulkEdit = () => {
-    if (selectedDates.length > 0) {
-      setShowBlockModal(true);
-    }
-  };
+
 
   return (
     <div className="mb-6" onMouseUp={onDragEnd} onMouseLeave={onDragEnd}>
