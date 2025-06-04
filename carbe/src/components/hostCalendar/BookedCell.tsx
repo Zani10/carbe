@@ -10,25 +10,26 @@ interface BookedCellProps {
     isEnd: boolean;
     isMiddle: boolean;
   };
-  startDate: Date;
+  datesInSpan: Date[];
   span: number;
   cellData: {
     isCurrentMonth: boolean;
   };
+  isWeekContinuation?: boolean;
 }
 
 export default function BookedCell({
   booking,
-  startDate,
+  datesInSpan,
   span,
-  cellData
+  cellData,
+  isWeekContinuation = false
 }: BookedCellProps) {
-  const dayNumber = format(startDate, 'd');
 
   return (
     <div
       className={`
-        relative h-16 flex items-center justify-start text-sm cursor-pointer 
+        relative h-20 flex items-center justify-start text-sm cursor-pointer 
         transition-all duration-200 rounded-lg border-0
         bg-gradient-to-r from-[#059669] to-[#10B981] text-white shadow-sm
         ${!cellData.isCurrentMonth ? 'opacity-30' : ''}
@@ -37,31 +38,46 @@ export default function BookedCell({
         gridColumn: `span ${span}`
       }}
     >
-      {/* Date number - top right of start cell */}
-      <span className="absolute top-1 right-1.5 text-xs text-white font-medium">
-        {dayNumber}
-      </span>
-
-      {/* Guest info - bottom left */}
-      <div className="absolute bottom-1.5 left-1.5 flex items-center space-x-1.5">
-        {/* Profile pic */}
-        <div className="w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">
-          {booking.guest_avatar ? (
-            <img 
-              src={booking.guest_avatar} 
-              alt={booking.guest_name}
-              className="w-4 h-4 rounded-full object-cover"
-            />
-          ) : (
-            booking.guest_name.charAt(0).toUpperCase()
-          )}
-        </div>
+      {/* Date numbers for each day - properly centered within each virtual cell */}
+      {datesInSpan.map((date, index) => {
+        const cellWidth = 100 / span; // Percentage width per virtual cell
+        const centerPosition = (index * cellWidth) + (cellWidth / 2); // Center of each virtual cell
         
-        {/* Booked text */}
-        <span className="text-xs font-medium text-white whitespace-nowrap">
-          Booked
-        </span>
-      </div>
+        return (
+          <span 
+            key={format(date, 'yyyy-MM-dd')}
+            className="absolute top-2 text-sm text-white font-medium"
+            style={{ 
+              left: `calc(${centerPosition}% - 6px)` // Center the number (6px is roughly half the text width)
+            }}
+          >
+            {format(date, 'd')}
+          </span>
+        );
+      })}
+
+      {/* Guest info - only show on actual booking start, NOT on week continuations */}
+      {booking.isStart && !isWeekContinuation && (
+        <div className="absolute bottom-2 left-2 flex items-center space-x-1.5">
+          {/* Profile pic */}
+          <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">
+            {booking.guest_avatar ? (
+              <img 
+                src={booking.guest_avatar} 
+                alt={booking.guest_name}
+                className="w-5 h-5 rounded-full object-cover"
+              />
+            ) : (
+              booking.guest_name.charAt(0).toUpperCase()
+            )}
+          </div>
+          
+          {/* Booked text */}
+          <span className="text-sm font-medium text-white whitespace-nowrap">
+            Booked
+          </span>
+        </div>
+      )}
     </div>
   );
 } 
