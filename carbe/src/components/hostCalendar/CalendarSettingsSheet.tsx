@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Clock, Calendar, DollarSign, Users, Settings as SettingsIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { X, Clock, Calendar, DollarSign, Users, Settings as SettingsIcon, Plus, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 
 interface CalendarSettings {
   basePricePerDay: number;
@@ -36,6 +36,7 @@ export default function CalendarSettingsSheet({
 }: CalendarSettingsSheetProps) {
   const [settings, setSettings] = useState<CalendarSettings>(currentSettings);
   const [isSaving, setIsSaving] = useState(false);
+  const [dragY, setDragY] = useState(0);
 
   useEffect(() => {
     setSettings(currentSettings);
@@ -51,6 +52,13 @@ export default function CalendarSettingsSheet({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.y > 150 || info.velocity.y > 300) {
+      onClose();
+    }
+    setDragY(0);
   };
 
   const addSpecialEvent = () => {
@@ -101,26 +109,40 @@ export default function CalendarSettingsSheet({
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.1}
+            onDrag={(event, info) => setDragY(info.offset.y)}
+            onDragEnd={handleDragEnd}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 bg-gray-900 rounded-t-3xl z-50 max-h-[85vh] overflow-hidden"
+            className="fixed bottom-0 left-0 right-0 z-50"
+            style={{ y: dragY }}
           >
+            <div className="bg-gray-900/95 backdrop-blur-2xl rounded-t-3xl shadow-2xl border border-gray-700/30 overflow-hidden mx-4 mb-4 max-w-lg mx-auto max-h-[85vh]">
             {/* Handle Bar */}
             <div className="flex justify-center py-3">
-              <div className="w-10 h-1 bg-gray-600 rounded-full" />
+              <div className="w-12 h-1.5 bg-gray-600 rounded-full" />
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-              <div className="flex items-center gap-3">
-                <SettingsIcon className="w-6 h-6 text-white" />
-                <h2 className="text-xl font-semibold text-white">Calendar Settings</h2>
+            <div className="px-6 py-4 border-b border-gray-700/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-700/50 rounded-xl flex items-center justify-center">
+                    <SettingsIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-white">Calendar Settings</h2>
+                    <p className="text-sm text-gray-400">Configure your rental settings</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-800/50 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-800 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
             </div>
 
             {/* Content */}
@@ -262,8 +284,9 @@ export default function CalendarSettingsSheet({
                   </label>
                   <button
                     onClick={addSpecialEvent}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                   >
+                    <Plus className="w-4 h-4" />
                     Add Event
                   </button>
                 </div>
@@ -282,7 +305,7 @@ export default function CalendarSettingsSheet({
                         onClick={() => removeSpecialEvent(event.id)}
                         className="ml-2 p-1 text-red-400 hover:text-red-300"
                       >
-                        <X className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                     
@@ -313,23 +336,24 @@ export default function CalendarSettingsSheet({
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-gray-700">
+            <div className="p-6 border-t border-gray-700/30 bg-gray-900/50">
               <div className="flex gap-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 py-3 px-4 bg-gray-800 text-gray-300 rounded-xl font-medium hover:bg-gray-700 transition-colors"
+                  className="flex-1 py-4 px-4 bg-gray-800/50 text-gray-300 rounded-2xl font-semibold hover:bg-gray-700/50 transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="flex-1 py-4 px-4 bg-red-500 text-white rounded-2xl font-semibold hover:bg-red-600 transition-all duration-200 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {isSaving ? 'Saving...' : 'Save Settings'}
                 </button>
               </div>
             </div>
+          </div>
           </motion.div>
         </>
       )}
