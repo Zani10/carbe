@@ -87,14 +87,14 @@ export default function AvailabilityDateCell({
       onMouseEnter={onMouseEnter}
       title={`${format(date, 'MMM d, yyyy')} - ${status}`}
     >
-      {/* Date Number */}
-      <span className="text-sm font-medium text-white mb-1">
+      {/* Date Number - positioned like Airbnb, slightly above center */}
+      <span className="absolute top-4 left-1/2 transform -translate-x-1/2 text-sm font-medium text-white">
         {dayNumber}
       </span>
 
-      {/* Price Line - Only for available/blocked cells with price data */}
+      {/* Price Line - centered horizontally, below date with nice spacing */}
       {status !== 'unset' && (
-        <span className="text-xs text-gray-400">€75</span>
+        <span className="absolute top-12 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">€75</span>
       )}
 
       {/* Status Indicators */}

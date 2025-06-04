@@ -46,9 +46,9 @@ export default function BookedCell({
         return (
           <span 
             key={format(date, 'yyyy-MM-dd')}
-            className="absolute top-2 text-sm text-white font-medium"
+            className="absolute top-4 text-sm text-white font-medium transform -translate-x-1/2"
             style={{ 
-              left: `calc(${centerPosition}% - 6px)` // Center the number (6px is roughly half the text width)
+              left: `${centerPosition}%` // Use percentage positioning with transform for perfect centering
             }}
           >
             {format(date, 'd')}
@@ -56,9 +56,9 @@ export default function BookedCell({
         );
       })}
 
-      {/* Guest info - only show on actual booking start, NOT on week continuations */}
+      {/* Guest info - positioned to match price level in regular cells */}
       {booking.isStart && !isWeekContinuation && (
-        <div className="absolute bottom-2 left-2 flex items-center space-x-1.5">
+        <div className="absolute top-12 left-2 flex items-center space-x-1.5">
           {/* Profile pic */}
           <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">
             {booking.guest_avatar ? (
