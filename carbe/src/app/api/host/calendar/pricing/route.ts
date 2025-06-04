@@ -2,15 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiRouteSupabaseClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
+  console.log('=== PRICING API CALLED ===');
+  console.log('Request URL:', request.url);
+  console.log('Request method:', request.method);
+  console.log('Request headers:', Object.fromEntries(request.headers.entries()));
+  
   try {
+    console.log('Pricing API: Starting request processing');
     const supabase = createApiRouteSupabaseClient(request);
     
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.log('Pricing API: Authentication failed:', userError);
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        debug: { userError: userError?.message }
+      }, { status: 401 });
     }
+
+    console.log('Pricing API: User authenticated:', user.id);
 
     const { carIds, date, priceOverride, isWeekendOverride } = await request.json();
 

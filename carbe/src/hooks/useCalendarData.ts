@@ -66,6 +66,14 @@ export function useCalendarData(
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
+      console.log('useCalendarData: updateAvailability called', {
+        dates,
+        status,
+        carIds,
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token
+      });
+      
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
@@ -74,33 +82,52 @@ export function useCalendarData(
         headers.Authorization = `Bearer ${session.access_token}`;
       }
 
+      const requestBody = {
+        carIds,
+        dates,
+        status
+      };
+      
+      console.log('useCalendarData: Making availability request', { 
+        url: '/api/host/calendar/availability',
+        method: 'POST',
+        requestBody, 
+        headers: Object.fromEntries(Object.entries(headers))
+      });
+
       const response = await fetch('/api/host/calendar/availability', {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          carIds,
-          dates,
-          status
-        })
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log('useCalendarData: Availability response', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update availability');
+        let errorData;
+        const responseText = await response.text();
+        console.log('useCalendarData: Raw error response text:', responseText);
+        
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('useCalendarData: Failed to parse error response as JSON:', parseError);
+          errorData = { rawResponse: responseText };
+        }
+        
+        console.error('useCalendarData: Availability error response', errorData);
+        throw new Error(`Failed to update availability: ${response.status} ${response.statusText}`);
       }
 
-      // Optimistically update local state
-      if (data) {
-        const newData = { ...data };
-        carIds.forEach(carId => {
-          if (!newData.availability[carId]) {
-            newData.availability[carId] = {};
-          }
-          dates.forEach(date => {
-            newData.availability[carId][date] = status;
-          });
-        });
-        setData(newData);
-      }
+      console.log('useCalendarData: Availability update successful, refreshing data');
+      
+      // Force refresh from server to get latest data
+      await fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update availability');
       throw err;
@@ -190,19 +217,10 @@ export function useCalendarData(
           throw new Error('Failed to bulk update pricing');
         }
 
-        // Optimistically update local state for pricing
-        if (data) {
-          const newData = { ...data };
-          operation.carIds.forEach(carId => {
-            if (!newData.pricingOverrides[carId]) {
-              newData.pricingOverrides[carId] = {};
-            }
-            operation.dates.forEach(date => {
-              newData.pricingOverrides[carId][date] = operation.value as number;
-            });
-          });
-          setData(newData);
-        }
+        console.log('useCalendarData: Pricing update successful, refreshing data');
+        
+        // Force refresh from server to get latest data
+        await fetchData();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to perform bulk update');

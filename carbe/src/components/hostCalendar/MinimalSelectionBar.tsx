@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
-import { BulkOperation } from '@/types/calendar';
+import { BulkOperation, CalendarData } from '@/types/calendar';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -8,6 +8,7 @@ interface MinimalSelectionBarProps {
   selectedDatesCount: number;
   selectedDates: string[];
   selectedCarIds: string[];
+  calendarData?: CalendarData; // Add calendar data to determine current state
   onBulkOperation: (operation: BulkOperation) => Promise<void>;
   onClear: () => void;
 }
@@ -16,6 +17,7 @@ export default function MinimalSelectionBar({
   selectedDatesCount,
   selectedDates,
   selectedCarIds,
+  calendarData,
   onBulkOperation,
   onClear
 }: MinimalSelectionBarProps) {
@@ -24,6 +26,74 @@ export default function MinimalSelectionBar({
   const [priceInputValue, setPriceInputValue] = useState('75');
   const [showPricePopover, setShowPricePopover] = useState(false);
   const [showCustomSettings, setShowCustomSettings] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Determine current availability status based on selected dates and calendar data
+  const getCurrentAvailabilityStatus = () => {
+    if (!calendarData || selectedDates.length === 0 || selectedCarIds.length === 0) {
+      return true; // Default to available
+    }
+    
+    // Check if any of the selected dates are blocked for any of the selected cars
+    let hasBlocked = false;
+    let hasAvailable = false;
+    
+    for (const carId of selectedCarIds) {
+      for (const date of selectedDates) {
+        const isBlocked = calendarData.availability?.[carId]?.[date] === 'blocked';
+        if (isBlocked) {
+          hasBlocked = true;
+        } else {
+          hasAvailable = true;
+        }
+      }
+    }
+    
+    // If we have mixed states, show as available (so clicking will block)
+    // If all are blocked, show as blocked (so clicking will make available)
+    return hasBlocked && !hasAvailable ? false : true;
+  };
+  
+  const isAvailable = getCurrentAvailabilityStatus();
+  
+  // Get current price from calendar data
+  const getCurrentPrice = () => {
+    if (!calendarData || selectedDates.length === 0 || selectedCarIds.length === 0) {
+      return '75'; // Default price
+    }
+    
+    // Get price from the first selected date and car (for simplicity)
+    const firstCarId = selectedCarIds[0];
+    const firstDate = selectedDates[0];
+    const priceOverride = calendarData.pricingOverrides?.[firstCarId]?.[firstDate];
+    
+    return priceOverride ? priceOverride.toString() : '75';
+  };
+  
+  // Update price input when selection changes
+  useEffect(() => {
+    const currentPrice = getCurrentPrice();
+    setPriceInputValue(currentPrice);
+  }, [selectedDates, selectedCarIds, calendarData]);
+
+  // Mobile keyboard detection
+  useEffect(() => {
+    const handleViewportChange = () => {
+      if (typeof window !== 'undefined') {
+        const viewportHeight = window.visualViewport?.height || window.innerHeight;
+        const windowHeight = window.innerHeight;
+        const keyboardHeight = Math.max(0, windowHeight - viewportHeight);
+        setKeyboardHeight(keyboardHeight);
+      }
+    };
+
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      return () => {
+        window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      };
+    }
+  }, []);
 
   // Notify parent about selection mode for bottom navbar fade
   useEffect(() => {
@@ -38,23 +108,25 @@ export default function MinimalSelectionBar({
   const handleAvailabilityToggle = async () => {
     if (isUpdatingAvailability) return;
     
+    const newStatus = isAvailable ? 'blocked' : 'available';
     console.log('MinimalSelectionBar: Starting availability update', {
       selectedDates,
       selectedCarIds,
       datesCount: selectedDates.length,
-      carsCount: selectedCarIds.length
+      carsCount: selectedCarIds.length,
+      currentStatus: isAvailable ? 'available' : 'blocked',
+      newStatus
     });
     
     setIsUpdatingAvailability(true);
     try {
-      // For simplicity, assume we're making dates available
       await onBulkOperation({
         type: 'availability',
         dates: selectedDates,
         carIds: selectedCarIds,
-        value: 'available'
+        value: newStatus
       });
-      console.log('MinimalSelectionBar: Availability update successful');
+      console.log('MinimalSelectionBar: Availability update successful, new status:', newStatus);
     } catch (error) {
       console.error('MinimalSelectionBar: Availability update failed:', error);
       // Show user-friendly error
@@ -102,15 +174,19 @@ export default function MinimalSelectionBar({
   };
 
   return (
-          <AnimatePresence>
+    <>
+      <AnimatePresence key="selection-bar">
         {selectedDatesCount > 0 && (
           <motion.div
             initial={{ y: 140 }}
             animate={{ y: 0 }}
             exit={{ y: 140 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#1A1A1A] to-[#212121] rounded-t-3xl p-4 shadow-2xl border-t border-gray-700/30"
-            style={{ height: '140px' }}
+            className="fixed left-0 right-0 z-50 bg-gradient-to-t from-[#1A1A1A] to-[#212121] rounded-t-3xl p-4 shadow-2xl border-t border-gray-700/30"
+            style={{ 
+              height: '140px',
+              bottom: keyboardHeight > 0 ? `${keyboardHeight + 20}px` : '0px'
+            }}
           >
           {/* Date Range Pill */}
           <div className="flex justify-center mb-4">
@@ -134,17 +210,21 @@ export default function MinimalSelectionBar({
             <motion.div
               whileTap={{ scale: 0.96 }}
               onClick={handleAvailabilityToggle}
-              className="w-20 h-20 rounded-lg bg-[#1F1F1F] p-2 flex flex-col items-center justify-center cursor-pointer"
+              className={`w-20 h-20 rounded-lg bg-[#1F1F1F] p-2 flex flex-col items-center justify-center cursor-pointer ${
+                isUpdatingAvailability ? 'opacity-50 pointer-events-none' : ''
+              }`}
             >
               <span className="text-xs font-medium mb-1 text-white">
-                Available
+                {isUpdatingAvailability ? 'Updating...' : (isAvailable ? 'Available' : 'Blocked')}
               </span>
               
               {/* Toggle Switch */}
-              <div className="w-10 h-5 rounded-full bg-[#00A680] transition-colors duration-150">
+              <div className={`w-10 h-5 rounded-full transition-colors duration-150 ${
+                isAvailable ? 'bg-[#00A680]' : 'bg-[#FF2800]'
+              }`}>
                 <motion.div
                   className="w-4 h-4 bg-white rounded-full mt-0.5"
-                  animate={{ x: 24 }}
+                  animate={{ x: isAvailable ? 24 : 4 }}
                   transition={{ duration: 0.15 }}
                 />
               </div>
@@ -164,7 +244,7 @@ export default function MinimalSelectionBar({
               </motion.div>
 
               {/* Price Popover */}
-              <AnimatePresence>
+              <AnimatePresence key="price-popover">
                 {showPricePopover && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -208,9 +288,10 @@ export default function MinimalSelectionBar({
           </div>
         </motion.div>
       )}
+      </AnimatePresence>
       
       {/* Custom Settings Overlay */}
-      <AnimatePresence>
+      <AnimatePresence key="custom-settings">
         {showCustomSettings && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -270,6 +351,6 @@ export default function MinimalSelectionBar({
           </motion.div>
         )}
       </AnimatePresence>
-    </AnimatePresence>
+    </>
   );
 } 

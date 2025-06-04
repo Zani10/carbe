@@ -9,6 +9,7 @@ interface ScrollableMonthListProps {
   selectedCarIds: string[];
   calendarData?: CalendarData; // Keep for interface compatibility
   selectedDates: string[];
+  refreshTrigger?: number; // Add refresh trigger
   onDateClick: (date: string) => void;
   onDragStart: (date: string) => void;
   onDragEnter: (date: string) => void;
@@ -20,8 +21,9 @@ interface ScrollableMonthListProps {
 export default function ScrollableMonthList({
   displayMonth,
   selectedCarIds,
-  calendarData: _calendarData, // Accept but ignore to prevent glitching
+  calendarData, // Accept but ignore to prevent glitching
   selectedDates,
+  refreshTrigger,
   onDateClick,
   onDragStart,
   onDragEnter,
@@ -29,6 +31,8 @@ export default function ScrollableMonthList({
   onBulkOperation,
   onMonthChange
 }: ScrollableMonthListProps) {
+  // Ignore calendarData to prevent glitching - we use our own cache
+  void calendarData;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [monthsData, setMonthsData] = useState<{ [month: string]: CalendarData }>({});
   
@@ -44,17 +48,25 @@ export default function ScrollableMonthList({
     return [prevMonth, displayMonth, nextMonth];
   }, [displayMonth]);
 
-  // Reset cache when car selection changes
+  // Reset cache when car selection changes or refresh is triggered
   useEffect(() => {
     const carIdsChanged = JSON.stringify(currentCarIdsRef.current) !== JSON.stringify(selectedCarIds);
     if (carIdsChanged) {
       console.log('🚗 Car selection changed, clearing cache');
       fetchedMonthsRef.current.clear();
       setMonthsData({});
-
       currentCarIdsRef.current = selectedCarIds;
     }
   }, [selectedCarIds]);
+
+  // Clear cache when refresh is triggered
+  useEffect(() => {
+    if (refreshTrigger) {
+      console.log('🔄 Refresh triggered, clearing cache');
+      fetchedMonthsRef.current.clear();
+      setMonthsData({});
+    }
+  }, [refreshTrigger]);
 
   // Stable fetch function (no monthsData dependency!)
   const fetchMonthData = useCallback(async (month: string) => {

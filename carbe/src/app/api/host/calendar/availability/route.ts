@@ -1,77 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiRouteSupabaseClientFromCookies } from '@/lib/supabase/server';
-import { createClient } from '@supabase/supabase-js';
+import { createApiRouteSupabaseClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
+  console.log('=== AVAILABILITY API CALLED ===');
+  console.log('Request URL:', request.url);
+  console.log('Request method:', request.method);
+  console.log('Request headers:', Object.fromEntries(request.headers.entries()));
+  
   try {
-    let supabase;
-    let user = null;
-    let authMethod = 'unknown';
+    console.log('Availability API: Starting request processing');
+    const supabase = createApiRouteSupabaseClient(request);
     
-    // Try cookie-based auth first
-    try {
-      supabase = await createApiRouteSupabaseClientFromCookies();
-      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
-      
-      if (cookieUser && !cookieError) {
-        user = cookieUser;
-        authMethod = 'cookies';
-        console.log('Availability API: Authenticated via cookies');
-      }
-    } catch (cookieAuthError) {
-      console.log('Availability API: Cookie auth failed:', cookieAuthError);
-    }
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    // Try authorization header if cookie auth failed
-    if (!user) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        console.log('Availability API: Trying authorization header');
-        
-        supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-        
-        const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(token);
-        
-        if (tokenUser && !tokenError) {
-          user = tokenUser;
-          authMethod = 'bearer_token';
-          console.log('Availability API: Authenticated via bearer token');
-        } else {
-          console.log('Availability API: Bearer token auth failed:', tokenError);
-        }
-      }
-    }
-    
-    if (!user) {
-      console.log('Availability API: No authentication method worked');
+    if (userError || !user) {
+      console.log('Availability API: Authentication failed:', userError);
       return NextResponse.json({ 
-        error: 'No authenticated user',
-        debug: {
-          cookieCount: request.cookies.getAll().length,
-          hasAuthHeader: !!request.headers.get('authorization'),
-          authMethod
-        }
+        error: 'Unauthorized',
+        debug: { userError: userError?.message }
       }, { status: 401 });
     }
 
-    console.log('Availability API: User ID:', user.id, 'Auth method:', authMethod);
+    console.log('Availability API: User authenticated:', user.id);
 
     const { carIds, dates, status } = await request.json();
+    console.log('Availability API: Request data:', { carIds, dates, status });
 
     if (!carIds || !dates || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    // Ensure supabase client is available
-    if (!supabase) {
-      return NextResponse.json({ 
-        error: 'Supabase client not initialized',
-        debug: { authMethod }
-      }, { status: 500 });
     }
 
     // Verify car ownership
@@ -136,10 +93,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('Availability API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('=== AVAILABILITY API ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error instance:', error instanceof Error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Full error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      type: typeof error
+    }, { status: 500 });
   }
 } 

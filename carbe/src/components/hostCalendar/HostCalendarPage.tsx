@@ -20,6 +20,7 @@ export default function HostCalendarPage() {
 
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [hideBottomNav, setHideBottomNav] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Fetch user's vehicles (non-blocking)
   useEffect(() => {
@@ -164,9 +165,23 @@ export default function HostCalendarPage() {
 
   const handleBulkOperation = useCallback(async (operation: BulkOperation) => {
     try {
+      console.log('HostCalendarPage: Starting bulk operation', operation);
+      
+      // Trigger cache refresh BEFORE the operation to clear stale data
+      setRefreshTrigger(prev => prev + 1);
+      
       await bulkUpdate(operation);
       setSelectedDates([]);
+      
+      console.log('HostCalendarPage: Bulk operation completed, refreshing data');
       await refreshData();
+      
+      // Trigger another cache refresh AFTER to ensure fresh data
+      setTimeout(() => {
+        setRefreshTrigger(prev => prev + 1);
+      }, 100);
+      
+      console.log('HostCalendarPage: Data refresh completed');
     } catch (error) {
       console.error('Bulk operation failed:', error);
     }
@@ -231,6 +246,7 @@ export default function HostCalendarPage() {
           selectedCarIds={filters.selectedCarIds}
           calendarData={calendarData}
           selectedDates={selectedDates}
+          refreshTrigger={refreshTrigger}
           onDateClick={handleDateClick}
           onDragStart={handleDragStart}
           onDragEnter={handleDragEnter}
@@ -250,6 +266,7 @@ export default function HostCalendarPage() {
           selectedDatesCount={selectedDates.length}
           selectedDates={selectedDates}
           selectedCarIds={filters.selectedCarIds}
+          calendarData={calendarData}
           onBulkOperation={handleBulkOperation}
           onClear={handleClearSelection}
         />

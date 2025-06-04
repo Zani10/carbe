@@ -29,10 +29,42 @@ export async function createServerSupabaseClient() {
   )
 }
 
-// Improved API route client with better cookie handling
+// Improved API route client with both cookie and auth header support
 export function createApiRouteSupabaseClient(request: NextRequest) {
   const cookieStore = request.cookies
+  const authHeader = request.headers.get('authorization')
 
+  // If we have a Bearer token, use it to create a client with global headers
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7)
+    console.log('Using Bearer token authentication')
+    
+    return createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        },
+        cookies: {
+          getAll() {
+            return cookieStore.getAll().map(cookie => ({
+              name: cookie.name,
+              value: cookie.value,
+            }))
+          },
+          setAll() {
+            // API routes don't need to set cookies
+          },
+        },
+      }
+    )
+  }
+
+  // Fallback to cookie-based auth
+  console.log('Using cookie-based authentication')
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
