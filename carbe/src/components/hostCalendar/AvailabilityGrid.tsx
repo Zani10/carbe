@@ -79,13 +79,14 @@ export default function AvailabilityGrid({
       }
     ] : (calendarData?.bookings || []);
 
-    // Determine status across selected cars
+    // Determine status across selected cars - Airbnb default: available
     let status: 'available' | 'blocked' | 'pending' | 'booked' | 'mixed' = 'available';
     let pendingCount = 0;
     let booking = undefined;
     const carStatuses: string[] = [];
 
     selectedCarIds.forEach(carId => {
+      // Default to 'available' like Airbnb - hosts manually block dates as needed
       const carStatus = calendarData?.availability?.[carId]?.[dateStr] || 'available';
       carStatuses.push(carStatus);
       
@@ -189,34 +190,54 @@ export default function AvailabilityGrid({
       const currentWeekStart = Math.floor(i / 7) * 7;
       const currentWeekEnd = currentWeekStart + 6;
 
-      if (cellData.status === 'booked' && cellData.booking?.isStart && cellData.booking) {
-        // Find the span of this booking within the current week
-        let span = 1;
+      if (cellData.status === 'booked' && cellData.booking) {
+        // Check if this is the start of a new booking segment (either actual start or start of week continuation)
+        const isBookingStart = cellData.booking.isStart;
+        const isWeekContinuation = !cellData.booking.isStart && (i === currentWeekStart);
         
-        for (let j = i + 1; j <= Math.min(currentWeekEnd, calendarDays.length - 1); j++) {
-          const nextCellData = getCellData(calendarDays[j]);
-          if (nextCellData.status === 'booked' && 
-              nextCellData.booking?.id === cellData.booking.id) {
-            span++;
-            if (nextCellData.booking?.isEnd) break;
-          } else {
-            break;
+        if (isBookingStart || isWeekContinuation) {
+          // Find the span of this booking within the current week
+          let span = 1;
+          
+          for (let j = i + 1; j <= Math.min(currentWeekEnd, calendarDays.length - 1); j++) {
+            const nextCellData = getCellData(calendarDays[j]);
+            if (nextCellData.status === 'booked' && 
+                nextCellData.booking?.id === cellData.booking.id) {
+              span++;
+              if (nextCellData.booking?.isEnd) break;
+              if (j === currentWeekEnd) {
+                break;
+              }
+            } else {
+              break;
+            }
           }
+
+          // Collect all dates in this span for the BookedCell component
+          const datesInSpan = [];
+          for (let k = i; k < i + span; k++) {
+            datesInSpan.push(calendarDays[k]);
+          }
+
+          items.push({
+            type: 'booked' as const,
+            key: `${cellData.booking.id}-${i}`,
+            booking: cellData.booking,
+            startDate: date,
+            datesInSpan: datesInSpan,
+            span,
+            cellData,
+            isWeekContinuation
+          });
+
+          i += span;
+        } else {
+          // This is part of a booking that was already processed, skip
+          i++;
         }
-
-        items.push({
-          type: 'booked' as const,
-          key: `${cellData.booking.id}-${i}`,
-          booking: cellData.booking,
-          startDate: date,
-          span,
-          cellData
-        });
-
-        i += span;
       } else {
         items.push({
-          type: 'regular',
+          type: 'regular' as const,
           key: cellData.dateStr,
           date: date,
           cellData
@@ -256,9 +277,10 @@ export default function AvailabilityGrid({
               <BookedCell
                 key={item.key}
                 booking={item.booking}
-                startDate={item.startDate}
+                datesInSpan={item.datesInSpan}
                 span={item.span}
                 cellData={item.cellData}
+                isWeekContinuation={item.isWeekContinuation}
               />
             );
           } else {

@@ -62,7 +62,7 @@ export default function AvailabilityDateCell({
 
     // Regular cell styling
     const baseStyles = `
-      relative w-12 h-16 flex flex-col items-center justify-center text-xs
+      relative w-12 h-20 flex flex-col items-center justify-center text-xs
       cursor-pointer transition-all duration-200 rounded-lg border
       ${!isCurrentMonth ? 'opacity-30' : ''}
       ${isSelected ? 'bg-[#FF4646]/30 border-2 border-[#FF4646] ring-1 ring-[#FF4646]/50' : ''}
