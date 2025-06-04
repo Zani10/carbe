@@ -1,6 +1,5 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Ban } from 'lucide-react';
 
 interface AvailabilityDateCellProps {
   date: Date;
@@ -92,7 +91,7 @@ export default function AvailabilityDateCell({
       onMouseEnter={onMouseEnter}
       title={`${format(date, 'MMM d, yyyy')} - ${status}`}
     >
-      {/* Date Number - positioned like Airbnb, slightly above center */}
+      {/* Date Number */}
       <span className="absolute top-4 left-1/2 transform -translate-x-1/2 text-sm font-medium text-white">
         {dayNumber}
       </span>
@@ -114,7 +113,6 @@ export default function AvailabilityDateCell({
       {status === 'blocked' && (
         <>
           <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#FF4646] shadow-sm" />
-          <Ban className="absolute top-1 right-1 w-2.5 h-2.5 text-[#FF4646]" />
         </>
       )}
       
@@ -125,8 +123,6 @@ export default function AvailabilityDateCell({
       {status === 'mixed' && (
         <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-yellow-400 shadow-sm" />
       )}
-
-      {/* No indicator for 'unset' status - clean default state */}
 
       {/* Pending Request Badge */}
       {(status === 'pending' || pendingCount > 0) && (

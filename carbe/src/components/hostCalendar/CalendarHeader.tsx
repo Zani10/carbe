@@ -1,32 +1,46 @@
 import React, { useState } from 'react';
-import { Car, Settings } from 'lucide-react';
-import { Vehicle, CalendarMetrics } from '@/types/calendar';
-import { format, parse } from 'date-fns';
+import { Settings } from 'lucide-react';
+import { Vehicle } from '@/types/calendar';
 import { motion } from 'framer-motion';
+import DynamicCarAvatar from './DynamicCarAvatar';
+import CalendarSettingsSheet from './CalendarSettingsSheet';
+
+interface CalendarSettings {
+  basePricePerDay: number;
+  minimumStayRequirement: number;
+  weekendPriceAdjustment: {
+    type: 'percentage' | 'fixed';
+    value: number;
+  };
+  specialEventPricing: Array<{
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    pricePerDay: number;
+  }>;
+  defaultCheckInTime: string;
+  defaultCheckOutTime: string;
+  bookingLeadTime: number;
+}
 
 interface CalendarHeaderProps {
-  displayMonth: string;
   vehicles: Vehicle[];
   selectedCarIds: string[];
-  metrics?: CalendarMetrics;
   selectedDatesCount: number;
-  onMonthChange: (direction: 'prev' | 'next') => void;
   onVehicleChange: (vehicleIds: string[]) => void;
+  onSettingsSave?: (settings: CalendarSettings) => void;
 }
 
 export default function CalendarHeader({
-  displayMonth,
   vehicles,
   selectedCarIds,
-  metrics,
   selectedDatesCount,
-  onMonthChange,
-  onVehicleChange
+  onVehicleChange,
+  onSettingsSave
 }: CalendarHeaderProps) {
   const [showVehicleModal, setShowVehicleModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-
-  const monthDate = parse(displayMonth, 'yyyy-MM', new Date());
+  const [showSettingsSheet, setShowSettingsSheet] = useState(false);
 
   const totalVehicleCount = vehicles.length;
 
@@ -48,30 +62,6 @@ export default function CalendarHeader({
     }
   };
 
-
-
-  // Generate month options for settings modal
-  const monthOptions = [];
-  for (let i = -6; i <= 6; i++) {
-    const optionDate = new Date(monthDate);
-    optionDate.setMonth(monthDate.getMonth() + i);
-    monthOptions.push({
-      value: format(optionDate, 'yyyy-MM'),
-      label: format(optionDate, 'MMMM yyyy')
-    });
-  }
-
-  const handleMonthSelect = (monthValue: string) => {
-    const currentMonth = parse(displayMonth, 'yyyy-MM', new Date());
-    const targetMonth = parse(monthValue, 'yyyy-MM', new Date());
-    
-    if (targetMonth > currentMonth) {
-      onMonthChange('next');
-    } else if (targetMonth < currentMonth) {
-      onMonthChange('prev');
-    }
-  };
-
   return (
     <>
       {/* Simplified Header */}
@@ -89,18 +79,22 @@ export default function CalendarHeader({
           }}
           transition={{ duration: 0.1 }}
         >
-          {/* Vehicle Selector */}
+          {/* Vehicle Selector with Dynamic Avatar */}
           <button
             onClick={() => setShowVehicleModal(true)}
             className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
             disabled={selectedDatesCount > 0}
           >
-            <Car className="w-5 h-5" />
+            <DynamicCarAvatar
+              selectedCarIds={selectedCarIds}
+              allCars={vehicles}
+              size="md"
+            />
           </button>
 
           {/* Settings */}
           <button
-            onClick={() => setShowSettingsModal(true)}
+            onClick={() => setShowSettingsSheet(true)}
             className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
             disabled={selectedDatesCount > 0}
           >
@@ -192,89 +186,24 @@ export default function CalendarHeader({
         </>
       )}
 
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            onClick={() => setShowSettingsModal(false)}
-          />
-          
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm mx-4">
-            <div className="bg-[#212121] rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
-              {/* Header */}
-              <div className="p-6 border-b border-gray-700/30">
-                <h3 className="text-lg font-semibold text-white">Calendar Settings</h3>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 space-y-4">
-                {/* Revenue Display */}
-                <div className="p-4 bg-gray-800/30 rounded-xl">
-                  <div className="text-sm text-gray-400 mb-1">This month&apos;s revenue</div>
-                  <div className="text-xl font-bold text-white">
-                    €{metrics?.totalRevenue || 720}
-                  </div>
-                </div>
-
-                {/* Quick Month Jump */}
-                <div>
-                  <label className="block text-white font-medium mb-2 text-sm">
-                    Jump to Month
-                  </label>
-                  <select
-                    value={displayMonth}
-                    onChange={(e) => handleMonthSelect(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-[#FF4646] transition-colors"
-                  >
-                    {monthOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Performance Stats */}
-                {metrics && (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Occupancy Rate</span>
-                      <span className="text-white font-medium">
-                        {Math.round((metrics.occupancyRate || 0) * 100)}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Average Rate</span>
-                      <span className="text-white font-medium">
-                        €{metrics.averageRate || 85}
-                      </span>
-                    </div>
-                    {metrics.pendingRequestsCount > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-400 text-sm">Pending Requests</span>
-                        <span className="text-[#FF4646] font-medium">
-                          {metrics.pendingRequestsCount}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 border-t border-gray-700/30">
-                <button
-                  onClick={() => setShowSettingsModal(false)}
-                  className="w-full py-3 bg-gray-800/50 text-white rounded-xl font-medium hover:bg-gray-800/70 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Calendar Settings Sheet */}
+      <CalendarSettingsSheet
+        isOpen={showSettingsSheet}
+        onClose={() => setShowSettingsSheet(false)}
+        currentSettings={{
+          basePricePerDay: vehicles[0]?.base_price || 65,
+          minimumStayRequirement: 1,
+          weekendPriceAdjustment: { type: 'percentage', value: 20 },
+          specialEventPricing: [],
+          defaultCheckInTime: '15:00',
+          defaultCheckOutTime: '11:00',
+          bookingLeadTime: 1
+        }}
+        onSave={async (settings) => {
+          onSettingsSave?.(settings);
+          console.log('Settings saved:', settings);
+        }}
+      />
     </>
   );
 } 
