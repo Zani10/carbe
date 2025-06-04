@@ -16,6 +16,7 @@ interface BookedCellProps {
     isCurrentMonth: boolean;
   };
   isWeekContinuation?: boolean;
+  onClick?: () => void;
 }
 
 export default function BookedCell({
@@ -23,7 +24,8 @@ export default function BookedCell({
   datesInSpan,
   span,
   cellData,
-  isWeekContinuation = false
+  isWeekContinuation = false,
+  onClick
 }: BookedCellProps) {
 
   return (
@@ -32,11 +34,13 @@ export default function BookedCell({
         relative h-20 flex items-center justify-start text-sm cursor-pointer 
         transition-all duration-200 rounded-lg border-0
         bg-gradient-to-r from-[#059669] to-[#10B981] text-white shadow-sm
+        hover:from-[#047857] hover:to-[#059669]
         ${!cellData.isCurrentMonth ? 'opacity-30' : ''}
       `}
       style={{
         gridColumn: `span ${span}`
       }}
+      onClick={onClick}
     >
       {/* Date numbers for each day - properly centered within each virtual cell */}
       {datesInSpan.map((date, index) => {

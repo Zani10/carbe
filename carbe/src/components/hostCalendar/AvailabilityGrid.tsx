@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { CalendarData, BulkOperation, BookingRequest } from '@/types/calendar';
+import { CalendarData, BulkOperation, BookingRequest, CalendarBooking } from '@/types/calendar';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek } from 'date-fns';
 import AvailabilityDateCell from './AvailabilityDateCell';
 import BlockDatesModal from './BlockDatesModal';
 import BookingRequestSheet from './BookingRequestSheet';
+import BookingDetailsModal from './BookingDetailsModal';
 import BookedCell from './BookedCell';
 
 interface AvailabilityGridProps {
@@ -35,6 +36,7 @@ export default function AvailabilityGrid({
 }: AvailabilityGridProps) {
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [selectedBookingRequest, setSelectedBookingRequest] = useState<BookingRequest | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null);
 
   const monthStart = startOfMonth(new Date(displayMonth + '-01'));
   const monthEnd = endOfMonth(monthStart);
@@ -184,6 +186,14 @@ export default function AvailabilityGrid({
     }
   };
 
+  const handleBookedCellClick = (bookingId: string) => {
+    // Find the booking details from calendar data
+    const booking = calendarData?.bookings?.find(b => b.id === bookingId);
+    if (booking) {
+      setSelectedBooking(booking);
+    }
+  };
+
   const handleCellMouseDown = (date: Date) => {
     const cellData = getCellData(date);
     if (cellData.status !== 'booked' && cellData.status !== 'pending') {
@@ -300,6 +310,7 @@ export default function AvailabilityGrid({
                 span={item.span}
                 cellData={item.cellData}
                 isWeekContinuation={item.isWeekContinuation}
+                onClick={() => handleBookedCellClick(item.booking.id)}
               />
             );
           } else {
@@ -345,6 +356,21 @@ export default function AvailabilityGrid({
             setSelectedBookingRequest(null);
           }}
           onClose={() => setSelectedBookingRequest(null)}
+        />
+      )}
+
+      {selectedBooking && (
+        <BookingDetailsModal
+          booking={selectedBooking}
+          onMessage={() => {
+            // TODO: Handle message guest action
+            setSelectedBooking(null);
+          }}
+          onCancel={async () => {
+            // TODO: Handle booking cancellation
+            setSelectedBooking(null);
+          }}
+          onClose={() => setSelectedBooking(null)}
         />
       )}
     </div>
