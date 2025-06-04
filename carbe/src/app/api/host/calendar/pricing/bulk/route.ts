@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
               .eq('date', date)
           );
         } else {
-          // Upsert price override
+          // Upsert price override with proper conflict resolution
           operations.push(
             supabase
               .from('host_calendar_pricing')
@@ -66,6 +66,9 @@ export async function POST(request: NextRequest) {
                 date: date,
                 price_override: priceOverride,
                 is_weekend_override: isWeekendOverride || false
+              }, {
+                onConflict: 'car_id,date',
+                ignoreDuplicates: false
               })
           );
         }

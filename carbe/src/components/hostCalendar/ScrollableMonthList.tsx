@@ -105,7 +105,12 @@ export default function ScrollableMonthList({
           ...prev,
           [month]: result.calendarData
         }));
-        console.log(`✅ Successfully cached data for ${month}`);
+        console.log(`✅ Successfully cached data for ${month}`, {
+          availability: result.calendarData?.availability ? Object.keys(result.calendarData.availability).length : 0,
+          pricing: result.calendarData?.pricingOverrides ? Object.keys(result.calendarData.pricingOverrides).length : 0,
+          sampleAvailability: result.calendarData?.availability?.[selectedCarIds[0]] ? 
+            Object.entries(result.calendarData.availability[selectedCarIds[0]]).slice(0, 3) : 'none'
+        });
       } else {
         // Remove from cache if fetch failed
         fetchedMonthsRef.current.delete(cacheKey);
@@ -119,6 +124,63 @@ export default function ScrollableMonthList({
       // Fetch completed - cache already updated
     }
   }, [selectedCarIds]); // Only depend on selectedCarIds, not monthsData!
+
+  // Fetch fresh data after cache refresh - AGGRESSIVE
+  useEffect(() => {
+    if (refreshTrigger && selectedCarIds.length > 0) {
+      console.log(`🔄 AGGRESSIVE refresh: clearing ALL cache and fetching fresh data for ${displayMonth}`, {
+        refreshTrigger,
+        selectedCarIds,
+        cacheSize: fetchedMonthsRef.current.size,
+        monthsDataKeys: Object.keys(monthsData)
+      });
+      
+      // Clear ALL cache aggressively
+      fetchedMonthsRef.current.clear();
+      setMonthsData({});
+      
+      // Force immediate fetch - bypass cache entirely
+      const fetchImmediately = async () => {
+        console.log(`🚨 FORCE FETCH for ${displayMonth}`);
+        try {
+          const params = new URLSearchParams({
+            month: displayMonth,
+            carIds: selectedCarIds.join(',')
+          });
+
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+          };
+          
+          if (session?.access_token) {
+            headers.Authorization = `Bearer ${session.access_token}`;
+          }
+
+          const response = await fetch(`/api/host/calendar?${params}&t=${Date.now()}`, { headers }); // Add timestamp to prevent caching
+          
+          if (response.ok) {
+            const result = await response.json();
+            setMonthsData(prev => ({
+              ...prev,
+              [displayMonth]: result.calendarData
+            }));
+            console.log(`✅ FORCE FETCHED fresh data for ${displayMonth}`, {
+              availability: result.calendarData?.availability ? Object.keys(result.calendarData.availability).length : 0,
+              pricing: result.calendarData?.pricingOverrides ? Object.keys(result.calendarData.pricingOverrides).length : 0,
+              sampleAvailability: result.calendarData?.availability?.[selectedCarIds[0]] ? 
+                Object.entries(result.calendarData.availability[selectedCarIds[0]]).slice(0, 5) : 'none'
+            });
+          }
+        } catch (error) {
+          console.error('Force fetch failed:', error);
+        }
+      };
+      
+      fetchImmediately();
+    }
+  }, [refreshTrigger, displayMonth, selectedCarIds]);
 
   // Set current month data when it changes (instant) - ONLY if we don't have it cached
   useEffect(() => {

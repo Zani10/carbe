@@ -165,23 +165,18 @@ export default function HostCalendarPage() {
 
   const handleBulkOperation = useCallback(async (operation: BulkOperation) => {
     try {
-      console.log('HostCalendarPage: Starting bulk operation', operation);
-      
-      // Trigger cache refresh BEFORE the operation to clear stale data
-      setRefreshTrigger(prev => prev + 1);
-      
-      await bulkUpdate(operation);
+      // Clear selection immediately for responsive UI
       setSelectedDates([]);
       
-      console.log('HostCalendarPage: Bulk operation completed, refreshing data');
+      // Execute the bulk operation
+      await bulkUpdate(operation);
+      
+      // Simple refresh: just refresh the data once
       await refreshData();
       
-      // Trigger another cache refresh AFTER to ensure fresh data
-      setTimeout(() => {
-        setRefreshTrigger(prev => prev + 1);
-      }, 100);
+      // Trigger calendar component refresh
+      setRefreshTrigger(prev => prev + 1);
       
-      console.log('HostCalendarPage: Data refresh completed');
     } catch (error) {
       console.error('Bulk operation failed:', error);
     }
@@ -228,7 +223,7 @@ export default function HostCalendarPage() {
         `}</style>
       )}
       
-      <div className="max-w-6xl mx-auto p-4 lg:p-6">
+      <div className="max-w-6xl mx-auto p-4 lg:p-6 pb-32">
         {/* Header */}
         <CalendarHeader
           displayMonth={filters.displayMonth}

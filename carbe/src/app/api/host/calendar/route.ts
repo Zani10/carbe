@@ -35,7 +35,14 @@ export async function GET(request: NextRequest) {
         
         supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            global: {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          }
         );
         
         const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(token);
@@ -44,6 +51,13 @@ export async function GET(request: NextRequest) {
           user = tokenUser;
           authMethod = 'bearer_token';
           console.log('Calendar API: Authenticated via bearer token');
+          
+          // Set auth context for RLS
+          await supabase.auth.setSession({
+            access_token: token,
+            refresh_token: '', 
+          });
+          
         } else {
           console.log('Calendar API: Bearer token auth failed:', tokenError);
         }
@@ -73,7 +87,8 @@ export async function GET(request: NextRequest) {
     }
 
     const carIds = carIdsParam.split(',').filter(id => id.trim());
-    console.log('Calendar API: Processing month:', month, 'for cars:', carIds);
+    console.log('🎯 Calendar API: Processing month:', month, 'for cars:', carIds);
+    console.log('🎯 Calendar API: Date range will be:', `${month}-01`, 'to', `${month}-${String(new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]), 0).getDate()).padStart(2, '0')}`);
 
     // Ensure supabase client is available
     if (!supabase) {
@@ -127,6 +142,9 @@ export async function GET(request: NextRequest) {
       console.error('Calendar API: Availability error:', availabilityError);
       // Don't fail completely, just log and continue with empty data
     }
+    
+    console.log('🎯 Calendar API: Raw availability data from DB:', availabilityData?.length || 0, 'records');
+    console.log('🎯 Calendar API: First few availability records:', availabilityData?.slice(0, 3));
 
     // Fetch pricing data
     const { data: pricingData, error: pricingError } = await supabase
@@ -140,6 +158,9 @@ export async function GET(request: NextRequest) {
       console.error('Calendar API: Pricing error:', pricingError);
       // Don't fail completely, just log and continue with empty data
     }
+    
+    console.log('🎯 Calendar API: Raw pricing data from DB:', pricingData?.length || 0, 'records');
+    console.log('🎯 Calendar API: First few pricing records:', pricingData?.slice(0, 3));
 
     // Fetch bookings data (existing table)
     const { data: bookingsData, error: bookingsError } = await supabase
@@ -237,7 +258,18 @@ export async function GET(request: NextRequest) {
       averageRate: Object.values(basePriceByCar).reduce((a, b) => a + b, 0) / Object.values(basePriceByCar).length || 85
     };
 
-    console.log('Calendar API: Returning data successfully');
+    console.log('🎯 Calendar API: Returning data successfully');
+    console.log('🎯 Calendar API: Sample availability data:', Object.keys(availability).slice(0, 2).map(carId => ({
+      carId,
+      dates: Object.keys(availability[carId]).slice(0, 5),
+      statuses: Object.values(availability[carId]).slice(0, 5)
+    })));
+    console.log('🎯 Calendar API: Sample pricing data:', Object.keys(pricingOverrides).slice(0, 2).map(carId => ({
+      carId,  
+      dates: Object.keys(pricingOverrides[carId]).slice(0, 5),
+      prices: Object.values(pricingOverrides[carId]).slice(0, 5)
+    })));
+    
     return NextResponse.json({
       calendarData,
       metrics

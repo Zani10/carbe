@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
               .eq('date', date)
           );
         } else if (status === 'blocked') {
-          // Upsert availability record
+          // Upsert availability record with proper conflict resolution
           operations.push(
             supabase
               .from('host_calendar_availability')
@@ -66,6 +66,9 @@ export async function POST(request: NextRequest) {
                 car_id: carId,
                 date: date,
                 status: 'blocked'
+              }, {
+                onConflict: 'car_id,date',
+                ignoreDuplicates: false
               })
           );
         }

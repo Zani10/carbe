@@ -11,6 +11,7 @@ interface UseCalendarDataResult {
   updatePricing: (date: string, price: number, carIds: string[], isWeekendOverride?: boolean) => Promise<void>;
   bulkUpdate: (operation: BulkOperation) => Promise<void>;
   refreshData: () => Promise<void>;
+  forceRefresh: () => Promise<void>;
 }
 
 export function useCalendarData(
@@ -132,7 +133,7 @@ export function useCalendarData(
       setError(err instanceof Error ? err.message : 'Failed to update availability');
       throw err;
     }
-  }, [data]);
+  }, [fetchData]);
 
   const updatePricing = useCallback(async (
     date: string,
@@ -222,13 +223,41 @@ export function useCalendarData(
         // Force refresh from server to get latest data
         await fetchData();
       }
+      
+      // NUCLEAR OPTION: Force multiple refreshes after ANY operation
+      console.log('🚨 NUCLEAR REFRESH: Forcing multiple data refreshes');
+      setTimeout(async () => {
+        console.log('🚨 Refresh #1');
+        await fetchData();
+      }, 100);
+      
+      setTimeout(async () => {
+        console.log('🚨 Refresh #2');
+        await fetchData();
+      }, 300);
+      
+      setTimeout(async () => {
+        console.log('🚨 Refresh #3');
+        await fetchData();
+      }, 600);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to perform bulk update');
       throw err;
     }
-  }, [updateAvailability, data]);
+  }, [updateAvailability, fetchData]);
 
   const refreshData = useCallback(async () => {
+    console.log('🔄 useCalendarData: Manual refresh triggered');
+    await fetchData();
+  }, [fetchData]);
+  
+  // Nuclear refresh function that forces everything to update
+  const forceRefresh = useCallback(async () => {
+    console.log('🚨 FORCE REFRESH: Clearing all state and refetching');
+    setData(undefined);
+    setLoading(true);
+    setError(null);
     await fetchData();
   }, [fetchData]);
 
@@ -246,6 +275,7 @@ export function useCalendarData(
     updateAvailability,
     updatePricing,
     bulkUpdate,
-    refreshData
+    refreshData,
+    forceRefresh
   };
 } 

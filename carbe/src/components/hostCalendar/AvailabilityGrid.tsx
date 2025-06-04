@@ -70,6 +70,30 @@ export default function AvailabilityGrid({
       const carStatus = relevantData?.availability?.[carId]?.[dateStr] || 'available';
       carStatuses.push(carStatus);
       
+      // 🎯 ENHANCED DEBUG for architecture analysis
+      if (dateStr === '2025-06-21' || dateStr === '2025-06-26' || dateStr === '2025-06-07') {
+        console.log(`🔍 AvailabilityGrid ARCHITECTURE DEBUG for ${dateStr} car ${carId}:`, {
+          hasRelevantData: !!relevantData,
+          hasAvailabilityData: !!relevantData?.availability,
+          hasCarData: !!relevantData?.availability?.[carId],
+          carStatus,
+          rawAvailabilityValue: relevantData?.availability?.[carId]?.[dateStr],
+          
+          // 🎯 PRICING DEBUG
+          hasPricingData: !!relevantData?.pricingOverrides,
+          hasCarPricing: !!relevantData?.pricingOverrides?.[carId],
+          priceOverride: relevantData?.pricingOverrides?.[carId]?.[dateStr],
+          basePrice: relevantData?.basePriceByCar?.[carId],
+          
+          // 🎯 FULL DATA STRUCTURE
+          fullAvailabilityForCar: relevantData?.availability?.[carId],
+          fullPricingForCar: relevantData?.pricingOverrides?.[carId],
+          
+          // 🎯 API RESPONSE STRUCTURE  
+          calendarDataKeys: relevantData ? Object.keys(relevantData) : 'no relevantData'
+        });
+      }
+      
       if (carStatus === 'pending' || carStatus === 'booked') {
         const requests = relevantData?.pendingRequestsByDate?.[dateStr] || [];
         pendingCount += requests.filter(r => r.car_id === carId).length;

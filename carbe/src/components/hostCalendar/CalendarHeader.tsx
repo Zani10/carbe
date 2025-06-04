@@ -75,7 +75,7 @@ export default function CalendarHeader({
   return (
     <>
       {/* Simplified Header */}
-      <div className="flex items-center justify-between py-4 mb-6">
+      <div className="flex items-center justify-between py-4">
         {/* Left: App Title */}
         <div className="flex items-center space-x-4">
          
