@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { Vehicle } from '@/types/calendar';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 import DynamicCarAvatar from './DynamicCarAvatar';
 import CalendarSettingsSheet from './CalendarSettingsSheet';
 import VehicleSelectionSheet from './VehicleSelectionSheet';
@@ -56,12 +57,12 @@ export default function CalendarHeader({
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const token = localStorage.getItem('supabase_auth_token');
-        if (!token) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
 
         const response = await fetch('/api/host/calendar/settings', {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -80,15 +81,15 @@ export default function CalendarHeader({
 
   const handleSettingsSave = async (settings: CalendarSettings) => {
     try {
-      const token = localStorage.getItem('supabase_auth_token');
-      if (!token) {
-        throw new Error('No authentication token found');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No authentication session found');
       }
 
       const response = await fetch('/api/host/calendar/settings', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(settings)

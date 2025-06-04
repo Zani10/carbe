@@ -5,8 +5,19 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🎯 Calendar Settings API: Processing save request');
     
-    // Get authenticated user
+    // Get authenticated user with proper session setup for RLS
     const supabase = createApiRouteSupabaseClient(request);
+    const authHeader = request.headers.get('authorization');
+    
+    // Set up authentication session if we have a bearer token
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: '', 
+      });
+    }
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -47,7 +58,6 @@ export async function POST(request: NextRequest) {
       default_checkin_time: settings.defaultCheckInTime,
       default_checkout_time: settings.defaultCheckOutTime,
       booking_lead_time: settings.bookingLeadTime || 1,
-      special_event_pricing: settings.specialEventPricing || [],
       updated_at: new Date().toISOString()
     };
 
@@ -68,11 +78,14 @@ export async function POST(request: NextRequest) {
       result = data;
     } else {
       // Create new settings
-      settingsData.created_at = new Date().toISOString();
+      const newSettingsData = {
+        ...settingsData,
+        created_at: new Date().toISOString()
+      };
       
       const { data, error } = await supabase
         .from('host_calendar_settings')
-        .insert(settingsData)
+        .insert(newSettingsData)
         .select()
         .single();
 
@@ -99,8 +112,19 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🎯 Calendar Settings API: Processing get request');
     
-    // Get authenticated user
+    // Get authenticated user with proper session setup for RLS
     const supabase = createApiRouteSupabaseClient(request);
+    const authHeader = request.headers.get('authorization');
+    
+    // Set up authentication session if we have a bearer token
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: '', 
+      });
+    }
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -142,7 +166,6 @@ export async function GET(request: NextRequest) {
         type: settings.weekend_price_adjustment_type,
         value: settings.weekend_price_adjustment_value
       },
-      specialEventPricing: settings.special_event_pricing || [],
       defaultCheckInTime: settings.default_checkin_time,
       defaultCheckOutTime: settings.default_checkout_time,
       bookingLeadTime: settings.booking_lead_time

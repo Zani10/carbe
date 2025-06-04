@@ -185,6 +185,19 @@ export async function GET(request: NextRequest) {
       console.error('Calendar API: Cars data error:', carsDataError);
     }
 
+    // Fetch user's calendar settings to override default prices
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('host_calendar_settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      console.error('Calendar API: Settings error:', settingsError);
+    }
+
+    console.log('🎯 Calendar API: User settings found:', settingsData);
+
     // Transform data into CalendarData format
     const availability: Record<string, Record<string, 'available' | 'blocked' | 'pending' | 'booked'>> = {};
     const pricingOverrides: Record<string, Record<string, number>> = {};
@@ -197,20 +210,59 @@ export async function GET(request: NextRequest) {
       basePriceByCar[carId] = 85; // default
     });
 
-    // Process base prices
+    // Process base prices - prioritize settings over car table
+    const userBasePrice = settingsData?.base_price_per_day;
     carsData?.forEach(car => {
-      basePriceByCar[car.id] = car.price_per_day || 85;
+      // Use user's global base price from settings if available, otherwise fall back to car-specific price
+      basePriceByCar[car.id] = userBasePrice || car.price_per_day || 85;
     });
+
+    console.log('🎯 Calendar API: Final base prices by car:', basePriceByCar);
 
     // Process availability data
     availabilityData?.forEach(item => {
       availability[item.car_id][item.date] = item.status;
     });
 
-    // Process pricing data
+    // Process pricing data and apply weekend adjustments
     pricingData?.forEach(item => {
       pricingOverrides[item.car_id][item.date] = item.price_override;
     });
+
+    // Apply weekend pricing adjustments from settings
+    if (settingsData?.weekend_price_adjustment_type && settingsData?.weekend_price_adjustment_value) {
+      ownedCarIds.forEach(carId => {
+        const basePrice = basePriceByCar[carId];
+        
+        // Generate all dates in the month
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dateStr = `${month}-${String(day).padStart(2, '0')}`;
+          const date = new Date(dateStr);
+          const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+          
+          // Check if it's weekend (Saturday or Sunday)
+          if (dayOfWeek === 0 || dayOfWeek === 6) {
+            // Only apply weekend pricing if there's no existing override
+            if (!pricingOverrides[carId][dateStr]) {
+              let weekendPrice = basePrice;
+              
+              if (settingsData.weekend_price_adjustment_type === 'percentage') {
+                weekendPrice = basePrice * (1 + settingsData.weekend_price_adjustment_value / 100);
+              } else if (settingsData.weekend_price_adjustment_type === 'fixed') {
+                weekendPrice = basePrice + settingsData.weekend_price_adjustment_value;
+              }
+              
+              pricingOverrides[carId][dateStr] = Math.round(weekendPrice);
+            }
+          }
+        }
+      });
+    }
+
+    console.log('🎯 Calendar API: Applied weekend pricing, sample overrides:', Object.keys(pricingOverrides).slice(0, 1).map(carId => ({
+      carId,
+      sampleOverrides: Object.entries(pricingOverrides[carId]).slice(0, 5)
+    })));
 
     // Process bookings data - mark dates as booked
     bookingsData?.forEach(booking => {
@@ -251,11 +303,27 @@ export async function GET(request: NextRequest) {
       return total + Object.values(carAvailability).filter(status => status === 'booked').length;
     }, 0);
 
+    // Calculate average rate including weekend adjustments
+    const allPrices: number[] = [];
+    ownedCarIds.forEach(carId => {
+      const basePrice = basePriceByCar[carId];
+      allPrices.push(basePrice);
+      
+      // Add weekend prices to average calculation
+      Object.values(pricingOverrides[carId]).forEach(price => {
+        allPrices.push(price);
+      });
+    });
+    
+    const averageRate = allPrices.length > 0 
+      ? allPrices.reduce((a, b) => a + b, 0) / allPrices.length 
+      : Object.values(basePriceByCar).reduce((a, b) => a + b, 0) / Object.values(basePriceByCar).length || 85;
+
     const metrics: CalendarMetrics = {
-      totalRevenue: bookedDays * 85, // simplified
+      totalRevenue: bookedDays * averageRate, // use calculated average
       pendingRequestsCount: bookingsData?.filter(b => b.status === 'pending').length || 0,
       occupancyRate: totalDays > 0 ? bookedDays / totalDays : 0,
-      averageRate: Object.values(basePriceByCar).reduce((a, b) => a + b, 0) / Object.values(basePriceByCar).length || 85
+      averageRate
     };
 
     console.log('🎯 Calendar API: Returning data successfully');

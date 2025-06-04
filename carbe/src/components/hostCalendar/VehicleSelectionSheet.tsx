@@ -75,15 +75,15 @@ export default function VehicleSelectionSheet({
             className="fixed bottom-0 left-0 right-0 z-50"
             style={{ y: dragY }}
           >
-            <div className="bg-gray-900/95 backdrop-blur-2xl rounded-t-3xl shadow-2xl border border-gray-700/30 overflow-hidden mx-4 mb-4 max-w-md mx-auto">
+            <div className="bg-[#212121] rounded-t-[28px] shadow-2xl border border-gray-700/50 overflow-hidden max-w-md mx-auto">
               
               {/* Handle Bar */}
-              <div className="flex justify-center py-3">
-                <div className="w-12 h-1.5 bg-gray-600 rounded-full" />
+              <div className="flex justify-center pt-2">
+                <div className="w-10 h-1 bg-gray-400 rounded-full opacity-50" />
               </div>
 
               {/* Header */}
-              <div className="px-6 py-4 border-b border-gray-700/30">
+              <div className="px-4 pt-4 pb-2 border-b border-gray-700/50">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-semibold text-white">Select Vehicles</h2>
@@ -101,7 +101,7 @@ export default function VehicleSelectionSheet({
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
                 
                 {/* Select All Option */}
                 <button
@@ -130,7 +130,7 @@ export default function VehicleSelectionSheet({
                 </button>
 
                 {/* Divider */}
-                <div className="border-t border-gray-700/30" />
+                <div className="border-t border-gray-700/50" />
 
                 {/* Individual Vehicles */}
                 <div className="space-y-2">
@@ -187,10 +187,10 @@ export default function VehicleSelectionSheet({
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-gray-700/30 bg-gray-900/50">
+              <div className="p-4 border-t border-gray-700/50">
                 <button
                   onClick={onClose}
-                  className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full py-4 bg-[#FF4646] hover:bg-red-600 text-white rounded-xl font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Done ({selectedCarIds.length} selected)
                 </button>
