@@ -32,14 +32,12 @@ export function useCalendarData(
         carIds: selectedCarIds.join(',')
       });
 
-      // Get the current session to send the access token (same as vehicles API)
       const { data: { session } } = await supabase.auth.getSession();
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
       
-      // Add authorization header if we have a session
       if (session?.access_token) {
         headers.Authorization = `Bearer ${session.access_token}`;
       }
@@ -66,14 +64,12 @@ export function useCalendarData(
     carIds: string[]
   ) => {
     try {
-      // Get the current session to send the access token
       const { data: { session } } = await supabase.auth.getSession();
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
       
-      // Add authorization header if we have a session
       if (session?.access_token) {
         headers.Authorization = `Bearer ${session.access_token}`;
       }
@@ -118,14 +114,12 @@ export function useCalendarData(
     isWeekendOverride = false
   ) => {
     try {
-      // Get the current session to send the access token
       const { data: { session } } = await supabase.auth.getSession();
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
       
-      // Add authorization header if we have a session
       if (session?.access_token) {
         headers.Authorization = `Bearer ${session.access_token}`;
       }
@@ -171,14 +165,12 @@ export function useCalendarData(
           operation.carIds
         );
       } else if (operation.type === 'pricing') {
-        // Get the current session to send the access token
         const { data: { session } } = await supabase.auth.getSession();
         
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
         };
         
-        // Add authorization header if we have a session
         if (session?.access_token) {
           headers.Authorization = `Bearer ${session.access_token}`;
         }
@@ -198,7 +190,7 @@ export function useCalendarData(
           throw new Error('Failed to bulk update pricing');
         }
 
-        // Optimistically update local state
+        // Optimistically update local state for pricing
         if (data) {
           const newData = { ...data };
           operation.carIds.forEach(carId => {
@@ -216,15 +208,17 @@ export function useCalendarData(
       setError(err instanceof Error ? err.message : 'Failed to perform bulk update');
       throw err;
     }
-  }, [data, updateAvailability]);
+  }, [updateAvailability, data]);
 
   const refreshData = useCallback(async () => {
     await fetchData();
   }, [fetchData]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (selectedCarIds.length > 0) {
+      fetchData();
+    }
+  }, [fetchData, selectedCarIds.length]);
 
   return {
     data,

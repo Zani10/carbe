@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Car, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Car, Settings } from 'lucide-react';
 import { Vehicle, CalendarMetrics } from '@/types/calendar';
 import { format, parse } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -76,25 +76,9 @@ export default function CalendarHeader({
     <>
       {/* Simplified Header */}
       <div className="flex items-center justify-between py-4 mb-6">
-        {/* Left: Month Navigation */}
+        {/* Left: App Title */}
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => onMonthChange('prev')}
-            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          
-          <h2 className="text-xl font-semibold text-white">
-            {format(parse(displayMonth, 'yyyy-MM', new Date()), 'MMMM yyyy')}
-          </h2>
-          
-          <button
-            onClick={() => onMonthChange('next')}
-            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/30"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+         
         </div>
 
         {/* Right: Actions with Fade Effect */}

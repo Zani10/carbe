@@ -2,11 +2,8 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import CalendarHeader from './CalendarHeader';
-import AvailabilityGrid from './AvailabilityGrid';
 import MinimalSelectionBar from './MinimalSelectionBar';
-import SwipeContainer from './SwipeContainer';
-
-import AnimatedCalendarGrid from './AnimatedCalendarGrid';
+import ScrollableMonthList from './ScrollableMonthList';
 import { useCalendarData } from '@/hooks/useCalendarData';
 import { CalendarFilters, BulkOperation, Vehicle } from '@/types/calendar';
 import { format } from 'date-fns';
@@ -115,14 +112,6 @@ export default function HostCalendarPage() {
     setSelectedDates([]);
   }, []);
 
-  const handleTabChange = useCallback((tab: 'availability' | 'pricing') => {
-    setFilters(prev => ({
-      ...prev,
-      activeTab: tab
-    }));
-    setSelectedDates([]);
-  }, []);
-
   const handleDateClick = useCallback((date: string) => {
     setSelectedDates(prev => {
       // If no dates selected, start new selection
@@ -192,23 +181,6 @@ export default function HostCalendarPage() {
     setSelectedDates([]);
     setHideBottomNav(false);
   }, []);
-
-  // Swipe handlers
-  const handleSwipeUp = useCallback(() => {
-    handleMonthChange('next');
-  }, [handleMonthChange]);
-
-  const handleSwipeDown = useCallback(() => {
-    handleMonthChange('prev');
-  }, [handleMonthChange]);
-
-  const handleSwipeLeft = useCallback(() => {
-    handleTabChange(filters.activeTab === 'availability' ? 'pricing' : 'availability');
-  }, [handleTabChange, filters.activeTab]);
-
-  const handleSwipeRight = useCallback(() => {
-    handleTabChange(filters.activeTab === 'availability' ? 'pricing' : 'availability');
-  }, [handleTabChange, filters.activeTab]);
 
   if (isLoadingVehicles) {
     return (
@@ -286,7 +258,7 @@ export default function HostCalendarPage() {
       
       <div className="max-w-6xl mx-auto p-4 lg:p-6">
         {/* Header */}
-                 <CalendarHeader
+        <CalendarHeader
           displayMonth={filters.displayMonth}
           vehicles={vehicles}
           selectedCarIds={filters.selectedCarIds}
@@ -296,43 +268,34 @@ export default function HostCalendarPage() {
           onVehicleChange={handleVehicleChange}
         />
 
-             {/* Calendar Grid */}
-      <SwipeContainer
-        className="mt-6"
-        onSwipeUp={handleSwipeUp}
-        onSwipeDown={handleSwipeDown}
-        onSwipeLeft={handleSwipeLeft}
-        onSwipeRight={handleSwipeRight}
-      >
-        <AnimatedCalendarGrid
+        {/* Calendar Grid with Scrollable Month List */}
+        <ScrollableMonthList
           displayMonth={filters.displayMonth}
-          isLoading={loading}
-        >
-          <AvailabilityGrid
-            displayMonth={filters.displayMonth}
-            selectedCarIds={filters.selectedCarIds}
-            calendarData={calendarData}
-            selectedDates={selectedDates}
-            isDragSelecting={false}
-            onDateClick={handleDateClick}
-            onDragStart={handleDragStart}
-            onDragEnter={handleDragEnter}
-            onDragEnd={handleDragEnd}
-            onBulkOperation={handleBulkOperation}
-          />
-        </AnimatedCalendarGrid>
-      </SwipeContainer>
+          selectedCarIds={filters.selectedCarIds}
+          calendarData={calendarData}
+          selectedDates={selectedDates}
+          onDateClick={handleDateClick}
+          onDragStart={handleDragStart}
+          onDragEnter={handleDragEnter}
+          onDragEnd={handleDragEnd}
+          onBulkOperation={handleBulkOperation}
+          onMonthChange={(month: string) => {
+            setFilters(prev => ({
+              ...prev,
+              displayMonth: month
+            }));
+            setSelectedDates([]);
+          }}
+        />
 
-      {/* Bottom Control Panel - Airbnb Style */}
-      <MinimalSelectionBar
-        selectedDatesCount={selectedDates.length}
-        selectedDates={selectedDates}
-        selectedCarIds={filters.selectedCarIds}
-        onBulkOperation={handleBulkOperation}
-        onClear={handleClearSelection}
-      />
-
-
+        {/* Bottom Control Panel - Airbnb Style */}
+        <MinimalSelectionBar
+          selectedDatesCount={selectedDates.length}
+          selectedDates={selectedDates}
+          selectedCarIds={filters.selectedCarIds}
+          onBulkOperation={handleBulkOperation}
+          onClear={handleClearSelection}
+        />
       </div>
     </>
   );
