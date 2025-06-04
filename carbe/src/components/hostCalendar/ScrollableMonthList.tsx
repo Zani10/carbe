@@ -7,7 +7,7 @@ import AvailabilityGrid from './AvailabilityGrid';
 interface ScrollableMonthListProps {
   displayMonth: string;
   selectedCarIds: string[];
-  calendarData?: CalendarData;
+  calendarData?: CalendarData; // Keep for interface compatibility
   selectedDates: string[];
   onDateClick: (date: string) => void;
   onDragStart: (date: string) => void;
@@ -20,7 +20,7 @@ interface ScrollableMonthListProps {
 export default function ScrollableMonthList({
   displayMonth,
   selectedCarIds,
-  calendarData,
+  calendarData: _calendarData, // Accept but ignore to prevent glitching
   selectedDates,
   onDateClick,
   onDragStart,
@@ -32,6 +32,10 @@ export default function ScrollableMonthList({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [monthsData, setMonthsData] = useState<{ [month: string]: CalendarData }>({});
   
+  // Smart cache tracking - tracks what we've actually fetched
+  const fetchedMonthsRef = useRef<Set<string>>(new Set());
+  const currentCarIdsRef = useRef<string[]>([]);
+  
   // Generate 3 months: previous, current, next (memoized to prevent recreation)
   const months = useMemo(() => {
     const currentDate = new Date(displayMonth + '-01');
@@ -40,9 +44,29 @@ export default function ScrollableMonthList({
     return [prevMonth, displayMonth, nextMonth];
   }, [displayMonth]);
 
-  // Fetch data for a specific month (background loading)
+  // Reset cache when car selection changes
+  useEffect(() => {
+    const carIdsChanged = JSON.stringify(currentCarIdsRef.current) !== JSON.stringify(selectedCarIds);
+    if (carIdsChanged) {
+      console.log('🚗 Car selection changed, clearing cache');
+      fetchedMonthsRef.current.clear();
+      setMonthsData({});
+
+      currentCarIdsRef.current = selectedCarIds;
+    }
+  }, [selectedCarIds]);
+
+  // Stable fetch function (no monthsData dependency!)
   const fetchMonthData = useCallback(async (month: string) => {
-    if (monthsData[month] || selectedCarIds.length === 0) return;
+    // Smart cache check: don't fetch if already fetched for current car selection
+    const cacheKey = `${month}-${selectedCarIds.join(',')}`;
+    if (fetchedMonthsRef.current.has(cacheKey) || selectedCarIds.length === 0) {
+      console.log(`📋 Cache hit for ${month} - skipping fetch`);
+      return;
+    }
+
+    console.log(`🌐 Fetching fresh data for ${month}`);
+    fetchedMonthsRef.current.add(cacheKey);
 
     try {
       const params = new URLSearchParams({
@@ -69,29 +93,57 @@ export default function ScrollableMonthList({
           ...prev,
           [month]: result.calendarData
         }));
+        console.log(`✅ Successfully cached data for ${month}`);
+      } else {
+        // Remove from cache if fetch failed
+        fetchedMonthsRef.current.delete(cacheKey);
+        console.log(`❌ Failed to fetch ${month}, removed from cache`);
       }
     } catch (error) {
+      // Remove from cache if fetch failed
+      fetchedMonthsRef.current.delete(cacheKey);
       console.error(`Failed to fetch data for ${month}:`, error);
+    } finally {
+      // Fetch completed - cache already updated
     }
-  }, [selectedCarIds, monthsData]);
+  }, [selectedCarIds]); // Only depend on selectedCarIds, not monthsData!
 
-  // Set current month data when it changes (instant)
+  // Set current month data when it changes (instant) - ONLY if we don't have it cached
   useEffect(() => {
-    if (calendarData) {
-      setMonthsData(prev => ({
-        ...prev,
-        [displayMonth]: calendarData
-      }));
+    // IGNORE parent calendarData! It causes glitching when parent refetches
+    // ScrollableMonthList should be completely independent with its own caching
+    
+    // Only fetch the current month if we don't have it and have cars selected
+    if (selectedCarIds.length > 0 && !monthsData[displayMonth]) {
+      const cacheKey = `${displayMonth}-${selectedCarIds.join(',')}`;
+      if (!fetchedMonthsRef.current.has(cacheKey)) {
+        console.log(`🔄 Initial fetch for current month: ${displayMonth}`);
+        fetchMonthData(displayMonth);
+      }
     }
-  }, [displayMonth, calendarData]);
+  }, [displayMonth, selectedCarIds, monthsData]);
 
   // Fetch adjacent months data silently in background
   useEffect(() => {
     const [prevMonth, , nextMonth] = months;
-    // Fetch in background without blocking UI
-    setTimeout(() => fetchMonthData(prevMonth), 0);
-    setTimeout(() => fetchMonthData(nextMonth), 0);
-  }, [fetchMonthData, months]);
+    
+    // Only fetch adjacent months if we have cars selected
+    if (selectedCarIds.length > 0) {
+      // Intelligent background fetching - only if not already cached
+      const prevCacheKey = `${prevMonth}-${selectedCarIds.join(',')}`;
+      const nextCacheKey = `${nextMonth}-${selectedCarIds.join(',')}`;
+      
+      if (!fetchedMonthsRef.current.has(prevCacheKey) && !monthsData[prevMonth]) {
+        console.log(`🔄 Background fetch: ${prevMonth}`);
+        setTimeout(() => fetchMonthData(prevMonth), 100);
+      }
+      
+      if (!fetchedMonthsRef.current.has(nextCacheKey) && !monthsData[nextMonth]) {
+        console.log(`🔄 Background fetch: ${nextMonth}`);
+        setTimeout(() => fetchMonthData(nextMonth), 200);
+      }
+    }
+  }, [months, selectedCarIds]); // Removed fetchMonthData dependency to prevent recreation
 
   // Handle scroll to detect month changes (debounced)
   const handleScroll = useCallback(() => {
@@ -156,24 +208,28 @@ export default function ScrollableMonthList({
         const monthData = monthsData[month];
         const isCurrentMonth = month === displayMonth;
         
+        // NEVER use parent calendarData - it causes glitching!
+        // Only use our own cached monthsData
+        const displayData = monthData; // Pure cached data only
+        
         return (
           <div 
             key={month} 
             className="snap-start h-[600px] flex flex-col"
           >
             {/* Month Header */}
-            <div className="text-center py-4 bg-[#121212]">
+            <div className="text-center py-4 bg-gradient-to-b from-[#121212] via-[#121212]/80 to-[#121212]/40 relative z-10">
               <h3 className={`text-lg font-medium ${isCurrentMonth ? 'text-white' : 'text-gray-400'}`}>
                 {format(new Date(month + '-01'), 'MMMM yyyy')}
               </h3>
             </div>
 
-            {/* Month Calendar - ALWAYS RENDER, even without data */}
+            {/* Month Calendar - ALWAYS RENDER with our cached data only */}
             <div className={`flex-1 ${!isCurrentMonth ? 'opacity-70 pointer-events-none' : ''}`}>
               <AvailabilityGrid
                 displayMonth={month}
                 selectedCarIds={selectedCarIds}
-                calendarData={monthData} // undefined is fine - will show skeleton
+                calendarData={displayData} // Only our cached data - never parent data!
                 adjacentMonthsData={monthsData} // Pass all months data for cross-month bookings
                 selectedDates={isCurrentMonth ? selectedDates : []}
                 isDragSelecting={false}
