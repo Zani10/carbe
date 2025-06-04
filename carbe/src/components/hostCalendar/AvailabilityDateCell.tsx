@@ -7,7 +7,7 @@ interface AvailabilityDateCellProps {
   isCurrentMonth: boolean;
   isWeekend: boolean;
   isSelected: boolean;
-  status: 'available' | 'blocked' | 'pending' | 'booked' | 'mixed';
+  status: 'unset' | 'available' | 'blocked' | 'pending' | 'booked' | 'mixed';
   pendingCount: number;
   booking?: {
     id: string;
@@ -39,28 +39,28 @@ export default function AvailabilityDateCell({
   const getCellStyles = () => {
     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
     
-    // Handle connected booking spans
+    // Handle connected booking spans - Airbnb style
     if (status === 'booked' && booking) {
-      let bookingStyles = 'bg-gradient-to-r from-[#059669] to-[#10B981] text-white shadow-sm '; // Satisfying green gradient for booked
+      let bookingStyles = 'bg-gradient-to-r from-[#059669] to-[#10B981] text-white shadow-sm border-0 ';
       
       if (booking.isStart && booking.isEnd) {
         // Single day booking
-        bookingStyles += 'rounded-lg';
+        bookingStyles += 'rounded-lg mx-0.5';
       } else if (booking.isStart) {
         // Start of multi-day booking
-        bookingStyles += 'rounded-l-lg';
+        bookingStyles += 'rounded-l-lg mr-0';
       } else if (booking.isEnd) {
         // End of multi-day booking
-        bookingStyles += 'rounded-r-lg';
+        bookingStyles += 'rounded-r-lg ml-0';
       } else if (booking.isMiddle) {
-        // Middle of multi-day booking - no borders or rounding
-        bookingStyles += '';
+        // Middle of multi-day booking - completely connected
+        bookingStyles += 'mx-0';
       }
       
-      return `relative w-12 h-16 flex items-center justify-center text-sm cursor-pointer transition-all duration-200 ${!isCurrentMonth ? 'opacity-30' : ''} ${bookingStyles}`;
+      return `relative w-12 h-16 flex items-center justify-start text-sm cursor-pointer transition-all duration-200 ${!isCurrentMonth ? 'opacity-30' : ''} ${bookingStyles}`;
     }
 
-    // Regular cell styling (reverted to original)
+    // Regular cell styling
     const baseStyles = `
       relative w-12 h-16 flex flex-col items-center justify-center text-xs
       cursor-pointer transition-all duration-200 rounded-lg border
@@ -76,41 +76,7 @@ export default function AvailabilityDateCell({
     return baseStyles;
   };
 
-
-
-  // Render booked cell with guest info
-  if (status === 'booked' && booking) {
-    return (
-      <div className={getCellStyles()} style={{ marginLeft: booking.isMiddle || booking.isEnd ? '-1px' : '0' }}>
-        {/* Guest Avatar (only on start date) */}
-        {booking.isStart && (
-          <div className="absolute left-1.5 top-1/2 transform -translate-y-1/2 w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold z-10">
-            {booking.guest_avatar ? (
-              <img 
-                src={booking.guest_avatar} 
-                alt={booking.guest_name}
-                className="w-5 h-5 rounded-full object-cover"
-              />
-            ) : (
-              booking.guest_name.charAt(0).toUpperCase()
-            )}
-          </div>
-        )}
-
-        {/* Booking text (only on start date or single day) */}
-        {(booking.isStart || (booking.isStart && booking.isEnd)) && (
-          <span className="text-xs font-medium text-white ml-7">
-            Booked
-          </span>
-        )}
-
-        {/* Date number (always visible) */}
-        <span className={`absolute top-1 right-1 text-xs text-white font-medium`}>
-          {dayNumber}
-        </span>
-      </div>
-    );
-  }
+  // Booked cells are now handled by BookedCell component
 
   // Regular cell
   return (
@@ -126,8 +92,8 @@ export default function AvailabilityDateCell({
         {dayNumber}
       </span>
 
-      {/* Price Line - Only for non-booked cells */}
-      {status !== 'booked' && (
+      {/* Price Line - Only for available/blocked cells with price data */}
+      {status !== 'unset' && (
         <span className="text-xs text-gray-400">€75</span>
       )}
 
@@ -137,7 +103,10 @@ export default function AvailabilityDateCell({
       )}
       
       {status === 'blocked' && (
-        <Ban className="absolute top-1 right-1 w-2.5 h-2.5 text-[#FF4646]" />
+        <>
+          <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#FF4646] shadow-sm" />
+          <Ban className="absolute top-1 right-1 w-2.5 h-2.5 text-[#FF4646]" />
+        </>
       )}
       
       {status === 'pending' && (
@@ -147,6 +116,8 @@ export default function AvailabilityDateCell({
       {status === 'mixed' && (
         <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-yellow-400 shadow-sm" />
       )}
+
+      {/* No indicator for 'unset' status - clean default state */}
 
       {/* Pending Request Badge */}
       {(status === 'pending' || pendingCount > 0) && (

@@ -1,4 +1,4 @@
-export type AvailabilityStatus = 'available' | 'blocked' | 'pending' | 'booked' | 'mixed';
+export type AvailabilityStatus = 'unset' | 'available' | 'blocked' | 'pending' | 'booked' | 'mixed';
 
 export interface AvailabilityRecord {
   id: string;
@@ -54,6 +54,7 @@ export interface UnifiedCellData {
   pendingRequestsCount: number;
   bookingRequests: BookingRequest[];
   carConflicts?: {
+    unset: string[];
     available: string[];
     blocked: string[];
     booked: string[];
@@ -62,7 +63,7 @@ export interface UnifiedCellData {
 }
 
 export interface CalendarData {
-  availability: { [carId: string]: { [date: string]: 'available' | 'blocked' | 'pending' | 'booked' } };
+  availability: { [carId: string]: { [date: string]: 'unset' | 'available' | 'blocked' | 'pending' | 'booked' } };
   pricingOverrides: { [carId: string]: { [date: string]: number } };
   basePriceByCar: { [carId: string]: number };
   pendingRequestsByDate: { [date: string]: BookingRequest[] };

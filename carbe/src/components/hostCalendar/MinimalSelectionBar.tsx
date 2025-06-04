@@ -38,6 +38,13 @@ export default function MinimalSelectionBar({
   const handleAvailabilityToggle = async () => {
     if (isUpdatingAvailability) return;
     
+    console.log('MinimalSelectionBar: Starting availability update', {
+      selectedDates,
+      selectedCarIds,
+      datesCount: selectedDates.length,
+      carsCount: selectedCarIds.length
+    });
+    
     setIsUpdatingAvailability(true);
     try {
       // For simplicity, assume we're making dates available
@@ -47,8 +54,11 @@ export default function MinimalSelectionBar({
         carIds: selectedCarIds,
         value: 'available'
       });
+      console.log('MinimalSelectionBar: Availability update successful');
     } catch (error) {
-      console.error('Availability update failed:', error);
+      console.error('MinimalSelectionBar: Availability update failed:', error);
+      // Show user-friendly error
+      alert('Failed to update availability. Please try again.');
     } finally {
       setIsUpdatingAvailability(false);
     }
