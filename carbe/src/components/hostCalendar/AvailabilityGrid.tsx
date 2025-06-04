@@ -10,6 +10,7 @@ interface AvailabilityGridProps {
   displayMonth: string;
   selectedCarIds: string[];
   calendarData?: CalendarData;
+  adjacentMonthsData?: { [month: string]: CalendarData };
   selectedDates: string[];
   isDragSelecting: boolean;
   onDateClick: (date: string) => void;
@@ -23,6 +24,7 @@ export default function AvailabilityGrid({
   displayMonth,
   selectedCarIds,
   calendarData,
+  adjacentMonthsData,
   selectedDates,
   isDragSelecting,
   onDateClick,
@@ -52,52 +54,44 @@ export default function AvailabilityGrid({
     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
     const isSelected = selectedDates.includes(dateStr);
 
-    // TEST: Add fake bookings for June to test rendering
-    const testBookings = displayMonth === '2025-06' && selectedCarIds.length > 0 ? [
-      ...(calendarData?.bookings || []),
-      {
-        id: 'test-booking-1',
-        car_id: selectedCarIds[0],
-        start_date: '2025-06-05',
-        end_date: '2025-06-07',
-        status: 'confirmed' as const,
-        daily_rate: 85,
-        guest_name: 'John Doe',
-        guest_email: 'john@example.com',
-        total_amount: 255
-      },
-      {
-        id: 'test-booking-2',
-        car_id: selectedCarIds[0],
-        start_date: '2025-06-15',
-        end_date: '2025-06-15',
-        status: 'confirmed' as const,
-        daily_rate: 85,
-        guest_name: 'Sarah Smith',
-        guest_email: 'sarah@example.com',
-        total_amount: 85
-      }
-    ] : (calendarData?.bookings || []);
+    // Get data from current month or adjacent months if available
+    const dateMonth = format(date, 'yyyy-MM');
+    const relevantData = dateMonth === displayMonth ? calendarData : adjacentMonthsData?.[dateMonth];
 
     // Determine status across selected cars - Airbnb default: available
     let status: 'available' | 'blocked' | 'pending' | 'booked' | 'mixed' = 'available';
     let pendingCount = 0;
     let booking = undefined;
+    let pricing = undefined;
     const carStatuses: string[] = [];
 
     selectedCarIds.forEach(carId => {
-      // Default to 'available' like Airbnb - hosts manually block dates as needed
-      const carStatus = calendarData?.availability?.[carId]?.[dateStr] || 'available';
+      // Default to 'available' like Airbnb - hosts manually block dates as needed  
+      const carStatus = relevantData?.availability?.[carId]?.[dateStr] || 'available';
       carStatuses.push(carStatus);
       
       if (carStatus === 'pending' || carStatus === 'booked') {
-        const requests = calendarData?.pendingRequestsByDate?.[dateStr] || [];
+        const requests = relevantData?.pendingRequestsByDate?.[dateStr] || [];
         pendingCount += requests.filter(r => r.car_id === carId).length;
       }
     });
 
-    // Check for bookings on this date
-    const dayBookings = testBookings.filter(booking => {
+    // Get pricing data for the first selected car (simplified for now)
+    if (selectedCarIds.length > 0 && relevantData) {
+      const firstCarId = selectedCarIds[0];
+      const priceOverride = relevantData.pricingOverrides?.[firstCarId]?.[dateStr];
+      const basePrice = relevantData.basePriceByCar?.[firstCarId];
+      
+      if (priceOverride || basePrice) {
+        pricing = {
+          basePrice: priceOverride || basePrice,
+          currency: '€'
+        };
+      }
+    }
+
+    // Check for bookings on this date (including cross-month bookings)
+    const dayBookings = relevantData?.bookings?.filter(booking => {
       const bookingStart = new Date(booking.start_date);
       const bookingEnd = new Date(booking.end_date);
       const currentDate = new Date(dateStr);
@@ -105,7 +99,7 @@ export default function AvailabilityGrid({
       return currentDate >= bookingStart && currentDate <= bookingEnd && 
              selectedCarIds.includes(booking.car_id) &&
              (booking.status === 'confirmed' || booking.status === 'completed');
-    });
+    }) || [];
 
     if (dayBookings.length > 0) {
       const currentBooking = dayBookings[0]; // Take first booking for this date
@@ -145,8 +139,9 @@ export default function AvailabilityGrid({
       isSelected,
       status,
       pendingCount,
+      pricing,
       booking,
-      bookingRequests: calendarData?.pendingRequestsByDate?.[dateStr] || []
+      bookingRequests: relevantData?.pendingRequestsByDate?.[dateStr] || []
     };
   };
 
@@ -293,6 +288,7 @@ export default function AvailabilityGrid({
                 isSelected={item.cellData.isSelected}
                 status={item.cellData.status}
                 pendingCount={item.cellData.pendingCount}
+                pricing={item.cellData.pricing}
                 booking={item.cellData.booking}
                 onClick={() => handleCellClick(item.date)}
                 onMouseDown={() => handleCellMouseDown(item.date)}

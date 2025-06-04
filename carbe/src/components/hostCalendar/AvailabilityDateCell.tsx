@@ -9,6 +9,10 @@ interface AvailabilityDateCellProps {
   isSelected: boolean;
   status: 'unset' | 'available' | 'blocked' | 'pending' | 'booked' | 'mixed';
   pendingCount: number;
+  pricing?: {
+    basePrice?: number;
+    currency?: string;
+  };
   booking?: {
     id: string;
     guest_name: string;
@@ -28,6 +32,7 @@ export default function AvailabilityDateCell({
   isSelected,
   status,
   pendingCount,
+  pricing,
   booking,
   onClick,
   onMouseDown,
@@ -92,9 +97,13 @@ export default function AvailabilityDateCell({
         {dayNumber}
       </span>
 
-      {/* Price Line - centered horizontally, below date with nice spacing */}
-      {status !== 'unset' && (
-        <span className="absolute top-12 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">€75</span>
+      {/* Price Line - skeleton or actual price */}
+      {pricing?.basePrice ? (
+        <span className="absolute top-12 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">
+          {pricing.currency || '€'}{pricing.basePrice}
+        </span>
+      ) : (
+        <div className="absolute top-12 left-1/2 transform -translate-x-1/2 w-8 h-3 bg-gray-700 rounded animate-pulse" />
       )}
 
       {/* Status Indicators */}

@@ -174,6 +174,7 @@ export default function ScrollableMonthList({
                 displayMonth={month}
                 selectedCarIds={selectedCarIds}
                 calendarData={monthData} // undefined is fine - will show skeleton
+                adjacentMonthsData={monthsData} // Pass all months data for cross-month bookings
                 selectedDates={isCurrentMonth ? selectedDates : []}
                 isDragSelecting={false}
                 onDateClick={isCurrentMonth ? onDateClick : () => {}}

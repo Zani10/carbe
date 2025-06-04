@@ -19,14 +19,12 @@ export default function HostCalendarPage() {
   });
 
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [hideBottomNav, setHideBottomNav] = useState(false);
 
-  // Fetch user's vehicles
+  // Fetch user's vehicles (non-blocking)
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        setIsLoadingVehicles(true);
         console.log('Fetching vehicles from /api/host/vehicles');
         
         // Get the current session to send the access token
@@ -66,14 +64,12 @@ export default function HostCalendarPage() {
             console.error('Server error:', errorData.details || errorData.error);
           }
           
-          // Fallback to empty array
+          // Fallback to empty array (non-blocking)
           setVehicles([]);
         }
       } catch (error) {
         console.error('Network error fetching vehicles:', error);
-        setVehicles([]);
-      } finally {
-        setIsLoadingVehicles(false);
+        setVehicles([]); // Non-blocking fallback
       }
     };
 
@@ -83,7 +79,6 @@ export default function HostCalendarPage() {
   // Data hook
   const {
     data: calendarData,
-    loading,
     error,
     metrics,
     bulkUpdate,
@@ -182,17 +177,6 @@ export default function HostCalendarPage() {
     setHideBottomNav(false);
   }, []);
 
-  if (isLoadingVehicles) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF4646] mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading vehicles...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (vehicles.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -214,35 +198,8 @@ export default function HostCalendarPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF4646] mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading calendar...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="bg-red-900/20 border border-red-700/50 rounded-xl p-6 max-w-md">
-            <h3 className="text-red-300 font-semibold mb-2">Error Loading Calendar</h3>
-            <p className="text-red-400 text-sm mb-4">{error}</p>
-            <button
-              onClick={refreshData}
-              className="px-4 py-2 bg-[#FF4646] text-white rounded-lg hover:bg-[#FF4646]/90 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Always render calendar immediately - no loading states!
+  // Data will populate progressively via skeleton loading
 
   return (
     <>
@@ -296,6 +253,19 @@ export default function HostCalendarPage() {
           onBulkOperation={handleBulkOperation}
           onClear={handleClearSelection}
         />
+
+        {/* Optional: Show errors as non-blocking notifications */}
+        {error && (
+          <div className="fixed bottom-20 left-4 right-4 bg-red-900/90 border border-red-700/50 rounded-lg p-3 text-red-200 text-sm z-50">
+            <span className="font-medium">Error:</span> {error}
+            <button
+              onClick={refreshData}
+              className="ml-2 underline hover:no-underline"
+            >
+              Retry
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
