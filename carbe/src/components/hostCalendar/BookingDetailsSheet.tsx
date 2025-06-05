@@ -109,19 +109,19 @@ export default function BookingDetailsSheet({
   const saveField = async (field: string) => {
     try {
       const updates: {
-        fuelDeposit?: number;
-        pickupLocation?: string;
-        additionalInfo?: string;
+        fuel_deposit?: number;
+        pickup_location?: string;
+        additional_info?: string;
       } = {};
       
       if (field === 'fuel') {
-        updates.fuelDeposit = fuelDeposit;
+        updates.fuel_deposit = fuelDeposit;
         setEditingFuel(false);
       } else if (field === 'location') {
-        updates.pickupLocation = pickupLocation;
+        updates.pickup_location = pickupLocation;
         setEditingLocation(false);
       } else if (field === 'info') {
-        updates.additionalInfo = additionalInfo;
+        updates.additional_info = additionalInfo;
         setEditingInfo(false);
       }
 

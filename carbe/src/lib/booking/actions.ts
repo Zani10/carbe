@@ -94,35 +94,38 @@ export async function sendCheckInInstructions(bookingId: string): Promise<void> 
   }
 }
 
+// Update booking details (host-editable fields)
 export async function updateBookingDetails(
-  bookingId: string, 
+  bookingId: string,
   updates: {
-    fuelDeposit?: number;
-    pickupLocation?: string;
-    additionalInfo?: string;
+    fuel_deposit?: number;
+    pickup_location?: string;
+    additional_info?: string;
   }
 ): Promise<void> {
-  try {
-    // TODO: Replace with actual API call
-    console.log('Updating booking details for:', bookingId, updates);
-    
-    // Mock API call
-    const response = await fetch(`/api/bookings/${bookingId}/details`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updates),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update booking details');
-    }
-
-    // TODO: Update local state, send notifications to guest, etc.
-    console.log('Booking details updated successfully');
-  } catch (error) {
-    console.error('Error updating booking details:', error);
-    throw error;
-  }
+  // TODO: Implement actual API call
+  // This should:
+  // 1. Update booking_details table with new values
+  // 2. Send notification to guest about changes
+  // 3. Update any related cached data
+  console.log('Updating booking details:', { bookingId, updates });
+  
+  // Mock API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Example API call structure:
+  // const { data, error } = await supabase
+  //   .from('booking_details')
+  //   .upsert({
+  //     booking_id: bookingId,
+  //     fuel_deposit: updates.fuel_deposit,
+  //     pickup_location: updates.pickup_location,
+  //     additional_info: updates.additional_info,
+  //     updated_at: new Date().toISOString()
+  //   });
+  
+  // Send notification to guest
+  // await sendNotificationToGuest(bookingId, 'booking_updated', {
+  //   message: 'Your host has updated trip details'
+  // });
 } 

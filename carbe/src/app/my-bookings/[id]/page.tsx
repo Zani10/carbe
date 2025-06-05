@@ -13,7 +13,11 @@ import {
   ChevronRight,
   AlertCircle,
   CheckCircle,
-  ArrowLeft
+  ArrowLeft,
+  MapPin,
+  Info,
+  Car,
+  Fuel
 } from 'lucide-react';
 import { BookingWithCar } from '@/types/booking';
 import { useBooking } from '@/hooks/booking/useBooking';
@@ -21,6 +25,7 @@ import Button from '@/components/ui/Button';
 import BookingImageCarousel from '@/components/booking/BookingImageCarousel';
 import PickupLocationMap from '@/components/maps/PickupLocationMap';
 import MessageBookingButton from '@/components/booking/MessageBookingButton';
+import { DEFAULT_PICKUP_LOCATION, DEFAULT_ADDITIONAL_INFO, DEFAULT_FUEL_DEPOSIT } from '@/constants/pricing';
 
 interface BookingDetailsPageProps {
   params: Promise<{
@@ -28,10 +33,17 @@ interface BookingDetailsPageProps {
   }>;
 }
 
+// Extended booking data with host-editable fields
+interface BookingWithHostData extends BookingWithCar {
+  fuel_deposit?: number;
+  pickup_location?: string;
+  additional_info?: string;
+}
+
 export default function BookingDetailsPage({ params }: BookingDetailsPageProps) {
   const router = useRouter();
   const { getBookingDetails } = useBooking();
-  const [booking, setBooking] = useState<BookingWithCar | null>(null);
+  const [booking, setBooking] = useState<BookingWithHostData | null>(null);
   const [loading, setLoading] = useState(true);
   const resolvedParams = use(params);
 
@@ -39,7 +51,17 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
     const fetchBooking = async () => {
       try {
         const bookingData = await getBookingDetails(resolvedParams.id);
-        setBooking(bookingData);
+        // TODO: Fetch host-editable fields from booking_details table
+        // This should eventually call: getBookingDetailsWithHostData(bookingId)
+        // which fetches from both bookings table + booking_details table
+        // For now, using defaults from constants
+        const extendedBookingData = {
+          ...bookingData,
+          fuel_deposit: DEFAULT_FUEL_DEPOSIT,
+          pickup_location: DEFAULT_PICKUP_LOCATION,
+          additional_info: DEFAULT_ADDITIONAL_INFO
+        } as BookingWithHostData;
+        setBooking(extendedBookingData);
       } catch (error) {
         console.error('Error fetching booking:', error);
       } finally {
@@ -79,6 +101,31 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
     return format(new Date(dateString), 'EEEE, MMMM d');
   };
 
+  const getStatusInfo = () => {
+    const now = new Date();
+    const startDate = new Date(booking.start_date);
+    const endDate = new Date(booking.end_date);
+    const isUpcoming = now < startDate;
+    const isActive = now >= startDate && now <= endDate;
+    const isCompleted = now > endDate;
+
+    if (booking.status === 'cancelled') {
+      return { text: 'Cancelled', color: 'text-red-400', bgColor: 'bg-red-400/20' };
+    }
+    if (isCompleted) {
+      return { text: 'Completed', color: 'text-blue-400', bgColor: 'bg-blue-400/20' };
+    }
+    if (isActive) {
+      return { text: 'Active - Enjoy your trip!', color: 'text-green-400', bgColor: 'bg-green-400/20' };
+    }
+    if (isUpcoming) {
+      return { text: 'Upcoming', color: 'text-yellow-400', bgColor: 'bg-yellow-400/20' };
+    }
+    return { text: 'Confirmed', color: 'text-green-400', bgColor: 'bg-green-400/20' };
+  };
+
+  const statusInfo = getStatusInfo();
+
   return (
     <div className="min-h-screen bg-[#212121]">
       {/* Enhanced Header */}
@@ -99,12 +146,10 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
                 </p>
               </div>
             </div>
-            {booking.status === 'confirmed' && (
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
-                <CheckCircle className="h-4 w-4 text-green-400" />
-                <span className="text-sm font-medium text-green-400">Confirmed</span>
-              </div>
-            )}
+            <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full ${statusInfo.bgColor} border border-opacity-20`}>
+              <CheckCircle className="h-4 w-4" />
+              <span className={`text-sm font-medium ${statusInfo.color}`}>{statusInfo.text}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -115,11 +160,11 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
           <div className="lg:col-span-2 space-y-6">
             {/* Car Image Carousel */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 overflow-hidden">
-                             <BookingImageCarousel
-                 images={booking.cars.images || []}
-                 alt={`${booking.cars.make} ${booking.cars.model}`}
-                 className="aspect-[16/9]"
-               />
+              <BookingImageCarousel
+                images={booking.cars.images || []}
+                alt={`${booking.cars.make} ${booking.cars.model}`}
+                className="aspect-[16/9]"
+              />
               <div className="p-6">
                 <h2 className="text-xl font-semibold text-white mb-2">
                   {booking.cars.make} {booking.cars.model}
@@ -159,13 +204,55 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
               </div>
             </div>
 
-            {/* Enhanced Pickup & Return with Map */}
+            {/* Enhanced Pickup & Return with Dynamic Location */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Pickup & Return</h3>
+              <div className="flex items-center space-x-2 mb-4">
+                <MapPin className="h-5 w-5 text-blue-400" />
+                <h3 className="text-lg font-semibold text-white">Pickup & Return Location</h3>
+              </div>
+              
+              {/* Dynamic pickup location from host */}
+              <div className="bg-gray-800/50 rounded-xl p-4 mb-4">
+                <p className="text-gray-300 text-sm whitespace-pre-line leading-relaxed">
+                  {booking.pickup_location || booking.cars.location || "Contact host for pickup location"}
+                </p>
+              </div>
+              
               <PickupLocationMap 
-                address={booking.cars.location || "Contact host for pickup location"}
+                address={booking.pickup_location || booking.cars.location || "Contact host for pickup location"}
               />
             </div>
+
+            {/* Vehicle Status */}
+            <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Car className="h-5 w-5 text-green-400" />
+                <h3 className="text-lg font-semibold text-white">Vehicle Status</h3>
+              </div>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-gray-300 text-sm">Ready for pickup</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Fuel className="h-4 w-4 text-blue-400" />
+                  <span className="text-gray-300 text-sm">Full tank</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trip Information from Host */}
+            {booking.additional_info && (
+              <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <Info className="h-5 w-5 text-yellow-400" />
+                  <h3 className="text-lg font-semibold text-white">Important Information</h3>
+                </div>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  {booking.additional_info}
+                </p>
+              </div>
+            )}
 
             {/* Host Information - Moved here */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
@@ -261,7 +348,7 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
               </div>
             </div>
 
-            {/* Payment Summary */}
+            {/* Enhanced Payment Summary with Fuel Deposit */}
             <div className="bg-[#2A2A2A] rounded-2xl border border-gray-700/50 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Payment Summary</h3>
               <div className="space-y-3">
@@ -272,6 +359,10 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-400">Service fee</span>
                   <span className="text-sm font-medium text-white">€{booking.service_fee}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Fuel deposit</span>
+                  <span className="text-sm font-medium text-white">€{booking.fuel_deposit || DEFAULT_FUEL_DEPOSIT}</span>
                 </div>
                 <div className="border-t border-gray-600 pt-3">
                   <div className="flex justify-between items-center">
