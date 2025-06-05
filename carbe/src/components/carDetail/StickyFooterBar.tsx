@@ -1,20 +1,26 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
+import { useCarMinPrice } from '@/hooks/useCarMinPrice';
 
 interface StickyFooterBarProps {
   price: number;
   currency?: string;
   onSelectDates?: () => void;
+  carId?: string;
 }
 
 const StickyFooterBar: React.FC<StickyFooterBarProps> = ({
   price,
   currency = '€',
   onSelectDates = () => {},
+  carId,
 }) => {
+  // Fetch real pricing from host calendar if carId is available
+  const { minPrice } = useCarMinPrice(carId || '', price);
+  
   return (
     <div 
-      className=" fixed bottom-4 left-4 right-4 rounded-full px-5 py-4 flex justify-between items-center"
+      className="fixed bottom-4 left-4 right-4 rounded-full px-5 py-4 flex justify-between items-center"
       style={{
         backgroundColor: '#292929',
         boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.3)'
@@ -23,7 +29,7 @@ const StickyFooterBar: React.FC<StickyFooterBarProps> = ({
       <div className="flex flex-col ml-2">
         <span className="text-gray-400 text-xs">From</span>
         <span className="text-white font-bold text-2xl">
-          {currency}{price}<span className="text-sm font-normal text-gray-400">/day</span>
+          {currency}{minPrice}<span className="text-sm font-normal text-gray-400">/day</span>
         </span>
       </div>
       

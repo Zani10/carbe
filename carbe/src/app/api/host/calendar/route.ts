@@ -185,18 +185,17 @@ export async function GET(request: NextRequest) {
       console.error('Calendar API: Cars data error:', carsDataError);
     }
 
-    // Fetch user's calendar settings to override default prices
+    // Fetch car-specific calendar settings to override default prices
     const { data: settingsData, error: settingsError } = await supabase
       .from('host_calendar_settings')
       .select('*')
-      .eq('user_id', user.id)
-      .single();
+      .in('car_id', ownedCarIds);
 
     if (settingsError && settingsError.code !== 'PGRST116') {
       console.error('Calendar API: Settings error:', settingsError);
     }
 
-    console.log('🎯 Calendar API: User settings found:', settingsData);
+    console.log('🎯 Calendar API: Car-specific settings found:', settingsData?.length || 0, 'records');
 
     // Transform data into CalendarData format
     const availability: Record<string, Record<string, 'available' | 'blocked' | 'pending' | 'booked'>> = {};
@@ -207,14 +206,14 @@ export async function GET(request: NextRequest) {
     ownedCarIds.forEach(carId => {
       availability[carId] = {};
       pricingOverrides[carId] = {};
-      basePriceByCar[carId] = 85; // default
+      basePriceByCar[carId] = 85; // default fallback
     });
 
-    // Process base prices - prioritize settings over car table
-    const userBasePrice = settingsData?.base_price_per_day;
+    // Process base prices - prioritize car-specific settings over car table
     carsData?.forEach(car => {
-      // Use user's global base price from settings if available, otherwise fall back to car-specific price
-      basePriceByCar[car.id] = userBasePrice || car.price_per_day || 85;
+      const carSettings = settingsData?.find(setting => setting.car_id === car.id);
+      // Use car-specific base price from settings if available, otherwise fall back to car table price
+      basePriceByCar[car.id] = carSettings?.base_price_per_day || car.price_per_day || 85;
     });
 
     console.log('🎯 Calendar API: Final base prices by car:', basePriceByCar);
@@ -229,9 +228,11 @@ export async function GET(request: NextRequest) {
       pricingOverrides[item.car_id][item.date] = item.price_override;
     });
 
-    // Apply weekend pricing adjustments from settings
-    if (settingsData?.weekend_price_adjustment_type && settingsData?.weekend_price_adjustment_value) {
-      ownedCarIds.forEach(carId => {
+    // Apply weekend pricing adjustments from car-specific settings
+    ownedCarIds.forEach(carId => {
+      const carSettings = settingsData?.find(setting => setting.car_id === carId);
+      
+      if (carSettings?.weekend_price_adjustment_type && carSettings?.weekend_price_adjustment_value) {
         const basePrice = basePriceByCar[carId];
         
         // Generate all dates in the month
@@ -246,18 +247,18 @@ export async function GET(request: NextRequest) {
             if (!pricingOverrides[carId][dateStr]) {
               let weekendPrice = basePrice;
               
-              if (settingsData.weekend_price_adjustment_type === 'percentage') {
-                weekendPrice = basePrice * (1 + settingsData.weekend_price_adjustment_value / 100);
-              } else if (settingsData.weekend_price_adjustment_type === 'fixed') {
-                weekendPrice = basePrice + settingsData.weekend_price_adjustment_value;
+              if (carSettings.weekend_price_adjustment_type === 'percentage') {
+                weekendPrice = basePrice * (1 + carSettings.weekend_price_adjustment_value / 100);
+              } else if (carSettings.weekend_price_adjustment_type === 'fixed') {
+                weekendPrice = basePrice + carSettings.weekend_price_adjustment_value;
               }
               
               pricingOverrides[carId][dateStr] = Math.round(weekendPrice);
             }
           }
         }
-      });
-    }
+      }
+    });
 
     console.log('🎯 Calendar API: Applied weekend pricing, sample overrides:', Object.keys(pricingOverrides).slice(0, 1).map(carId => ({
       carId,

@@ -330,11 +330,13 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
             startDate={selectedStartDate}
             endDate={selectedEndDate}
             onConfirm={handleRequestBooking}
+            onEditDates={() => setIsDatePickerOpen(true)}
           />
         ) : (
           <StickyFooterBar
             price={car.price_per_day}
             onSelectDates={() => setIsDatePickerOpen(true)}
+            carId={id}
           />
         )}
       </div>
@@ -346,6 +348,7 @@ export default function CarDetailPage({ params }: CarDetailPageProps) {
         onSelectDates={handleDateSelect}
         initialStartDate={selectedStartDate || undefined}
         initialEndDate={selectedEndDate || undefined}
+        carId={id}
       />
 
       {/* Success Overlay */}

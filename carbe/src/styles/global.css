@@ -24,6 +24,7 @@ html, body {
   overscroll-behavior: none;
   height: 100%;
   overflow-x: hidden;
+  touch-action: pan-y;
 }
 
 body {
@@ -60,4 +61,16 @@ body {
 
 .snap-center {
   scroll-snap-align: center;
+}
+
+/* Prevent unwanted scrolling in calendar header */
+.calendar-header {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+/* Ensure proper touch handling for calendar components */
+.calendar-container {
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
 }

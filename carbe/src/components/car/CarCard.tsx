@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { Star, Heart, MapPin, Settings2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useCarMinPrice } from '@/hooks/useCarMinPrice';
 
 export interface CarCardProps {
   id: string;
@@ -30,6 +31,7 @@ const CarCard: React.FC<CarCardProps> = ({
   onCardClick,
 }) => {
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { minPrice } = useCarMinPrice(id, pricePerDay);
   
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -102,7 +104,7 @@ const CarCard: React.FC<CarCardProps> = ({
             </div>
             <div className="text-right flex-shrink-0 pl-2">
               <p className="text-lg font-bold text-white">
-                ${pricePerDay}<span className="text-xs font-normal text-gray-400">/day</span>
+                €{minPrice}<span className="text-xs font-normal text-gray-400">/day</span>
               </p>
               {distance && (
                 <p className="text-xs text-green-400 font-medium mt-0.5">{distance}</p>

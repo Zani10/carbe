@@ -49,6 +49,7 @@ export default function AvailabilityGrid({
   });
 
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekendDays = ['Sat', 'Sun'];
 
   const getCellData = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -68,7 +69,7 @@ export default function AvailabilityGrid({
     const carStatuses: string[] = [];
 
     selectedCarIds.forEach(carId => {
-      // Default to 'available' like Airbnb - hosts manually block dates as needed  
+      // Default to 'available'  - hosts manually block dates as needed  
       const carStatus = relevantData?.availability?.[carId]?.[dateStr] || 'available';
       carStatuses.push(carStatus);
       

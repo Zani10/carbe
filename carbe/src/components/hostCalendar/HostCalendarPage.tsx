@@ -223,7 +223,7 @@ export default function HostCalendarPage() {
         `}</style>
       )}
       
-      <div className="max-w-6xl mx-auto p-4 lg:p-6 pb-32">
+      <div className="calendar-container max-w-6xl mx-auto p-4 lg:p-6 pb-32">
         {/* Header */}
         <CalendarHeader
           displayMonth={filters.displayMonth}

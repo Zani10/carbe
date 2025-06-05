@@ -26,80 +26,111 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const settings = await request.json();
-    console.log('Calendar Settings API: Received settings:', settings);
+    const { carIds, settings } = await request.json();
+    console.log('Calendar Settings API: Received settings for cars:', carIds, 'settings:', settings);
+
+    if (!carIds || !Array.isArray(carIds) || carIds.length === 0) {
+      return NextResponse.json({ error: 'Missing or invalid carIds' }, { status: 400 });
+    }
 
     // Validate required fields
-    const requiredFields = ['basePricePerDay', 'minimumStayRequirement', 'defaultCheckInTime', 'defaultCheckOutTime'];
+    const requiredFields = ['basePricePerDay', 'minimumBookingDuration', 'defaultCheckInTime', 'defaultCheckOutTime'];
     for (const field of requiredFields) {
       if (settings[field] === undefined || settings[field] === null) {
         return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 });
       }
     }
 
-    // Check if settings record exists for this user
-    const { data: existingSettings, error: fetchError } = await supabase
-      .from('host_calendar_settings')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    // Verify user owns all specified cars
+    const { data: userCars, error: carsError } = await supabase
+      .from('cars')
+      .select('id')
+      .eq('owner_id', user.id)
+      .in('id', carIds);
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error('Calendar Settings API: Error fetching existing settings:', fetchError);
+    if (carsError) {
+      console.error('Calendar Settings API: Error verifying car ownership:', carsError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
+    const ownedCarIds = userCars?.map(car => car.id) || [];
+    const unauthorizedCars = carIds.filter(id => !ownedCarIds.includes(id));
+    
+    if (unauthorizedCars.length > 0) {
+      return NextResponse.json({ 
+        error: 'Unauthorized access to some vehicles',
+        unauthorizedCars 
+      }, { status: 403 });
+    }
+
+    // Prepare settings data for each car
     const settingsData = {
-      user_id: user.id,
       base_price_per_day: settings.basePricePerDay,
-      minimum_stay_requirement: settings.minimumStayRequirement,
+      minimum_booking_duration: settings.minimumBookingDuration,
       weekend_price_adjustment_type: settings.weekendPriceAdjustment?.type || 'percentage',
       weekend_price_adjustment_value: settings.weekendPriceAdjustment?.value || 0,
       default_checkin_time: settings.defaultCheckInTime,
       default_checkout_time: settings.defaultCheckOutTime,
-      booking_lead_time: settings.bookingLeadTime || 1,
+      booking_advance_notice: settings.bookingAdvanceNotice || 1,
       updated_at: new Date().toISOString()
     };
 
-    let result;
-    if (existingSettings) {
-      // Update existing settings
-      const { data, error } = await supabase
+    // Update settings for each car
+    const results = [];
+    for (const carId of ownedCarIds) {
+      // Check if settings record exists for this car
+      const { data: existingSettings, error: fetchError } = await supabase
         .from('host_calendar_settings')
-        .update(settingsData)
-        .eq('user_id', user.id)
-        .select()
+        .select('*')
+        .eq('car_id', carId)
         .single();
 
-      if (error) {
-        console.error('Calendar Settings API: Error updating settings:', error);
-        return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Calendar Settings API: Error fetching existing settings for car', carId, ':', fetchError);
+        return NextResponse.json({ error: 'Database error' }, { status: 500 });
       }
-      result = data;
-    } else {
-      // Create new settings
-      const newSettingsData = {
-        ...settingsData,
-        created_at: new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('host_calendar_settings')
-        .insert(newSettingsData)
-        .select()
-        .single();
 
-      if (error) {
-        console.error('Calendar Settings API: Error creating settings:', error);
-        return NextResponse.json({ error: 'Failed to create settings' }, { status: 500 });
+      if (existingSettings) {
+        // Update existing settings
+        const { data, error } = await supabase
+          .from('host_calendar_settings')
+          .update(settingsData)
+          .eq('car_id', carId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Calendar Settings API: Error updating settings for car', carId, ':', error);
+          return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+        }
+        results.push(data);
+      } else {
+        // Create new settings
+        const newSettingsData = {
+          ...settingsData,
+          car_id: carId,
+          created_at: new Date().toISOString()
+        };
+        
+        const { data, error } = await supabase
+          .from('host_calendar_settings')
+          .insert(newSettingsData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Calendar Settings API: Error creating settings for car', carId, ':', error);
+          return NextResponse.json({ error: 'Failed to create settings' }, { status: 500 });
+        }
+        results.push(data);
       }
-      result = data;
     }
 
-    console.log('Calendar Settings API: Settings saved successfully');
+    console.log('Calendar Settings API: Settings saved successfully for', results.length, 'cars');
     return NextResponse.json({ 
       success: true, 
-      settings: result 
+      settingsCount: results.length,
+      affectedCars: ownedCarIds
     });
 
   } catch (error) {
@@ -112,11 +143,9 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🎯 Calendar Settings API: Processing get request');
     
-    // Get authenticated user with proper session setup for RLS
     const supabase = createApiRouteSupabaseClient(request);
     const authHeader = request.headers.get('authorization');
     
-    // Set up authentication session if we have a bearer token
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       await supabase.auth.setSession({
@@ -132,47 +161,87 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch user's calendar settings
-    const { data: settings, error } = await supabase
-      .from('host_calendar_settings')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    // Get carIds from query parameters
+    const { searchParams } = new URL(request.url);
+    const carIdsParam = searchParams.get('carIds');
+    
+    if (!carIdsParam) {
+      return NextResponse.json({ error: 'Missing carIds parameter' }, { status: 400 });
+    }
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error('Calendar Settings API: Error fetching settings:', error);
+    const carIds = carIdsParam.split(',').filter(id => id.trim());
+    
+    // Verify user owns all specified cars
+    const { data: userCars, error: carsError } = await supabase
+      .from('cars')
+      .select('id')
+      .eq('owner_id', user.id)
+      .in('id', carIds);
+
+    if (carsError) {
+      console.error('Calendar Settings API: Error verifying car ownership:', carsError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    // If no settings found, return defaults
-    if (!settings) {
-      console.log('Calendar Settings API: No settings found, returning defaults');
-      return NextResponse.json({
-        basePricePerDay: 65,
-        minimumStayRequirement: 1,
-        weekendPriceAdjustment: { type: 'percentage', value: 20 },
-        specialEventPricing: [],
-        defaultCheckInTime: '15:00',
-        defaultCheckOutTime: '11:00',
-        bookingLeadTime: 1
-      });
+    const ownedCarIds = userCars?.map(car => car.id) || [];
+    
+    // Fetch settings for owned cars
+    const { data: settings, error: settingsError } = await supabase
+      .from('host_calendar_settings')
+      .select('*')
+      .in('car_id', ownedCarIds);
+
+    if (settingsError) {
+      console.error('Calendar Settings API: Error fetching settings:', settingsError);
+      return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
     }
 
-    // Transform database format to frontend format
-    const transformedSettings = {
-      basePricePerDay: settings.base_price_per_day,
-      minimumStayRequirement: settings.minimum_stay_requirement,
+    // Group settings by car_id and transform to frontend format
+    interface CarSettings {
+      basePricePerDay: number;
+      minimumBookingDuration: number;
       weekendPriceAdjustment: {
-        type: settings.weekend_price_adjustment_type,
-        value: settings.weekend_price_adjustment_value
-      },
-      defaultCheckInTime: settings.default_checkin_time,
-      defaultCheckOutTime: settings.default_checkout_time,
-      bookingLeadTime: settings.booking_lead_time
-    };
+        type: string;
+        value: number;
+      };
+      defaultCheckInTime: string;
+      defaultCheckOutTime: string;
+      bookingAdvanceNotice: number;
+    }
+    const settingsByCar: Record<string, CarSettings> = {};
+    settings?.forEach(setting => {
+      settingsByCar[setting.car_id] = {
+        basePricePerDay: setting.base_price_per_day,
+        minimumBookingDuration: setting.minimum_booking_duration,
+        weekendPriceAdjustment: {
+          type: setting.weekend_price_adjustment_type,
+          value: setting.weekend_price_adjustment_value
+        },
+        defaultCheckInTime: setting.default_checkin_time,
+        defaultCheckOutTime: setting.default_checkout_time,
+        bookingAdvanceNotice: setting.booking_advance_notice
+      };
+    });
 
-    console.log('Calendar Settings API: Settings retrieved successfully');
-    return NextResponse.json(transformedSettings);
+    // For cars without settings, provide defaults
+    ownedCarIds.forEach(carId => {
+      if (!settingsByCar[carId]) {
+        settingsByCar[carId] = {
+          basePricePerDay: 65,
+          minimumBookingDuration: 1,
+          weekendPriceAdjustment: {
+            type: 'percentage',
+            value: 20
+          },
+          defaultCheckInTime: '15:00',
+          defaultCheckOutTime: '11:00',
+          bookingAdvanceNotice: 1
+        };
+      }
+    });
+
+    console.log('Calendar Settings API: Settings retrieved successfully for', Object.keys(settingsByCar).length, 'cars');
+    return NextResponse.json(settingsByCar);
 
   } catch (error) {
     console.error('Calendar Settings API: Unexpected error:', error);

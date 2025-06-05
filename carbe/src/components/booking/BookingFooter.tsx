@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { LockIcon, LockOpen, ChevronRight, Check } from 'lucide-react';
+import { LockIcon, LockOpen, ChevronRight, Check, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 
@@ -10,6 +10,7 @@ interface BookingFooterProps {
   startDate: Date | undefined;
   endDate: Date | undefined;
   onConfirm: () => void;
+  onEditDates?: () => void;
   currency?: string;
 }
 
@@ -18,6 +19,7 @@ const BookingFooter: React.FC<BookingFooterProps> = ({
   startDate,
   endDate,
   onConfirm,
+  onEditDates,
   currency = '€',
 }) => {
   const [swipeActive, setSwipeActive] = useState(false);
@@ -225,7 +227,17 @@ const BookingFooter: React.FC<BookingFooterProps> = ({
             transition={{ duration: 0.32, ease: 'easeInOut' }}
           >
             <div className="flex justify-between items-center h-full">
-              <div className="text-white text-sm font-bold">{formatDateRange()}</div>
+              <div className="flex items-center space-x-2">
+                <div className="text-white text-sm font-bold">{formatDateRange()}</div>
+                {onEditDates && (
+                  <button
+                    onClick={onEditDates}
+                    className="p-1 hover:bg-gray-600 rounded-full transition-colors"
+                  >
+                    <Edit2 size={14} className="text-gray-300" />
+                  </button>
+                )}
+              </div>
               <div className="text-white font-bold text-lg">{currency}{pricePerDay}<span className="text-xs font-normal text-gray-300">/day</span></div>
             </div>
           </motion.div>

@@ -467,6 +467,7 @@ export default function BookPage({ params }: BookPageProps) {
         onSelectDates={handleDateSelect}
         initialStartDate={selectedStartDate || undefined}
         initialEndDate={selectedEndDate || undefined}
+        carId={id}
       />
     </div>
   );

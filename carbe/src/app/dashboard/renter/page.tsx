@@ -45,7 +45,7 @@ export default function RenterDashboardPage() {
             <p className="text-gray-400 mb-8">Track your bookings and past experiences</p>
             <button 
               onClick={() => router.push('/signin')}
-              className="px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
+              className="px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
             >
               Sign In
             </button>
@@ -83,7 +83,7 @@ export default function RenterDashboardPage() {
       <>
         <div className="min-h-screen bg-[#212121] flex items-center justify-center pb-24">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 text-[#FF2800] animate-spin mx-auto mb-4" />
+            <Loader2 className="h-8 w-8 text-[#FF4646] animate-spin mx-auto mb-4" />
             <p className="text-gray-400">Loading your rides...</p>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function RenterDashboardPage() {
             onClick={() => setActiveTab('upcoming')}
               className={`flex-1 py-3 px-4 text-center rounded-lg transition-all duration-200 font-medium ${
               activeTab === 'upcoming' 
-                ? 'bg-[#FF2800] text-white shadow-sm' 
+                ? 'bg-[#FF4646] text-white shadow-sm' 
                   : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -114,7 +114,7 @@ export default function RenterDashboardPage() {
             onClick={() => setActiveTab('past')}
               className={`flex-1 py-3 px-4 text-center rounded-lg transition-all duration-200 font-medium ${
               activeTab === 'past' 
-                ? 'bg-[#FF2800] text-white shadow-sm' 
+                ? 'bg-[#FF4646] text-white shadow-sm' 
                   : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -141,7 +141,7 @@ export default function RenterDashboardPage() {
                 {activeTab === 'upcoming' && (
                   <button 
                     onClick={() => router.push('/explore')}
-                    className="px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90 transition-colors font-medium"
+                    className="px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
                   >
                     Browse Cars
                   </button>
