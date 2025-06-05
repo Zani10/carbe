@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Car, Check } from 'lucide-react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { Vehicle } from '@/types/calendar';
@@ -20,23 +20,33 @@ export default function VehicleSelectionSheet({
   onVehicleChange
 }: VehicleSelectionSheetProps) {
   const [dragY, setDragY] = useState(0);
+  const [tempSelectedIds, setTempSelectedIds] = useState<string[]>(selectedCarIds);
+
+  // Update temp selection when prop changes (when sheet opens)
+  useEffect(() => {
+    setTempSelectedIds(selectedCarIds);
+  }, [selectedCarIds, isOpen]);
 
   const handleVehicleToggle = (vehicleId: string) => {
-    const newSelection = selectedCarIds.includes(vehicleId)
-      ? selectedCarIds.filter(id => id !== vehicleId)
-      : [...selectedCarIds, vehicleId];
+    const newSelection = tempSelectedIds.includes(vehicleId)
+      ? tempSelectedIds.filter(id => id !== vehicleId)
+      : [...tempSelectedIds, vehicleId];
     
-    onVehicleChange(newSelection);
+    setTempSelectedIds(newSelection);
   };
 
   const handleSelectAllVehicles = () => {
-    if (selectedCarIds.length === vehicles.length) {
+    if (tempSelectedIds.length === vehicles.length) {
       // If all selected, deselect all except first one
-      onVehicleChange([vehicles[0]?.id].filter(Boolean));
+      setTempSelectedIds([vehicles[0]?.id].filter(Boolean));
     } else {
       // Select all
-      onVehicleChange(vehicles.map(v => v.id));
+      setTempSelectedIds(vehicles.map(v => v.id));
     }
+  };
+
+  const handleDone = () => {
+    onVehicleChange(tempSelectedIds);
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -88,7 +98,7 @@ export default function VehicleSelectionSheet({
                   <div>
                     <h2 className="text-xl font-semibold text-white">Select Vehicles</h2>
                     <p className="text-sm text-gray-400 mt-1">
-                      {selectedCarIds.length} of {totalVehicleCount} selected
+                      {tempSelectedIds.length} of {totalVehicleCount} selected
                     </p>
                   </div>
                   <button
@@ -119,11 +129,11 @@ export default function VehicleSelectionSheet({
                   </div>
                   
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                    selectedCarIds.length === vehicles.length
+                    tempSelectedIds.length === vehicles.length
                       ? 'bg-red-500 border-red-500 scale-110'
                       : 'border-gray-600 group-hover:border-gray-500'
                   }`}>
-                    {selectedCarIds.length === vehicles.length && (
+                    {tempSelectedIds.length === vehicles.length && (
                       <Check className="w-4 h-4 text-white" strokeWidth={3} />
                     )}
                   </div>
@@ -135,7 +145,7 @@ export default function VehicleSelectionSheet({
                 {/* Individual Vehicles */}
                 <div className="space-y-2">
                   {vehicles.map(vehicle => {
-                    const isSelected = selectedCarIds.includes(vehicle.id);
+                    const isSelected = tempSelectedIds.includes(vehicle.id);
                     
                     return (
                       <button
@@ -189,10 +199,10 @@ export default function VehicleSelectionSheet({
               {/* Footer */}
               <div className="p-4 border-t border-gray-700/50">
                 <button
-                  onClick={onClose}
+                  onClick={handleDone}
                   className="w-full py-4 bg-[#FF4646] hover:bg-red-600 text-white rounded-xl font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  Done ({selectedCarIds.length} selected)
+                  Done ({tempSelectedIds.length} selected)
                 </button>
               </div>
             </div>

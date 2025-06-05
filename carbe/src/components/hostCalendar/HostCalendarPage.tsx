@@ -50,9 +50,31 @@ export default function HostCalendarPage() {
           console.log('Vehicles API response data:', data);
           const userVehicles = data.cars || [];
           setVehicles(userVehicles);
+          
+          // Get cached selection or default to first car only
+          const cachedSelection = localStorage.getItem('host-calendar-selected-cars');
+          let selectedCarIds: string[] = [];
+          
+          if (cachedSelection) {
+            try {
+              const parsed = JSON.parse(cachedSelection);
+              // Validate that cached cars still exist
+              selectedCarIds = parsed.filter((id: string) => 
+                userVehicles.some((v: Vehicle) => v.id === id)
+              );
+            } catch (error) {
+              console.error('Failed to parse cached car selection:', error);
+            }
+          }
+          
+          // If no valid cached selection, default to first car only
+          if (selectedCarIds.length === 0 && userVehicles.length > 0) {
+            selectedCarIds = [userVehicles[0].id];
+          }
+          
           setFilters(prev => ({
             ...prev,
-            selectedCarIds: userVehicles.map((v: Vehicle) => v.id)
+            selectedCarIds
           }));
         } else {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -101,6 +123,9 @@ export default function HostCalendarPage() {
   }, [filters.displayMonth]);
 
   const handleVehicleChange = useCallback((vehicleIds: string[]) => {
+    // Cache the selection
+    localStorage.setItem('host-calendar-selected-cars', JSON.stringify(vehicleIds));
+    
     setFilters(prev => ({
       ...prev,
       selectedCarIds: vehicleIds

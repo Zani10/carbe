@@ -138,7 +138,7 @@ export default function CalendarHeader({
     }
   };
 
-  // Handle vehicle selection change
+  // Handle vehicle selection change - only called when Done is clicked
   const handleVehicleSelectionChange = (newSelectedIds: string[]) => {
     onVehicleChange(newSelectedIds);
     setShowVehicleModal(false);
@@ -172,7 +172,7 @@ export default function CalendarHeader({
                   )}
                 </div>
                 <span className="text-gray-300 text-sm font-medium">
-                  {selectedVehicles.length} {selectedVehicles.length === 1 ? 'Car' : 'Cars'}
+                  {selectedVehicles.length === 0 ? 'Select car' : `${selectedVehicles.length} ${selectedVehicles.length === 1 ? 'Car' : 'Cars'}`}
                 </span>
               </button>
             </div>
