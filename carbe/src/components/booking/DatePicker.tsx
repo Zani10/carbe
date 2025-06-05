@@ -79,33 +79,32 @@ const DatePicker: React.FC<DatePickerProps> = ({
     setValidationError(null);
 
     if (!startDate || (startDate && endDate)) {
-      // Start new selection
-      setStartDate(date);
-      setEndDate(null);
-    } else if (startDate && !endDate) {
-      if (isSameDay(date, startDate)) {
-        // Clicking the same date - book for 1 day
-        const error = validateSelection(startDate, startDate);
-        if (error) {
-          setValidationError(error);
-          return;
-        }
-        setEndDate(startDate);
-      } else {
-        // Complete selection with different end date
-        const newStartDate = isBefore(date, startDate) ? date : startDate;
-        const newEndDate = isBefore(date, startDate) ? startDate : date;
-        
-        // Validate the selection
-        const error = validateSelection(newStartDate, newEndDate);
-        if (error) {
-          setValidationError(error);
-          return;
-        }
-
-        setStartDate(newStartDate);
-        setEndDate(newEndDate);
+      // Start new selection - single day booking on first click
+      const error = validateSelection(date, date);
+      if (error) {
+        setValidationError(error);
+        return;
       }
+      setStartDate(date);
+      setEndDate(date);
+    } else if (startDate && endDate && isSameDay(date, startDate) && isSameDay(date, endDate)) {
+      // Clicking the same single-day selection - cancel/clear selection
+      setStartDate(null);
+      setEndDate(null);
+    } else {
+      // Complete selection with different end date
+      const newStartDate = isBefore(date, startDate) ? date : startDate;
+      const newEndDate = isBefore(date, startDate) ? startDate : date;
+      
+      // Validate the selection
+      const error = validateSelection(newStartDate, newEndDate);
+      if (error) {
+        setValidationError(error);
+        return;
+      }
+
+      setStartDate(newStartDate);
+      setEndDate(newEndDate);
     }
   };
 

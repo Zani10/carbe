@@ -154,7 +154,7 @@ export default function CalendarHeader({
             <div className="flex items-center space-x-3">
                               <button
                  onClick={() => setShowVehicleModal(true)}
-                 className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition-all duration-200"
+                 className="flex items-center space-x-2 px-4 py-2 bg-[#2A2A2A] hover:bg-[#3A3A3A] rounded-4xl border border-gray-700 transition-all duration-200"
               >
                 <div className="flex -space-x-2">
                   {selectedVehicles.slice(0, 3).map((vehicle) => (
@@ -191,7 +191,7 @@ export default function CalendarHeader({
                       <button
              onClick={() => setShowSettingsSheet(true)}
              disabled={selectedCarIds.length === 0}
-             className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+             className="p-3.5 bg-[#2A2A2A] hover:bg-[#3A3A3A] rounded-4xl border border-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Settings size={18} className="text-gray-300" />
           </button>
