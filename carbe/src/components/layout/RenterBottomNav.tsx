@@ -11,6 +11,7 @@ import {
 import clsx from 'clsx';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { COLORS } from '@/constants/colors';
 
 interface RenterBottomNavItemProps {
   icon: React.ElementType;
@@ -32,8 +33,9 @@ const RenterBottomNavItem: React.FC<RenterBottomNavItemProps> = ({
       onClick={onClick}
       className={clsx(
         'flex flex-col items-center justify-center pt-4 pb-2 px-2 focus:outline-none transition-colors duration-150 ease-in-out',
-        isActive ? 'text-red-500' : 'text-gray-300 hover:text-gray-100'
+        isActive ? 'text-gray-300 hover:text-gray-100' : 'text-gray-300 hover:text-gray-100'
       )}
+      style={isActive ? { color: COLORS.primary.red } : {}}
     >
       <Icon 
         className="h-6 w-6" 

@@ -8,6 +8,7 @@ import { ArrowLeft, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { createCar } from '@/lib/car/createCar';
+import { COLORS } from '@/constants/colors';
 
 // Import step components
 import BasicInfoStep from '@/components/car/addCar/BasicInfoStep';
@@ -162,9 +163,13 @@ function AddCarWizard() {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
                       step.id <= currentStep
-                        ? 'bg-[#FF2800] border-[#FF2800] text-white'
+                        ? 'text-white'
                         : 'border-gray-600 text-gray-500'
                     }`}
+                    style={step.id <= currentStep ? {
+                      backgroundColor: COLORS.primary.red,
+                      borderColor: COLORS.primary.red
+                    } : {}}
                   >
                     {step.id < currentStep ? (
                       <Check className="h-4 w-4" />
@@ -177,8 +182,11 @@ function AddCarWizard() {
                 {index < steps.length - 1 && (
                   <div
                     className={`flex-1 h-0.5 mx-2 transition-colors ${
-                      step.id < currentStep ? 'bg-[#FF2800]' : 'bg-gray-600'
+                      step.id < currentStep ? '' : 'bg-gray-600'
                     }`}
+                    style={step.id < currentStep ? {
+                      backgroundColor: COLORS.primary.red
+                    } : {}}
                   />
                 )}
               </div>
@@ -229,9 +237,22 @@ function AddCarWizard() {
             disabled={!canProceed || isSubmitting}
             className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
               canProceed && !isSubmitting
-                ? 'bg-[#FF2800] text-white hover:bg-[#FF2800]/90'
+                ? 'text-white'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
+            style={canProceed && !isSubmitting ? {
+              backgroundColor: COLORS.primary.red
+            } : {}}
+            onMouseEnter={(e) => {
+              if (canProceed && !isSubmitting) {
+                e.currentTarget.style.backgroundColor = COLORS.primary.redHover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (canProceed && !isSubmitting) {
+                e.currentTarget.style.backgroundColor = COLORS.primary.red;
+              }
+            }}
           >
             {isSubmitting ? (
               <div className="flex items-center justify-center">
@@ -264,7 +285,10 @@ export default function AddCarPage() {
           </p>
           <button 
             onClick={() => router.push('/profile')}
-            className="inline-block px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90"
+            className="inline-block px-6 py-3 text-white rounded-xl transition-colors"
+            style={{ backgroundColor: COLORS.primary.red }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.primary.redHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.primary.red}
           >
             Go to Profile
           </button>

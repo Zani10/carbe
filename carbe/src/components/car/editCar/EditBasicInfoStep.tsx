@@ -3,7 +3,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAddCar } from '@/contexts/AddCarContext';
 import { CAR_MAKES } from '@/types/car';
 import { Car, MapPin, Calendar, Users, AlertCircle, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -30,7 +29,11 @@ const basicInfoSchema = z.object({
 
 type BasicInfoData = z.infer<typeof basicInfoSchema>;
 
-// Common European/International cities for validation
+interface EditBasicInfoStepProps {
+  carData: any;
+  onUpdate: (data: any) => void;
+}
+
 const COMMON_LOCATIONS = [
   'Amsterdam, Netherlands',
   'Berlin, Germany',
@@ -42,22 +45,12 @@ const COMMON_LOCATIONS = [
   'Brussels, Belgium',
   'Copenhagen, Denmark',
   'Stockholm, Sweden',
-  'Oslo, Norway',
-  'Helsinki, Finland',
-  'Dublin, Ireland',
-  'Lisbon, Portugal',
-  'Athens, Greece',
-  'Prague, Czech Republic',
-  'Warsaw, Poland',
-  'Budapest, Hungary',
-  'Zurich, Switzerland',
-  'Luxembourg, Luxembourg'
 ];
 
-export default function BasicInfoStep() {
-  const { draftState, updateBasicInfo } = useAddCar();
+export default function EditBasicInfoStep({ carData, onUpdate }: EditBasicInfoStepProps) {
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
   
   const {
     register,
@@ -67,18 +60,17 @@ export default function BasicInfoStep() {
   } = useForm<BasicInfoData>({
     resolver: zodResolver(basicInfoSchema),
     defaultValues: {
-      make: draftState.basicInfo.make || '',
-      model: draftState.basicInfo.model || '',
-      year: draftState.basicInfo.year || new Date().getFullYear(),
-      seats: draftState.basicInfo.seats || 5,
-      location: draftState.basicInfo.location || '',
+      make: carData.make || '',
+      model: carData.model || '',
+      year: carData.year || new Date().getFullYear(),
+      seats: carData.seats || 5,
+      location: carData.location || '',
     },
     mode: 'onChange'
   });
 
   const watchedValues = watch();
   
-  // Watch specific fields to avoid infinite loops
   const make = watch('make');
   const model = watch('model');
   const year = watch('year');
@@ -99,16 +91,28 @@ export default function BasicInfoStep() {
     }
   }, [location]);
 
-  // Update context when form values change
+  // Update parent when form values change
   useEffect(() => {
-    updateBasicInfo({
-      make,
-      model,
-      year,
-      seats,
-      location
-    });
-  }, [make, model, year, seats, location, updateBasicInfo]);
+    const hasFormChanges = 
+      make !== carData.make ||
+      model !== carData.model ||
+      year !== carData.year ||
+      seats !== carData.seats ||
+      location !== carData.location;
+
+    setHasChanges(hasFormChanges);
+
+    if (hasFormChanges) {
+      onUpdate({
+        ...carData,
+        make,
+        model,
+        year,
+        seats,
+        location
+      });
+    }
+  }, [make, model, year, seats, location, carData, onUpdate]);
 
   const getFieldStatus = (fieldName: keyof BasicInfoData) => {
     const hasError = errors[fieldName];
@@ -141,6 +145,16 @@ export default function BasicInfoStep() {
 
   return (
     <div className="space-y-6">
+      {/* Changes Indicator */}
+      {hasChanges && (
+        <GlassCard gradient="accent" padding="sm">
+          <div className="flex items-center text-sm">
+            <AlertCircle className="h-4 w-4 mr-2" style={{ color: COLORS.primary.red }} />
+            <span style={{ color: COLORS.primary.red }}>Unsaved changes detected</span>
+          </div>
+        </GlassCard>
+      )}
+
       {/* Make */}
       <div>
         <label className="flex items-center text-sm font-medium text-gray-200 mb-3">
@@ -239,9 +253,6 @@ export default function BasicInfoStep() {
             {errors.year.message}
           </p>
         )}
-        <p className="mt-1 text-xs text-gray-500">
-          Cars from 1990 to {new Date().getFullYear()} are accepted
-        </p>
       </div>
 
       {/* Seats */}
@@ -269,14 +280,6 @@ export default function BasicInfoStep() {
               } : {}}
             >
               <span className="relative z-10">{seatCount}</span>
-                              {watchedValues.seats === seatCount && (
-                  <div 
-                    className="absolute inset-0"
-                    style={{ 
-                      background: `linear-gradient(to right, ${COLORS.primary.red}, ${COLORS.primary.red}CC)`
-                    }}
-                  />
-                )}
             </button>
           ))}
         </div>
@@ -334,9 +337,6 @@ export default function BasicInfoStep() {
             {errors.location.message}
           </p>
         )}
-        <p className="mt-1 text-xs text-gray-500">
-          Enter the city and country where renters can pick up the car
-        </p>
       </div>
 
       {/* Preview */}
@@ -350,7 +350,7 @@ export default function BasicInfoStep() {
               <Car className="h-6 w-6" style={{ color: COLORS.primary.red }} />
             </div>
             <div className="flex-1">
-                              <h3 className="text-sm font-medium mb-1" style={{ color: COLORS.primary.red }}>Car Preview</h3>
+              <h3 className="text-sm font-medium mb-1" style={{ color: COLORS.primary.red }}>Updated Preview</h3>
               <p className="text-white font-semibold text-lg">
                 {watchedValues.year} {watchedValues.make} {watchedValues.model}
               </p>

@@ -319,56 +319,44 @@ export default function HostHomePage() {
           <div className="grid grid-cols-2 gap-3 mb-6">
             {/* Active Rentals */}
             <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {bookings.filter(b => b.status === 'active').length}
-                  </div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">Active</div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">
+                  {bookings.filter(b => b.status === 'active').length}
                 </div>
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">Active</div>
               </div>
             </div>
 
             {/* Available Cars */}
             <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-white mb-1">4</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">Available</div>
-                </div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">4</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">Available</div>
               </div>
             </div>
 
             {/* Cleaning Status */}
             <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-white mb-1">1</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">Cleaning</div>
-                </div>
-                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">1</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">Cleaning</div>
               </div>
             </div>
 
             {/* Today's Activity */}
             <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {bookings.filter(b => {
-                      const today = new Date();
-                      const startDate = new Date(b.start_date);
-                      const endDate = new Date(b.end_date);
-                      return (startDate.toDateString() === today.toDateString() || 
-                              endDate.toDateString() === today.toDateString()) && 
-                             ['confirmed', 'active'].includes(b.status);
-                    }).length}
-                  </div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">Today</div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">
+                  {bookings.filter(b => {
+                    const today = new Date();
+                    const startDate = new Date(b.start_date);
+                    const endDate = new Date(b.end_date);
+                    return (startDate.toDateString() === today.toDateString() || 
+                            endDate.toDateString() === today.toDateString()) && 
+                           ['confirmed', 'active'].includes(b.status);
+                  }).length}
                 </div>
-                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">Today</div>
               </div>
             </div>
           </div>

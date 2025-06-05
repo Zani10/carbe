@@ -14,6 +14,7 @@ import HostCarCard from '@/components/car/HostCarCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorMessage from '@/components/ui/ErrorMessage';
 import GlassCard from '@/components/ui/GlassCard';
+import { COLORS } from '@/constants/colors';
 import { motion } from 'framer-motion';
 
 export default function HostGaragePage() {
@@ -41,7 +42,12 @@ export default function HostGaragePage() {
           </p>
           <button 
             onClick={() => router.push('/profile')}
-            className="inline-block px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90"
+            className="inline-block px-6 py-3 rounded-xl text-white transition-colors"
+            style={{ 
+              backgroundColor: COLORS.primary.red,
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.primary.redHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.primary.red}
           >
             Go to Profile
           </button>
@@ -84,32 +90,23 @@ export default function HostGaragePage() {
             className="grid grid-cols-3 gap-3 mb-6"
           >
             <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-white mb-1">{stats.totalCars}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">Cars</div>
-                </div>
-                <div className="w-2 h-2 bg-[#FF2800] rounded-full"></div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">{stats.totalCars}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">Cars</div>
               </div>
             </div>
             
             <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-white mb-1">{stats.totalBookings}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">Bookings</div>
-                </div>
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">{stats.totalBookings}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">Bookings</div>
               </div>
             </div>
             
             <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-white mb-1">{formatCurrency(stats.totalRevenue)}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">Revenue</div>
-                </div>
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">{formatCurrency(stats.totalRevenue)}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">Revenue</div>
               </div>
             </div>
           </motion.div>
@@ -125,7 +122,10 @@ export default function HostGaragePage() {
             </p>
             <button 
               onClick={() => router.push('/host/garage/new')}
-              className="w-full bg-[#FF2800] text-white py-3 rounded-xl font-medium hover:bg-[#FF2800]/90 transition-colors"
+              className="w-full text-white py-3 rounded-xl font-medium transition-colors"
+              style={{ backgroundColor: COLORS.primary.red }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.primary.redHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.primary.red}
             >
               Add New Car
             </button>
@@ -141,8 +141,9 @@ export default function HostGaragePage() {
           >
             {/* Sliding Background Indicator */}
             <div 
-              className="absolute top-1 bottom-1 bg-gradient-to-r from-[#FF2800] to-[#FF2800]/80 rounded-xl shadow-lg transition-all duration-300 ease-out"
+              className="absolute top-1 bottom-1 rounded-xl shadow-lg transition-all duration-300 ease-out"
               style={{
+                background: `linear-gradient(to right, ${COLORS.primary.red}, ${COLORS.primary.red}CC)`,
                 width: `${100 / tabs.length}%`,
                 left: `${(tabs.findIndex(tab => tab.id === activeTab) * 100) / tabs.length}%`,
               }}
@@ -223,7 +224,10 @@ export default function HostGaragePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => router.push('/host/garage/new')}
-            className="w-full mt-6 bg-[#FF2800] text-white py-3 rounded-xl font-medium hover:bg-[#FF2800]/90 transition-colors flex items-center justify-center"
+            className="w-full mt-6 text-white py-3 rounded-xl font-medium transition-colors flex items-center justify-center"
+            style={{ backgroundColor: COLORS.primary.red }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.primary.redHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.primary.red}
           >
             <Plus className="h-5 w-5 mr-2" />
             Add Another Car

@@ -68,8 +68,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
   };
 
   const handleEdit = () => {
-    // TODO: Implement edit functionality
-    toast('Edit functionality coming soon');
+    router.push(`/host/garage/edit/${car.id}`);
   };
 
   const handleSettings = () => {
@@ -79,8 +78,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
 
   return (
     <>
-      <GlassCard className="group"
-      >
+      <GlassCard className="group">
         {/* Car Image and Basic Info */}
         <div className="flex items-start space-x-3 mb-4">
           <div className="relative">
@@ -172,44 +170,35 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
               </div>
             </div>
             
-            {/* Rating and Status */}
-            <div className="flex items-center space-x-3 mt-2">
-              {car.rating && (
-                <div className="flex items-center">
-                  <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-1.5"></div>
-                  <span className="text-yellow-400 text-xs font-medium">
-                    {car.rating.toFixed(1)}
-                  </span>
-                </div>
-              )}
-              <span className="text-gray-500 text-xs">•</span>
-              <span className="text-gray-400 text-xs">
-                {car.bookings_count} booking{car.bookings_count !== 1 ? 's' : ''}
-              </span>
-            </div>
+            {/* Rating */}
+            {car.rating && (
+              <div className="flex items-center mt-2">
+                <Star className="h-3 w-3 text-yellow-400 mr-1" />
+                <span className="text-yellow-400 text-xs font-medium">
+                  {car.rating.toFixed(1)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-3 text-center hover:bg-gray-800/40 transition-colors">
-            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mx-auto mb-2"></div>
-            <p className="text-white font-semibold text-sm">{car.bookings_count}</p>
-            <p className="text-gray-400 text-xs">Bookings</p>
+        {/* Stats Row - Centered */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="aspect-square backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-2 text-center hover:bg-gray-800/40 transition-colors flex flex-col items-center justify-center">
+            <p className="text-white font-bold text-lg leading-none">{car.bookings_count || 0}</p>
+            <p className="text-gray-400 text-[10px] leading-tight mt-1">Bookings</p>
           </div>
           
-          <div className="backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-3 text-center hover:bg-gray-800/40 transition-colors">
-            <div className="w-1.5 h-1.5 bg-green-400 rounded-full mx-auto mb-2"></div>
-            <p className="text-white font-semibold text-sm">{formatCurrency(car.revenue)}</p>
-            <p className="text-gray-400 text-xs">Revenue</p>
+          <div className="aspect-square backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-2 text-center hover:bg-gray-800/40 transition-colors flex flex-col items-center justify-center">
+            <p className="text-white font-bold text-xs leading-none">{formatCurrency(car.revenue || 0)}</p>
+            <p className="text-gray-400 text-[10px] leading-tight mt-1">Revenue</p>
           </div>
           
-          <div className="backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-3 text-center hover:bg-gray-800/40 transition-colors">
-            <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mx-auto mb-2"></div>
-            <p className="text-white font-semibold text-sm">
+          <div className="aspect-square backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-2 text-center hover:bg-gray-800/40 transition-colors flex flex-col items-center justify-center">
+            <p className="text-white font-bold text-lg leading-none">
               {car.rating ? car.rating.toFixed(1) : '—'}
             </p>
-            <p className="text-gray-400 text-xs">Rating</p>
+            <p className="text-gray-400 text-[10px] leading-tight mt-1">Rating</p>
           </div>
         </div>
 
@@ -234,7 +223,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
           </div>
         )}
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Centered */}
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={handleView}
