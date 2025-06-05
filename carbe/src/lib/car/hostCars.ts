@@ -5,8 +5,9 @@ interface BookingData {
   id: string;
   start_date: string;
   end_date: string;
-  status: 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled';
+  status: 'pending' | 'awaiting_approval' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'rejected';
   renter_id: string;
+  total_amount?: number;
 }
 
 export interface CarStats {
@@ -46,7 +47,8 @@ export async function getHostCars(userId: string): Promise<{
           start_date,
           end_date,
           status,
-          renter_id
+          renter_id,
+          total_amount
         )
       `)
       .eq('owner_id', userId)
@@ -62,14 +64,24 @@ export async function getHostCars(userId: string): Promise<{
     // Process cars to add booking statistics
     const carsWithStats: CarWithBookingStats[] = cars.map(car => {
       const bookings = car.bookings as BookingData[] || [];
-      const completedBookings = bookings.filter((b: BookingData) => b.status === 'completed');
       
-      // Calculate total revenue (price per day * booking days)
-      const revenue = completedBookings.reduce((total: number, booking: BookingData) => {
-        const startDate = new Date(booking.start_date);
-        const endDate = new Date(booking.end_date);
-        const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        return total + (car.price_per_day * days);
+      // Count bookings that generate revenue (confirmed, active, completed)
+      const revenueBookings = bookings.filter((b: BookingData) => 
+        ['confirmed', 'active', 'completed'].includes(b.status)
+      );
+      
+      // Calculate total revenue from booking amounts or daily rate calculation
+      const revenue = revenueBookings.reduce((total: number, booking: BookingData) => {
+        // Try to use total_amount from booking if available, otherwise calculate
+        if (booking.total_amount) {
+          return total + booking.total_amount;
+        } else {
+          // Fallback to calculating from daily rate
+          const startDate = new Date(booking.start_date);
+          const endDate = new Date(booking.end_date);
+          const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          return total + (car.price_per_day * days);
+        }
       }, 0);
 
       // Find next upcoming booking
@@ -85,11 +97,19 @@ export async function getHostCars(userId: string): Promise<{
 
       return {
         ...car,
-        bookings_count: completedBookings.length,
+        bookings_count: revenueBookings.length,
         revenue,
         next_booking: nextBooking
       };
     });
+
+    console.log('Processed cars with stats:', carsWithStats.map(car => ({
+      id: car.id,
+      make: car.make,
+      model: car.model,
+      bookings_count: car.bookings_count,
+      revenue: car.revenue
+    })));
 
     return { data: carsWithStats, error: null };
   } catch (error) {
@@ -115,7 +135,8 @@ export async function getHostStats(userId: string): Promise<{
           id,
           start_date,
           end_date,
-          status
+          status,
+          total_amount
         )
       `)
       .eq('owner_id', userId);
@@ -132,7 +153,7 @@ export async function getHostStats(userId: string): Promise<{
     let totalRating = 0;
     let ratedCars = 0;
 
-    // Get car prices for revenue calculation
+    // Get car prices for revenue calculation fallback
     const { data: carPrices, error: pricesError } = await supabase
       .from('cars')
       .select('id, price_per_day')
@@ -146,17 +167,27 @@ export async function getHostStats(userId: string): Promise<{
 
     cars.forEach(car => {
       const bookings = car.bookings as BookingData[] || [];
-      const completedBookings = bookings.filter((b: BookingData) => b.status === 'completed');
       
-      totalBookings += completedBookings.length;
+      // Count bookings that generate revenue (confirmed, active, completed)
+      const revenueBookings = bookings.filter((b: BookingData) => 
+        ['confirmed', 'active', 'completed'].includes(b.status)
+      );
+      
+      totalBookings += revenueBookings.length;
       
       // Calculate revenue for this car
       const carPrice = priceMap.get(car.id) || 0;
-      const carRevenue = completedBookings.reduce((total: number, booking: BookingData) => {
-        const startDate = new Date(booking.start_date);
-        const endDate = new Date(booking.end_date);
-        const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        return total + (carPrice * days);
+      const carRevenue = revenueBookings.reduce((total: number, booking: BookingData) => {
+        // Try to use total_amount from booking if available, otherwise calculate
+        if (booking.total_amount) {
+          return total + booking.total_amount;
+        } else {
+          // Fallback to calculating from daily rate
+          const startDate = new Date(booking.start_date);
+          const endDate = new Date(booking.end_date);
+          const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          return total + (carPrice * days);
+        }
       }, 0);
       
       totalRevenue += carRevenue;
@@ -177,6 +208,8 @@ export async function getHostStats(userId: string): Promise<{
       totalRevenue,
       averageRating
     };
+
+    console.log('Calculated host stats:', stats);
 
     return { data: stats, error: null };
   } catch (error) {
