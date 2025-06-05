@@ -12,12 +12,12 @@ import {
   TrendingUp,
   Star,
   Trash2,
-
   Clock
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import GlassCard from '@/components/ui/GlassCard';
 
 interface HostCarCardProps {
   car: CarWithBookingStats;
@@ -79,23 +79,22 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-4 group relative"
+      <GlassCard className="group"
       >
         {/* Car Image and Basic Info */}
         <div className="flex items-start space-x-3 mb-4">
           <div className="relative">
-            <Image
-              src={car.images?.[0] || '/api/placeholder/80/80'}
-              alt={`${car.make} ${car.model}`}
-              width={80}
-              height={80}
-              className="w-20 h-20 rounded-lg object-cover"
-            />
+            <div className="w-20 h-20 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-xl overflow-hidden border border-gray-600/30">
+              <Image
+                src={car.images?.[0] || '/api/placeholder/80/80'}
+                alt={`${car.make} ${car.model}`}
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+              />
+            </div>
             {car.next_booking && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#2A2A2A]"></div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-900 animate-pulse"></div>
             )}
           </div>
           
@@ -103,7 +102,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-white font-semibold text-sm leading-tight">
-                  {car.year} {car.make} {car.model}
+                  {car.make} {car.model}
                 </h3>
                 <p className="text-gray-400 text-sm mt-0.5">
                   {formatCurrency(car.price_per_day)}/day
@@ -113,7 +112,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
               <div className="relative">
                 <button
                   onClick={() => setShowActions(!showActions)}
-                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors backdrop-blur-sm"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </button>
@@ -124,14 +123,14 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
                       initial={{ opacity: 0, scale: 0.95, y: -10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="absolute right-0 top-8 w-40 bg-[#1F1F1F] border border-gray-700/50 rounded-lg shadow-lg z-10"
+                      className="absolute right-0 top-8 w-40 backdrop-blur-xl bg-gray-900/90 border border-gray-700/50 rounded-xl shadow-lg z-10"
                     >
                       <button
                         onClick={() => {
                           handleView();
                           setShowActions(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-t-lg flex items-center"
+                        className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-white/10 rounded-t-xl flex items-center transition-colors"
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         View Listing
@@ -141,7 +140,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
                           handleEdit();
                           setShowActions(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center"
+                        className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-white/10 flex items-center transition-colors"
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Details
@@ -151,7 +150,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
                           handleSettings();
                           setShowActions(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center"
+                        className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-white/10 flex items-center transition-colors"
                       >
                         <Settings className="h-4 w-4 mr-2" />
                         Settings
@@ -162,7 +161,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
                           setShowDeleteConfirm(true);
                           setShowActions(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-900/20 rounded-b-lg flex items-center"
+                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-900/20 rounded-b-xl flex items-center transition-colors"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
@@ -177,8 +176,8 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
             <div className="flex items-center space-x-3 mt-2">
               {car.rating && (
                 <div className="flex items-center">
-                  <Star className="h-3 w-3 text-yellow-500 mr-1" />
-                  <span className="text-yellow-500 text-xs font-medium">
+                  <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-1.5"></div>
+                  <span className="text-yellow-400 text-xs font-medium">
                     {car.rating.toFixed(1)}
                   </span>
                 </div>
@@ -193,20 +192,20 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
 
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-[#1F1F1F] border border-gray-700/50 rounded-lg p-3 text-center">
-            <Calendar className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+          <div className="backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-3 text-center hover:bg-gray-800/40 transition-colors">
+            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mx-auto mb-2"></div>
             <p className="text-white font-semibold text-sm">{car.bookings_count}</p>
             <p className="text-gray-400 text-xs">Bookings</p>
           </div>
           
-          <div className="bg-[#1F1F1F] border border-gray-700/50 rounded-lg p-3 text-center">
-            <TrendingUp className="h-4 w-4 text-green-500 mx-auto mb-1" />
+          <div className="backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-3 text-center hover:bg-gray-800/40 transition-colors">
+            <div className="w-1.5 h-1.5 bg-green-400 rounded-full mx-auto mb-2"></div>
             <p className="text-white font-semibold text-sm">{formatCurrency(car.revenue)}</p>
             <p className="text-gray-400 text-xs">Revenue</p>
           </div>
           
-          <div className="bg-[#1F1F1F] border border-gray-700/50 rounded-lg p-3 text-center">
-            <Star className="h-4 w-4 text-yellow-500 mx-auto mb-1" />
+          <div className="backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl p-3 text-center hover:bg-gray-800/40 transition-colors">
+            <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mx-auto mb-2"></div>
             <p className="text-white font-semibold text-sm">
               {car.rating ? car.rating.toFixed(1) : '—'}
             </p>
@@ -216,9 +215,12 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
 
         {/* Next Booking */}
         {car.next_booking && (
-          <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3 mb-4">
+          <div className="backdrop-blur-sm bg-gradient-to-br from-green-500/10 via-green-400/5 to-transparent border border-green-500/20 rounded-xl p-3 mb-4">
             <div className="flex items-center">
-              <Clock className="h-4 w-4 text-green-400 mr-2" />
+              <div className="relative mr-3">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-pulse opacity-60"></div>
+              </div>
               <div className="flex-1">
                 <p className="text-green-300 text-xs font-medium">Next Booking</p>
                 <p className="text-green-200 text-sm">
@@ -236,7 +238,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={handleView}
-            className="flex items-center justify-center py-2 px-3 bg-[#1F1F1F] border border-gray-700/50 rounded-lg hover:bg-[#252525] transition-colors text-gray-300 hover:text-white"
+            className="flex items-center justify-center py-2 px-3 backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl hover:bg-gray-800/50 transition-colors text-gray-300 hover:text-white"
           >
             <Eye className="h-4 w-4 mr-1" />
             <span className="text-xs">View</span>
@@ -244,7 +246,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
           
           <button
             onClick={handleEdit}
-            className="flex items-center justify-center py-2 px-3 bg-[#1F1F1F] border border-gray-700/50 rounded-lg hover:bg-[#252525] transition-colors text-gray-300 hover:text-white"
+            className="flex items-center justify-center py-2 px-3 backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl hover:bg-gray-800/50 transition-colors text-gray-300 hover:text-white"
           >
             <Edit className="h-4 w-4 mr-1" />
             <span className="text-xs">Edit</span>
@@ -252,7 +254,7 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
           
           <button
             onClick={handleSettings}
-            className="flex items-center justify-center py-2 px-3 bg-[#1F1F1F] border border-gray-700/50 rounded-lg hover:bg-[#252525] transition-colors text-gray-300 hover:text-white"
+            className="flex items-center justify-center py-2 px-3 backdrop-blur-sm bg-gray-800/30 border border-gray-700/30 rounded-xl hover:bg-gray-800/50 transition-colors text-gray-300 hover:text-white"
           >
             <Settings className="h-4 w-4 mr-1" />
             <span className="text-xs">Settings</span>
@@ -266,25 +268,25 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
             onClick={() => setShowActions(false)}
           />
         )}
-      </motion.div>
+      </GlassCard>
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-6 max-w-sm w-full"
+              className="backdrop-blur-xl bg-gray-900/90 border border-gray-700/50 rounded-2xl p-6 max-w-sm w-full shadow-xl"
             >
               <div className="text-center">
-                <div className="w-12 h-12 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Trash2 className="h-6 w-6 text-red-400" />
                 </div>
                 <h3 className="text-white font-semibold mb-2">Delete Car Listing</h3>
                 <p className="text-gray-400 text-sm mb-6">
-                  Are you sure you want to delete &ldquo;{car.year} {car.make} {car.model}&rdquo;? 
+                  Are you sure you want to delete &ldquo;{car.make} {car.model}&rdquo;? 
                   This action cannot be undone.
                 </p>
                 
@@ -292,14 +294,14 @@ export default function HostCarCard({ car, onDelete, onRefresh }: HostCarCardPro
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={isDeleting}
-                    className="flex-1 py-2 px-4 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                    className="flex-1 py-2 px-4 backdrop-blur-sm bg-gray-700/50 text-white rounded-xl hover:bg-gray-700/70 transition-colors text-sm"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+                    className="flex-1 py-2 px-4 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-sm disabled:opacity-50"
                   >
                     {isDeleting ? 'Deleting...' : 'Delete'}
                   </button>

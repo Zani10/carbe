@@ -8,19 +8,17 @@ import HostBottomNav from '@/components/layout/HostBottomNav';
 import { 
   Plus,
   Car,
-  Calendar,
-  RefreshCw,
-  Star,
-  Euro
+  CheckCircle
 } from 'lucide-react';
 import HostCarCard from '@/components/car/HostCarCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorMessage from '@/components/ui/ErrorMessage';
+import GlassCard from '@/components/ui/GlassCard';
 import { motion } from 'framer-motion';
 
 export default function HostGaragePage() {
   const { user, isHostMode } = useAuth();
-  const { cars, stats, isLoading, isRefreshing, error, refreshData, deleteCar } = useHostCars();
+  const { cars, stats, isLoading, error, refreshData, deleteCar } = useHostCars();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
 
@@ -43,7 +41,7 @@ export default function HostGaragePage() {
           </p>
           <button 
             onClick={() => router.push('/profile')}
-            className="inline-block px-6 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90"
+            className="inline-block px-6 py-3 bg-[#FF2800] text-white rounded-xl hover:bg-[#FF2800]/90"
           >
             Go to Profile
           </button>
@@ -54,35 +52,16 @@ export default function HostGaragePage() {
 
   const activeCars = cars; // All cars are active for now
   const inactiveCars: typeof cars = []; // No inactive cars for now
+  
+  const tabs = [
+    { id: 'active' as const, title: 'Active', count: activeCars.length },
+    { id: 'inactive' as const, title: 'Inactive', count: inactiveCars.length }
+  ];
 
   return (
     <>
     <div className="min-h-screen bg-[#212121] pb-24">
-      {/* Header - Simple title without back button */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-white">My Garage</h1>
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={refreshData}
-                disabled={isRefreshing}
-                className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </button>
-              <button 
-                onClick={() => router.push('/host/garage/new')}
-                className="p-2 bg-[#FF4646] text-white rounded-lg hover:bg-[#FF4646]/90 transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-md mx-auto px-4 py-6">
+      <div className="max-w-md mx-auto px-4 pt-6">
         {/* Loading State */}
         {isLoading && (
           <LoadingSpinner size="lg" text="Loading your garage..." />
@@ -97,40 +76,48 @@ export default function HostGaragePage() {
           />
         )}
 
-        {/* Stats Cards */}
+        {/* Stats Cards with Glassmorphism */}
         {stats && !isLoading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-3 gap-3 mb-6"
           >
-            <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-4 text-center">
-              <Car className="h-6 w-6 text-[#FF4646] mx-auto mb-2" />
-              <p className="text-xl font-bold text-white">{stats.totalCars}</p>
-              <p className="text-sm text-gray-400">Cars</p>
+            <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white mb-1">{stats.totalCars}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Cars</div>
+                </div>
+                <div className="w-2 h-2 bg-[#FF2800] rounded-full"></div>
+              </div>
             </div>
             
-            <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-4 text-center">
-              <Calendar className="h-6 w-6 text-green-500 mx-auto mb-2" />
-              <p className="text-xl font-bold text-white">{stats.totalBookings}</p>
-              <p className="text-sm text-gray-400">Bookings</p>
+            <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white mb-1">{stats.totalBookings}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Bookings</div>
+                </div>
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              </div>
             </div>
             
-            <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-4 text-center">
-              <Euro className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-              <p className="text-xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</p>
-              <p className="text-sm text-gray-400">Revenue</p>
+            <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white mb-1">{formatCurrency(stats.totalRevenue)}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Revenue</div>
+                </div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+              </div>
             </div>
           </motion.div>
         )}
 
         {/* Add New Car CTA */}
         {!isLoading && activeCars.length === 0 && !error && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-6 mb-6 text-center"
-          >
+          <GlassCard padding="lg" className="mb-6 text-center">
             <Car className="h-12 w-12 text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">Add Your First Car</h3>
             <p className="text-gray-400 mb-4">
@@ -138,60 +125,95 @@ export default function HostGaragePage() {
             </p>
             <button 
               onClick={() => router.push('/host/garage/new')}
-              className="w-full bg-[#FF4646] text-white py-3 rounded-xl font-medium hover:bg-[#FF4646]/90 transition-colors"
+              className="w-full bg-[#FF2800] text-white py-3 rounded-xl font-medium hover:bg-[#FF2800]/90 transition-colors"
             >
               Add New Car
             </button>
-          </motion.div>
+          </GlassCard>
         )}
 
-        {/* Tabs */}
+        {/* Smart Tabs with Sliding Animation */}
         {!isLoading && activeCars.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex space-x-1 bg-[#2A2A2A] border border-gray-700/50 p-1 rounded-xl mb-6"
+            className="relative mb-6 backdrop-blur-xl bg-gradient-to-r from-gray-900/30 via-gray-800/20 to-gray-900/30 border border-gray-700/30 rounded-2xl p-1 shadow-lg"
           >
-            <button
-              onClick={() => setActiveTab('active')}
-              className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === 'active' 
-                  ? 'bg-[#FF4646] text-white shadow-sm' 
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              Active ({activeCars.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('inactive')}
-              className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === 'inactive' 
-                  ? 'bg-[#FF4646] text-white shadow-sm' 
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              Inactive ({inactiveCars.length})
-            </button>
+            {/* Sliding Background Indicator */}
+            <div 
+              className="absolute top-1 bottom-1 bg-gradient-to-r from-[#FF2800] to-[#FF2800]/80 rounded-xl shadow-lg transition-all duration-300 ease-out"
+              style={{
+                width: `${100 / tabs.length}%`,
+                left: `${(tabs.findIndex(tab => tab.id === activeTab) * 100) / tabs.length}%`,
+              }}
+            />
+            
+            {/* Tab Buttons */}
+            <div className="relative flex">
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-1 py-3 px-3 text-center rounded-xl transition-all duration-300 font-medium text-sm relative z-10 ${
+                      isActive
+                        ? 'text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span>{tab.title}</span>
+                    {tab.count > 0 && (
+                      <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${
+                        isActive 
+                          ? 'bg-white/20 text-white' 
+                          : 'bg-gray-600/50 text-gray-300'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </motion.div>
         )}
 
         {/* Car List */}
         {!isLoading && (
           <div className="space-y-4">
-            {(activeTab === 'active' ? activeCars : inactiveCars).map((car, index) => (
-              <motion.div
-                key={car.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <HostCarCard
-                  car={car}
-                  onDelete={deleteCar}
-                  onRefresh={refreshData}
-                />
-              </motion.div>
-            ))}
+            {(activeTab === 'active' ? activeCars : inactiveCars).length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-gray-700">
+                  <CheckCircle className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {activeTab === 'active' ? 'No active cars' : 'No inactive cars'}
+                </h3>
+                <p className="text-gray-400 max-w-xs mx-auto">
+                  {activeTab === 'active' 
+                    ? 'Add your first car to start earning' 
+                    : 'All your cars are currently active'
+                  }
+                </p>
+              </div>
+            ) : (
+              (activeTab === 'active' ? activeCars : inactiveCars).map((car, index) => (
+                <motion.div
+                  key={car.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <HostCarCard
+                    car={car}
+                    onDelete={deleteCar}
+                    onRefresh={refreshData}
+                  />
+                </motion.div>
+              ))
+            )}
           </div>
         )}
 
@@ -201,7 +223,7 @@ export default function HostGaragePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => router.push('/host/garage/new')}
-            className="w-full mt-6 bg-[#FF4646] text-white py-3 rounded-xl font-medium hover:bg-[#FF4646]/90 transition-colors flex items-center justify-center"
+            className="w-full mt-6 bg-[#FF2800] text-white py-3 rounded-xl font-medium hover:bg-[#FF2800]/90 transition-colors flex items-center justify-center"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add Another Car
@@ -210,18 +232,14 @@ export default function HostGaragePage() {
 
         {/* Average Rating Display */}
         {stats && stats.averageRating > 0 && !isLoading && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-4"
-          >
+          <GlassCard className="mt-6">
             <div className="flex items-center justify-center">
-              <Star className="h-5 w-5 text-yellow-500 mr-2" />
+              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-3" />
               <span className="text-white font-medium">
                 {stats.averageRating.toFixed(1)} average rating
               </span>
             </div>
-          </motion.div>
+          </GlassCard>
         )}
       </div>
     </div>
