@@ -60,7 +60,7 @@ export default function ProfilePage() {
       // Check if user is already a host
       if (profile?.is_host) {
         // User is already a host, go to host dashboard
-        router.push('/host/today');
+        router.push('/host/home');
       } else {
         // User is not a host yet, go to host setup
         router.push('/host/setup');

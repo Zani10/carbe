@@ -6,8 +6,6 @@ import { useBooking } from '@/hooks/booking/useBooking';
 import { format, startOfToday, endOfToday, addDays } from 'date-fns';
 import HostBottomNav from '@/components/layout/HostBottomNav';
 import { 
-  Euro,
-  AlertCircle,
   CheckCircle,
   X,
   Check,
@@ -32,7 +30,7 @@ interface BookingGroup {
   priority: 'urgent' | 'high' | 'normal';
 }
 
-export default function HostTodayPage() {
+export default function HostHomePage() {
   const { user, isHostMode } = useAuth();
   const { getHostBookings, isLoading } = useBooking();
   const { approveBooking } = useBookingActions();
@@ -42,7 +40,7 @@ export default function HostTodayPage() {
     monthlyEarnings: 0,
     pendingActions: 0,
   });
-  const [activeGroup, setActiveGroup] = useState<'needs-action' | 'today' | 'this-week'>('needs-action');
+  const [activeGroup, setActiveGroup] = useState<'requests' | 'bookings' | 'this-week'>('bookings');
   const [processingActions, setProcessingActions] = useState<Record<string, 'approve' | 'decline' | null>>({});
 
   useEffect(() => {
@@ -112,15 +110,19 @@ export default function HostTodayPage() {
 
     return [
       {
-        title: 'Needs Action',
-        description: 'Requests awaiting your response',
+        title: 'Requests',
+        description: 'Booking requests awaiting your response',
         bookings: needsAction,
         priority: 'urgent'
       },
       {
-        title: 'Today',
-        description: 'Active and starting today',
-        bookings: todayBookings,
+        title: 'Bookings',
+        description: 'Upcoming and active bookings',
+        bookings: bookings.filter(booking => {
+          const today = new Date();
+          const endDate = new Date(booking.end_date);
+          return ['confirmed', 'active'].includes(booking.status) && endDate >= today;
+        }).sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()),
         priority: 'high'
       },
       {
@@ -240,7 +242,7 @@ export default function HostTodayPage() {
         case 'confirmed':
           return { color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' };
         case 'active':
-          return { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
+          return { color: 'text-gray-300', bg: 'bg-gray-700/20', border: 'border-gray-600/30' };
         default:
           return { color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/20' };
       }
@@ -295,7 +297,7 @@ export default function HostTodayPage() {
         <div className="min-h-screen bg-[#212121] flex items-center justify-center pb-24">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-[#FF4646] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-400">Loading your dashboard...</p>
+            <p className="text-gray-400">Loading your home...</p>
           </div>
         </div>
         <HostBottomNav />
@@ -312,68 +314,112 @@ export default function HostTodayPage() {
     <>
       <div className="min-h-screen bg-[#212121] pb-24">
         <div className="max-w-md mx-auto px-4 pt-6">
-          {/* Quick Stats - Only 2 essential ones */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="backdrop-blur-xl bg-gradient-to-br from-[#FF4646]/5 via-gray-900/20 to-transparent border border-gray-700/30 rounded-2xl p-5 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#FF4646]/10 to-[#FF4646]/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <Euro className="h-5 w-5 text-[#FF4646]" />
+
+          {/* Fleet Status Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* Active Rentals */}
+            <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {bookings.filter(b => b.status === 'active').length}
+                  </div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Active</div>
                 </div>
-                <div className="text-xs text-green-400 font-medium">+12%</div>
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
               </div>
-              <div className="text-2xl font-bold text-white mb-1">€{stats.monthlyEarnings}</div>
-              <div className="text-sm text-gray-400">This month</div>
             </div>
 
-            <div className="backdrop-blur-xl bg-gradient-to-br from-amber-500/5 via-gray-900/20 to-transparent border border-gray-700/30 rounded-2xl p-5 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500/10 to-amber-500/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <AlertCircle className="h-5 w-5 text-amber-400" />
+            {/* Available Cars */}
+            <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white mb-1">4</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Available</div>
                 </div>
-                {stats.pendingActions > 0 && (
-                  <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                )}
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
               </div>
-              <div className="text-2xl font-bold text-white mb-1">{stats.pendingActions}</div>
-              <div className="text-sm text-gray-400">Need action</div>
+            </div>
+
+            {/* Cleaning Status */}
+            <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white mb-1">1</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Cleaning</div>
+                </div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+              </div>
+            </div>
+
+            {/* Today's Activity */}
+            <div className="relative backdrop-blur-xl bg-gradient-to-br from-gray-800/20 via-gray-900/10 to-transparent border border-gray-600/20 rounded-2xl p-4 shadow-lg hover:border-gray-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {bookings.filter(b => {
+                      const today = new Date();
+                      const startDate = new Date(b.start_date);
+                      const endDate = new Date(b.end_date);
+                      return (startDate.toDateString() === today.toDateString() || 
+                              endDate.toDateString() === today.toDateString()) && 
+                             ['confirmed', 'active'].includes(b.status);
+                    }).length}
+                  </div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Today</div>
+                </div>
+                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+              </div>
             </div>
           </div>
 
-          {/* Smart Category Tabs */}
-          <div className="flex mb-6 backdrop-blur-xl bg-gradient-to-r from-gray-900/30 via-gray-800/20 to-gray-900/30 border border-gray-700/30 rounded-2xl p-1 shadow-lg">
-            {bookingGroups.map((group) => {
-              const tabId = group.title.toLowerCase().replace(' ', '-') as typeof activeGroup;
-              const isActive = activeGroup === tabId;
-              const count = group.bookings.length;
-              
-              return (
-                <button
-                  key={tabId}
-                  onClick={() => setActiveGroup(tabId)}
-                  className={`flex-1 py-3 px-3 text-center rounded-xl transition-all duration-200 font-medium text-sm relative ${
-                    isActive
-                      ? 'bg-gradient-to-r from-[#FF4646] to-[#FF4646]/80 text-white shadow-lg backdrop-blur-sm'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5 backdrop-blur-sm'
-                  }`}
-                >
-                  <span>{group.title}</span>
-                  {count > 0 && (
-                    <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${
-                      isActive 
-                        ? 'bg-white/20 text-white' 
-                        : group.priority === 'urgent' 
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-gray-600/50 text-gray-300'
-                    }`}>
-                      {count}
-                    </span>
-                  )}
-                  {group.priority === 'urgent' && count > 0 && !isActive && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-pulse" />
-                  )}
-                </button>
-              );
-            })}
+          {/* Smart Category Tabs with Sliding Animation */}
+          <div className="relative mb-6 backdrop-blur-xl bg-gradient-to-r from-gray-900/30 via-gray-800/20 to-gray-900/30 border border-gray-700/30 rounded-2xl p-1 shadow-lg">
+            {/* Sliding Background Indicator */}
+            <div 
+              className="absolute top-1 bottom-1 bg-gradient-to-r from-[#FF4646] to-[#FF4646]/80 rounded-xl shadow-lg transition-all duration-300 ease-out"
+              style={{
+                width: `${100 / bookingGroups.length}%`,
+                left: `${(bookingGroups.findIndex(group => group.title.toLowerCase().replace(' ', '-') === activeGroup) * 100) / bookingGroups.length}%`,
+              }}
+            />
+            
+            {/* Tab Buttons */}
+            <div className="relative flex">
+              {bookingGroups.map((group) => {
+                const tabId = group.title.toLowerCase().replace(' ', '-') as typeof activeGroup;
+                const isActive = activeGroup === tabId;
+                const count = group.bookings.length;
+                
+                return (
+                  <button
+                    key={tabId}
+                    onClick={() => setActiveGroup(tabId)}
+                    className={`flex-1 py-3 px-3 text-center rounded-xl transition-all duration-300 font-medium text-sm relative z-10 ${
+                      isActive
+                        ? 'text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span>{group.title}</span>
+                    {count > 0 && (
+                      <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${
+                        isActive 
+                          ? 'bg-white/20 text-white' 
+                          : group.priority === 'urgent' 
+                            ? 'bg-amber-500/20 text-amber-400'
+                            : 'bg-gray-600/50 text-gray-300'
+                      }`}>
+                        {count}
+                      </span>
+                    )}
+                    {group.priority === 'urgent' && count > 0 && !isActive && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-pulse" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Content */}
@@ -381,21 +427,21 @@ export default function HostTodayPage() {
             {activeGroupData?.bookings.length === 0 ? (
               <div className="text-center py-16">
                 <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-                  activeGroup === 'needs-action' 
+                  activeGroup === 'requests' 
                     ? 'bg-green-900/50' 
                     : 'bg-gray-700'
                 }`}>
-                  {activeGroup === 'needs-action' ? (
+                  {activeGroup === 'requests' ? (
                     <CheckCircle className="h-8 w-8 text-green-400" />
                   ) : (
                     <Calendar className="h-8 w-8 text-gray-400" />
                   )}
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">
-                  {activeGroup === 'needs-action' 
+                  {activeGroup === 'requests' 
                     ? 'All caught up!' 
-                    : activeGroup === 'today'
-                      ? 'Nothing happening today'
+                    : activeGroup === 'bookings'
+                      ? 'No bookings'
                       : 'No upcoming trips'
                   }
                 </h3>
@@ -406,7 +452,7 @@ export default function HostTodayPage() {
             ) : (
               activeGroupData?.bookings.map((booking) => (
                 <div key={booking.id}>
-                  {activeGroup === 'needs-action' ? (
+                  {activeGroup === 'requests' ? (
                     <QuickActionCard booking={booking} />
                   ) : (
                     <RegularBookingCard booking={booking} />

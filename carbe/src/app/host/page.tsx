@@ -7,7 +7,7 @@ export default function HostPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/host/today');
+    router.replace('/host/home');
   }, [router]);
 
   return null;

@@ -65,7 +65,7 @@ const HostBottomNav = () => {
   }, []);
   
   const navItems = [
-    { path: '/host/today', icon: BarChart3, label: 'Today', isOutlineIcon: true, requiresAuth: true },
+    { path: '/host/home', icon: BarChart3, label: 'Home', isOutlineIcon: true, requiresAuth: true },
     { path: '/host/calendar', icon: Calendar, label: 'Calendar', isOutlineIcon: true, requiresAuth: true },
     { path: '/host/garage', icon: Car, label: 'Garage', isOutlineIcon: true, requiresAuth: true },
     { path: '/host/messages', icon: MessageSquare, label: 'Inbox', isOutlineIcon: true, requiresAuth: true },
