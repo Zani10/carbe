@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOf
 import AvailabilityDateCell from './AvailabilityDateCell';
 import BlockDatesModal from './BlockDatesModal';
 import BookingRequestSheet from './BookingRequestSheet';
-import BookingDetailsModal from './BookingDetailsModal';
+import BookingDetailsSheet from './BookingDetailsSheet';
 import BookedCell from './BookedCell';
 
 interface AvailabilityGridProps {
@@ -360,14 +360,17 @@ export default function AvailabilityGrid({
       )}
 
       {selectedBooking && (
-        <BookingDetailsModal
+        <BookingDetailsSheet
+          isOpen={!!selectedBooking}
           booking={selectedBooking}
           onMessage={() => {
-            // TODO: Handle message guest action
+            // TODO: Handle message guest action - integrate with chat system
+            console.log('Opening chat with guest:', selectedBooking.guest_name);
             setSelectedBooking(null);
           }}
           onCancel={async () => {
-            // TODO: Handle booking cancellation
+            // TODO: Handle booking cancellation - integrate with booking API
+            console.log('Cancelling booking:', selectedBooking.id);
             setSelectedBooking(null);
           }}
           onClose={() => setSelectedBooking(null)}
