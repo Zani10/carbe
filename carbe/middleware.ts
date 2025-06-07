@@ -32,9 +32,9 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Only run middleware for protected routes
-  if (request.nextUrl.pathname.startsWith('/api/host/') || 
-      request.nextUrl.pathname.startsWith('/host/')) {
+  // Only run middleware for protected frontend routes (not API routes)
+  if (request.nextUrl.pathname.startsWith('/host/') && 
+      !request.nextUrl.pathname.startsWith('/api/')) {
     if (!user && !request.nextUrl.pathname.includes('/signin')) {
       // Redirect to signin for protected routes
       const url = request.nextUrl.clone()

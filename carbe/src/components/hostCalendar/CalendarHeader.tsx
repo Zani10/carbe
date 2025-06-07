@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { Vehicle } from '@/types/calendar';
-import { motion } from 'framer-motion';
+
 import { supabase } from '@/lib/supabase';
 import DynamicCarAvatar from './DynamicCarAvatar';
 import CalendarSettingsSheet from './CalendarSettingsSheet';
@@ -31,7 +31,6 @@ interface CalendarHeaderProps {
   vehicles: Vehicle[];
   selectedCarIds: string[];
   metrics?: unknown;
-  selectedDatesCount: number;
   onMonthChange: (direction: 'prev' | 'next') => void;
   onVehicleChange: (vehicleIds: string[]) => void;
   onSettingsSave?: (settings: CalendarSettings) => void;
@@ -42,7 +41,6 @@ export default function CalendarHeader({
   vehicles,
   selectedCarIds,
   metrics,
-  selectedDatesCount,
   onMonthChange,
   onVehicleChange,
   onSettingsSave
@@ -177,15 +175,7 @@ export default function CalendarHeader({
               </button>
             </div>
             
-            {selectedDatesCount > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="px-3 py-1 bg-[#FF4646]/20 border border-[#FF4646]/30 rounded-full text-[#FF4646] text-xs font-medium"
-              >
-                {selectedDatesCount} {selectedDatesCount === 1 ? 'date' : 'dates'} selected
-              </motion.div>
-            )}
+
           </div>
 
                       <button

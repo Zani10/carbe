@@ -141,7 +141,7 @@ export default function BookingDetailsSheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-40"
+            className="fixed inset-0 bg-black/50 z-40"
             onClick={onClose}
           />
           
@@ -200,7 +200,7 @@ export default function BookingDetailsSheet({
                       {format(startDate, 'MMM d')} - {format(endDate, 'MMM d')}
                     </span>
                   </div>
-                  <span className="text-gray-400 text-sm">{nights} nights</span>
+                  <span className="text-gray-400 text-sm">{nights} days</span>
                 </div>
 
                 {/* Price Summary */}

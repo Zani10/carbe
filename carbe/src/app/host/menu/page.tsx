@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import HostBottomNav from '@/components/layout/HostBottomNav';
@@ -10,17 +10,18 @@ import {
   DollarSign, 
   Star, 
   User, 
-  Settings, 
   HelpCircle, 
   Shield, 
   Bell,
   ChevronRight,
   LogOut,
+  CreditCard,
+  UserCheck,
+  Calendar,
   Car,
+  Edit3,
   BarChart3,
-  Users,
-  MessageSquare,
-  Calendar
+  FileText
 } from 'lucide-react';
 
 interface MenuItemProps {
@@ -30,6 +31,7 @@ interface MenuItemProps {
   onClick: () => void;
   badge?: string;
   variant?: 'default' | 'highlight';
+  fullWidth?: boolean;
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({ 
@@ -38,13 +40,16 @@ const MenuItem: React.FC<MenuItemProps> = ({
   icon: Icon, 
   onClick, 
   badge,
-  variant = 'default'
+  variant = 'default',
+  fullWidth = false
 }) => (
   <Card 
     variant="dark" 
     padding="md" 
     onClick={onClick} 
-    className={`text-left ${variant === 'highlight' ? 'border-green-600/50 bg-green-900/20' : ''}`}
+    className={`text-left transition-all duration-200 hover:bg-[#333333] ${
+      variant === 'highlight' ? 'border-green-600/50 bg-green-900/20' : ''
+    } ${fullWidth ? 'w-full' : ''}`}
   >
     <div className="flex items-center">
       <div className={`p-2 rounded-lg mr-3 ${
@@ -79,24 +84,57 @@ interface StatBoxProps {
   icon: React.ElementType;
   color: 'green' | 'blue';
   onClick: () => void;
+  isLoading?: boolean;
 }
 
-const StatBox: React.FC<StatBoxProps> = ({ title, value, subtitle, icon: Icon, color, onClick }) => (
-  <Card variant="dark" padding="lg" onClick={onClick} className="text-center">
-    <div className={`inline-flex p-3 rounded-full mb-3 ${
-      color === 'green' ? 'bg-green-900/50 text-green-400' : 'bg-blue-900/50 text-blue-400'
+const StatBox: React.FC<StatBoxProps> = ({ 
+  title, 
+  value, 
+  subtitle, 
+  icon: Icon, 
+  color, 
+  onClick, 
+  isLoading = false 
+}) => (
+  <Card 
+    variant="dark" 
+    padding="lg" 
+    onClick={onClick} 
+    className="text-center transition-all duration-200 hover:bg-[#333333] relative overflow-hidden"
+  >
+    {/* Glassmorphism Background Effect */}
+    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent" />
+    
+    <div className={`inline-flex p-3 rounded-full mb-3 relative z-10 ${
+      color === 'green' 
+        ? 'bg-green-900/50 text-green-400' 
+        : 'bg-[#FF4646]/20 text-[#FF4646] shadow-lg shadow-[#FF4646]/20'
     }`}>
       <Icon className="h-6 w-6" />
     </div>
-    <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
-    <p className="text-2xl font-bold text-white mb-1">{value}</p>
-    <p className="text-sm text-gray-400">{subtitle}</p>
+    <h3 className="text-lg font-semibold text-white mb-1 relative z-10">{title}</h3>
+    {isLoading ? (
+      <div className="w-16 h-6 bg-gray-700 rounded animate-pulse mx-auto mb-1" />
+    ) : (
+      <p className="text-2xl font-bold text-white mb-1 relative z-10">{value}</p>
+    )}
+    <p className="text-sm text-gray-400 relative z-10">{subtitle}</p>
   </Card>
 );
+
+interface EarningsData {
+  totalEarnings: number;
+  thisMonth: number;
+  averageRating: number;
+  totalReviews: number;
+  totalBookings: number;
+}
 
 export default function HostMenuPage() {
   const { user, profile, signOut } = useAuth();
   const router = useRouter();
+  const [earnings, setEarnings] = useState<EarningsData | null>(null);
+  const [isLoadingEarnings, setIsLoadingEarnings] = useState(true);
 
   const handleNavigate = (path: string) => {
     router.push(path);
@@ -109,6 +147,52 @@ export default function HostMenuPage() {
 
   const handleSwitchToRenter = () => {
     router.push('/'); // Go back to renter home page
+  };
+
+  const handleEditProfile = () => {
+    router.push('/host/settings/personal');
+  };
+
+  // Fetch earnings data
+  useEffect(() => {
+    const fetchEarnings = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoadingEarnings(true);
+        const response = await fetch('/api/host/earnings', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setEarnings(data);
+        } else {
+          console.error('Failed to fetch earnings');
+        }
+      } catch (error) {
+        console.error('Error fetching earnings:', error);
+      } finally {
+        setIsLoadingEarnings(false);
+      }
+    };
+
+    fetchEarnings();
+  }, [user]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const getHostSince = () => {
+    if (profile?.created_at) {
+      const year = new Date(profile.created_at).getFullYear();
+      return `Host since ${year}`;
+    }
+    return 'Host since 2023';
   };
 
   if (!user) {
@@ -131,143 +215,178 @@ export default function HostMenuPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-[#212121] pb-24">
-      {/* Header - Simple title without back button */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50 px-4 py-6">
-        <div className="max-w-md mx-auto">
-          <h1 className="text-xl font-semibold text-white">Menu</h1>
-        </div>
-      </div>
-
-      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-        {/* Profile Section */}
-        <Card variant="dark" padding="md">
-          <div className="flex items-center">
-            <div className="h-16 w-16 bg-gray-700 rounded-full flex items-center justify-center text-gray-200 mr-4">
-              <User className="h-8 w-8" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold text-white">
-                {profile?.full_name || 'Host Profile'}
-              </h2>
-              <p className="text-sm text-gray-400">{user.email}</p>
-              <div className="flex items-center mt-1">
-                <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                <span className="text-sm text-gray-400">4.8 · Host since 2023</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Performance Overview - Two Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <StatBox
-            title="Earnings"
-            value="$2,847"
-            subtitle="This month"
-            icon={DollarSign}
-            color="green"
-            onClick={() => handleNavigate('/host/earnings')}
-          />
-          <StatBox
-            title="Reviews"
-            value="4.8"
-            subtitle="42 reviews"
-            icon={Star}
-            color="blue"
-            onClick={() => handleNavigate('/host/reviews')}
-          />
-        </div>
-
-        {/* Host Tools */}
-        <div>
-          <h3 className="text-lg font-semibold text-white mb-3">Host Tools</h3>
-          <div className="space-y-3">
-            <MenuItem
-              title="Manage Listings"
-              description="Add, edit, or remove your cars"
-              icon={Car}
-              onClick={() => handleNavigate('/host/listings')}
-            />
-            <MenuItem
-              title="Calendar & Availability"
-              description="Set your availability and pricing"
-              icon={Calendar}
-              onClick={() => handleNavigate('/host/calendar')}
-            />
-            <MenuItem
-              title="Messages"
-              description="Communicate with your guests"
-              icon={MessageSquare}
-              badge="2"
-              onClick={() => handleNavigate('/host/messages')}
-            />
-            <MenuItem
-              title="Performance"
-              description="View insights and analytics"
-              icon={BarChart3}
-              onClick={() => handleNavigate('/host/performance')}
-            />
-          </div>
-        </div>
-
-        {/* Support & Settings */}
-        <div>
-          <h3 className="text-lg font-semibold text-white mb-3">Support & Settings</h3>
-          <div className="space-y-3">
-            <MenuItem
-              title="Account Settings"
-              description="Manage your account preferences"
-              icon={Settings}
-              onClick={() => handleNavigate('/host/settings')}
-            />
-            <MenuItem
-              title="Notifications"
-              description="Control your notification preferences"
-              icon={Bell}
-              onClick={() => handleNavigate('/host/notifications')}
-            />
-            <MenuItem
-              title="Trust & Safety"
-              description="Security and verification settings"
-              icon={Shield}
-              onClick={() => handleNavigate('/host/safety')}
-            />
-            <MenuItem
-              title="Help Center"
-              description="Get help and support"
-              icon={HelpCircle}
-              onClick={() => handleNavigate('/host/help')}
-            />
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="space-y-3">
-          <Button 
-            variant="secondary" 
-            className="w-full justify-between"
-            onClick={handleSwitchToRenter}
-          >
+      <div className="min-h-screen bg-[#212121] pb-24">
+        <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+          {/* Profile Card */}
+          <Card variant="dark" padding="lg">
             <div className="flex items-center">
-              <Users className="h-4 w-4 mr-2" />
-              Switch to Renter Mode
+              <div className="h-16 w-16 bg-gray-700 rounded-full flex items-center justify-center text-gray-300 mr-4 overflow-hidden">
+                {profile?.profile_image ? (
+                  <img 
+                    src={profile.profile_image} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User size={32} strokeWidth={1.5} />
+                )}
+              </div>
+              <div className="flex-1">
+                <h1 className="text-xl font-semibold text-white">
+                  {profile?.full_name || user?.user_metadata?.full_name || 'Host'}
+                </h1>
+                <p className="text-gray-400 text-sm">{getHostSince()}</p>
+                <div className="flex items-center mt-1">
+                  <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                  <span className="text-sm text-gray-400">
+                    {earnings?.averageRating ? `${earnings.averageRating.toFixed(1)} rating` : 'New host'}
+                  </span>
+                </div>
+              </div>
+              <button 
+                onClick={handleEditProfile}
+                className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                <Edit3 className="h-4 w-4 text-gray-300" />
+              </button>
             </div>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            className="w-full justify-center text-red-400 hover:text-red-300 hover:bg-red-900/20"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          </Card>
+
+          {/* Performance Overview - Two Cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <StatBox
+              title="Earnings"
+              value={earnings ? formatCurrency(earnings.thisMonth) : '$0'}
+              subtitle="This month"
+              icon={DollarSign}
+              color="green"
+              onClick={() => handleNavigate('/host/earnings')}
+              isLoading={isLoadingEarnings}
+            />
+            <StatBox
+              title="Reviews"
+              value={earnings?.averageRating ? earnings.averageRating.toFixed(1) : '—'}
+              subtitle={earnings?.totalReviews ? `${earnings.totalReviews} reviews` : 'No reviews yet'}
+              icon={Star}
+              color="blue"
+              onClick={() => handleNavigate('/host/reviews')}
+              isLoading={isLoadingEarnings}
+            />
+          </div>
+
+          {/* Account & Personal Settings */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-3">Account & Personal</h3>
+            <div className="space-y-3">
+              <MenuItem
+                title="Personal Information"
+                description="Manage your profile, contact info, and preferences"
+                icon={User}
+                onClick={() => handleNavigate('/host/settings/personal')}
+                fullWidth
+              />
+              <MenuItem
+                title="Identity Verification"
+                description="Verify your identity to increase trust"
+                icon={UserCheck}
+                onClick={() => handleNavigate('/verify')}
+                fullWidth
+              />
+              <MenuItem
+                title="Payment & Taxes"
+                description="Manage payout methods and tax information"
+                icon={CreditCard}
+                onClick={() => handleNavigate('/host/settings/payments')}
+                fullWidth
+              />
+            </div>
+          </div>
+
+          {/* Hosting Settings */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-3">Hosting</h3>
+            <div className="space-y-3">
+              <MenuItem
+                title="Your Cars"
+                description="Manage your vehicle listings"
+                icon={Car}
+                onClick={() => handleNavigate('/host/garage')}
+                fullWidth
+              />
+              <MenuItem
+                title="Calendar & Availability"
+                description="Set availability and pricing"
+                icon={Calendar}
+                onClick={() => handleNavigate('/host/calendar')}
+                fullWidth
+              />
+              <MenuItem
+                title="Performance Insights"
+                description="View earnings and booking analytics"
+                icon={BarChart3}
+                onClick={() => handleNavigate('/host/analytics')}
+                fullWidth
+              />
+            </div>
+          </div>
+
+          {/* Support & Settings */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-3">Support & Settings</h3>
+            <div className="space-y-3">
+              <MenuItem
+                title="Notifications"
+                description="Control your notification preferences"
+                icon={Bell}
+                onClick={() => handleNavigate('/host/settings/notifications')}
+                fullWidth
+              />
+              <MenuItem
+                title="Privacy & Security"
+                description="Manage privacy settings and account security"
+                icon={Shield}
+                onClick={() => handleNavigate('/host/settings/privacy')}
+                fullWidth
+              />
+              <MenuItem
+                title="Help & Support"
+                description="Get help, contact support, or report issues"
+                icon={HelpCircle}
+                onClick={() => handleNavigate('/host/help')}
+                fullWidth
+              />
+              <MenuItem
+                title="Legal & Policies"
+                description="Terms of service, privacy policy, and guidelines"
+                icon={FileText}
+                onClick={() => handleNavigate('/host/legal')}
+                fullWidth
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            <button 
+              onClick={handleSwitchToRenter}
+              className="w-full flex items-center justify-center px-4 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
+            >
+              <User className="h-5 w-5 mr-2" />
+              Switch to Renter
+            </button>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-center text-red-400 hover:text-red-300 hover:bg-red-900/20"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-    <HostBottomNav />
+      <HostBottomNav />
     </>
   );
 } 
