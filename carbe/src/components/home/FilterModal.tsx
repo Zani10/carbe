@@ -1,36 +1,58 @@
 import React, { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Users, Car } from 'lucide-react';
 
 import Sheet from '@/components/ui/Sheet';
 import FilterOption from '@/components/ui/FilterOption';
 import RangeSlider from '@/components/ui/RangeSlider';
-import Switch from '@/components/ui/Switch';
 import Button from '@/components/ui/Button';
 import FilterGroup from '@/components/ui/FilterGroup';
 
 import {
   VEHICLE_TYPES,
-  CAR_FEATURES,
   CAR_BRANDS,
   ECO_FRIENDLY_OPTIONS,
   TRANSMISSION_TYPES,
-  SEAT_OPTIONS,
   YEAR_RANGES,
 } from '@/constants/carTypes';
+
+// Extended car brands list for better selection
+const EXTENDED_CAR_BRANDS = [
+  ...CAR_BRANDS,
+  { id: 'tesla', name: 'Tesla', logo: 'tesla.svg' },
+  { id: 'porsche', name: 'Porsche', logo: 'porsche.svg' },
+  { id: 'jaguar', name: 'Jaguar', logo: 'jaguar.svg' },
+  { id: 'land_rover', name: 'Land Rover', logo: 'land_rover.svg' },
+  { id: 'volvo', name: 'Volvo', logo: 'volvo.svg' },
+  { id: 'mazda', name: 'Mazda', logo: 'mazda.svg' },
+  { id: 'subaru', name: 'Subaru', logo: 'subaru.svg' },
+  { id: 'kia', name: 'Kia', logo: 'kia.svg' },
+  { id: 'hyundai', name: 'Hyundai', logo: 'hyundai.svg' },
+  { id: 'peugeot', name: 'Peugeot', logo: 'peugeot.svg' },
+  { id: 'renault', name: 'Renault', logo: 'renault.svg' },
+  { id: 'citroen', name: 'Citroën', logo: 'citroen.svg' },
+  { id: 'fiat', name: 'Fiat', logo: 'fiat.svg' },
+  { id: 'seat', name: 'SEAT', logo: 'seat.svg' },
+  { id: 'skoda', name: 'Škoda', logo: 'skoda.svg' },
+];
+
+// Seat options with icons
+const ENHANCED_SEAT_OPTIONS = [
+  { id: '2', name: '2', icon: <Users size={16} /> },
+  { id: '4', name: '4', icon: <Users size={16} /> },
+  { id: '5', name: '5', icon: <Users size={16} /> },
+  { id: '6', name: '6', icon: <Users size={16} /> },
+  { id: '7+', name: '7+', icon: <Users size={16} /> },
+];
 
 // Define the filter state type for better type safety
 export interface FilterState {
   vehicleTypes: string[];
   brands: string[];
   priceRange: [number, number];
-  features: string[];
   ecoFriendly: string[];
   years: string[];
   seats: string[];
   transmission: string[];
-  mileage: number;
-  deliveryOption: boolean;
-  deluxeClass: boolean;
 }
 
 interface FilterModalProps {
@@ -52,17 +74,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
     vehicleTypes: ['cars'],
     brands: [],
     priceRange: [10, 500],
-    features: [],
     ecoFriendly: [],
     years: [],
     seats: [],
     transmission: [],
-    mileage: 100,
-    deliveryOption: false,
-    deluxeClass: false,
   };
 
   const [filters, setFilters] = useState<FilterState>(initialFilters || defaultFilters);
+  const [showAllBrands, setShowAllBrands] = useState(false);
+
+  // Bottom nav visibility is handled by SearchBar component
 
   const toggleArrayItem = (array: string[], item: string) => {
     if (array.includes(item)) {
@@ -82,13 +103,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setFilters({
       ...filters,
       brands: toggleArrayItem(filters.brands, brandId),
-    });
-  };
-
-  const handleFeatureToggle = (featureId: string) => {
-    setFilters({
-      ...filters,
-      features: toggleArrayItem(filters.features, featureId),
     });
   };
 
@@ -127,27 +141,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
     });
   };
 
-  const handleMileageChange = (min: number, max: number) => {
-    setFilters({
-      ...filters,
-      mileage: max,
-    });
-  };
-
-  const handleDeliveryOptionToggle = () => {
-    setFilters({
-      ...filters,
-      deliveryOption: !filters.deliveryOption,
-    });
-  };
-
-  const handleDeluxeClassToggle = () => {
-    setFilters({
-      ...filters,
-      deluxeClass: !filters.deluxeClass,
-    });
-  };
-
   const handleApplyFilters = () => {
     onApplyFilters(filters);
     onClose();
@@ -165,18 +158,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
     
     if (filters.vehicleTypes.length > 0 && filters.vehicleTypes[0] !== 'cars') count++;
     if (filters.brands.length > 0) count++;
-    if (filters.features.length > 0) count++;
     if (filters.ecoFriendly.length > 0) count++;
     if (filters.years.length > 0) count++;
     if (filters.seats.length > 0) count++;
     if (filters.transmission.length > 0) count++;
     if (filters.priceRange[0] > 10 || filters.priceRange[1] < 500) count++;
-    if (filters.mileage < 100) count++;
-    if (filters.deliveryOption) count++;
-    if (filters.deluxeClass) count++;
     
     return count > 0 ? count : undefined;
   })();
+
+  const brandsToShow = showAllBrands ? EXTENDED_CAR_BRANDS : EXTENDED_CAR_BRANDS.slice(0, 12);
 
   return (
     <Sheet 
@@ -194,220 +185,164 @@ const FilterModal: React.FC<FilterModalProps> = ({
       }
       height="90vh"
     >
-      <div className="pb-32">
-        {/* Vehicle Type */}
+      <div className="pb-24">
+        {/* Vehicle Type - More compact */}
         <FilterGroup title="Vehicle type">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {VEHICLE_TYPES.map((type) => (
+          <div className="grid grid-cols-4 gap-2">
+            {VEHICLE_TYPES.slice(0, 4).map((type) => (
               <FilterOption
                 key={type.id}
                 id={type.id}
                 label={type.name}
-                icon={type.icon}
+                icon={<span className="text-lg">{type.icon}</span>}
                 isSelected={filters.vehicleTypes.includes(type.id)}
                 onClick={() => handleVehicleTypeToggle(type.id)}
-                className={filters.vehicleTypes.includes(type.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
+                className={`p-3 text-xs ${filters.vehicleTypes.includes(type.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
+              />
+            ))}
+          </div>
+          {VEHICLE_TYPES.length > 4 && (
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {VEHICLE_TYPES.slice(4).map((type) => (
+                <FilterOption
+                  key={type.id}
+                  id={type.id}
+                  label={type.name}
+                  icon={<span className="text-lg">{type.icon}</span>}
+                  isSelected={filters.vehicleTypes.includes(type.id)}
+                  onClick={() => handleVehicleTypeToggle(type.id)}
+                  className={`p-3 text-xs ${filters.vehicleTypes.includes(type.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
+                />
+              ))}
+            </div>
+          )}
+        </FilterGroup>
+
+        {/* Transmission - moved higher up */}
+        <FilterGroup title="Transmission">
+          <div className="grid grid-cols-2 gap-3">
+            {TRANSMISSION_TYPES.map((transmission) => (
+              <FilterOption
+                key={transmission.id}
+                id={transmission.id}
+                label={transmission.name}
+                icon={<Car size={16} />}
+                isSelected={filters.transmission.includes(transmission.id)}
+                onClick={() => handleTransmissionToggle(transmission.id)}
+                className={`p-4 ${filters.transmission.includes(transmission.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
               />
             ))}
           </div>
         </FilterGroup>
 
-        {/* Price Range */}
-        <FilterGroup title="Daily price">
-          <RangeSlider
-            min={10}
-            max={500}
-            step={10}
-            minValue={filters.priceRange[0]}
-            maxValue={filters.priceRange[1]}
-            onChange={handlePriceRangeChange}
-            formatValue={(value) => `${value} US$`}
-            unit="/day"
-          />
+        {/* Price Range - Improved */}
+        <FilterGroup title="Daily price range">
+          <div className="px-2">
+            <RangeSlider
+              min={10}
+              max={500}
+              step={5}
+              minValue={filters.priceRange[0]}
+              maxValue={filters.priceRange[1]}
+              onChange={handlePriceRangeChange}
+              formatValue={(value) => `€${value}`}
+              color="#FF4646"
+            />
+          </div>
         </FilterGroup>
 
-        {/* Vehicle Attributes */}
-        <FilterGroup title="Vehicle attributes">
-          {/* Make */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg text-white">Make</span>
-              <span className="text-[#FF4646]">All makes</span>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {CAR_BRANDS.slice(0, 8).map((brand) => (
-                <FilterOption
-                  key={brand.id}
-                  id={brand.id}
-                  label={brand.name}
-                  isSelected={filters.brands.includes(brand.id)}
-                  onClick={() => handleBrandToggle(brand.id)}
-                  className={`p-2 ${filters.brands.includes(brand.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
-                />
-              ))}
-            </div>
+        {/* Make - Improved with more brands */}
+        <FilterGroup title="Make">
+          <div className="grid grid-cols-4 gap-2">
+            {brandsToShow.map((brand) => (
+              <FilterOption
+                key={brand.id}
+                id={brand.id}
+                label={brand.name}
+                isSelected={filters.brands.includes(brand.id)}
+                onClick={() => handleBrandToggle(brand.id)}
+                className={`p-3 text-xs ${filters.brands.includes(brand.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
+              />
+            ))}
           </div>
+          {!showAllBrands && EXTENDED_CAR_BRANDS.length > 12 && (
+            <button 
+              onClick={() => setShowAllBrands(true)}
+              className="mt-4 text-[#FF4646] flex items-center hover:underline"
+            >
+              <span className="mr-1">Show more brands</span>
+              <ChevronRight size={16} />
+            </button>
+          )}
+          {showAllBrands && (
+            <button 
+              onClick={() => setShowAllBrands(false)}
+              className="mt-4 text-[#FF4646] flex items-center hover:underline"
+            >
+              <span className="mr-1">Show less</span>
+            </button>
+          )}
+        </FilterGroup>
 
-          {/* Years */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg text-white">Years</span>
-              <span className="text-[#FF4646]">All years</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {YEAR_RANGES.map((year) => (
-                <FilterOption
-                  key={year.id}
-                  id={year.id}
-                  label={year.name}
-                  isSelected={filters.years.includes(year.id)}
-                  onClick={() => handleYearToggle(year.id)}
-                  className={filters.years.includes(year.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
-                />
-              ))}
-            </div>
+        {/* Seats - Enhanced with icons */}
+        <FilterGroup title="Number of seats">
+          <div className="grid grid-cols-5 gap-2">
+            {ENHANCED_SEAT_OPTIONS.map((seat) => (
+              <FilterOption
+                key={seat.id}
+                id={seat.id}
+                label={seat.name}
+                icon={seat.icon}
+                isSelected={filters.seats.includes(seat.id)}
+                onClick={() => handleSeatToggle(seat.id)}
+                className={`p-4 ${filters.seats.includes(seat.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
+              />
+            ))}
           </div>
+        </FilterGroup>
 
-          {/* Seats */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg text-white">Number of seats</span>
-              <span className="text-[#FF4646]">All seats</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {SEAT_OPTIONS.map((seat) => (
-                <FilterOption
-                  key={seat.id}
-                  id={seat.id}
-                  label={seat.name}
-                  isSelected={filters.seats.includes(seat.id)}
-                  onClick={() => handleSeatToggle(seat.id)}
-                  className={filters.seats.includes(seat.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Transmission */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg text-white">Transmission</span>
-              <span className="text-[#FF4646]">All transmissions</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {TRANSMISSION_TYPES.map((transmission) => (
-                <FilterOption
-                  key={transmission.id}
-                  id={transmission.id}
-                  label={transmission.name}
-                  isSelected={filters.transmission.includes(transmission.id)}
-                  onClick={() => handleTransmissionToggle(transmission.id)}
-                  className={filters.transmission.includes(transmission.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
-                />
-              ))}
-            </div>
+        {/* Years */}
+        <FilterGroup title="Vehicle year">
+          <div className="grid grid-cols-2 gap-3">
+            {YEAR_RANGES.map((year) => (
+              <FilterOption
+                key={year.id}
+                id={year.id}
+                label={year.name}
+                isSelected={filters.years.includes(year.id)}
+                onClick={() => handleYearToggle(year.id)}
+                className={`p-4 ${filters.years.includes(year.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
+              />
+            ))}
           </div>
         </FilterGroup>
 
         {/* Eco-friendly */}
         <FilterGroup title="Eco-friendly">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {ECO_FRIENDLY_OPTIONS.map((option) => (
               <FilterOption
                 key={option.id}
                 id={option.id}
                 label={option.name}
-                icon={option.icon}
+                icon={<span className="text-lg">{option.icon}</span>}
                 isSelected={filters.ecoFriendly.includes(option.id)}
                 onClick={() => handleEcoFriendlyToggle(option.id)}
-                className={filters.ecoFriendly.includes(option.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
+                className={`p-4 ${filters.ecoFriendly.includes(option.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}`}
               />
             ))}
           </div>
         </FilterGroup>
-
-        {/* Features */}
-        <FilterGroup title="Features">
-          <div className="grid grid-cols-3 gap-4">
-            {CAR_FEATURES.slice(0, 6).map((feature) => (
-              <FilterOption
-                key={feature.id}
-                id={feature.id}
-                label={feature.name}
-                icon={feature.icon}
-                isSelected={filters.features.includes(feature.id)}
-                onClick={() => handleFeatureToggle(feature.id)}
-                className={filters.features.includes(feature.id) ? 'border-[#FF4646] bg-[#FF4646]/10' : ''}
-              />
-            ))}
-          </div>
-          
-          <button className="mt-4 text-[#FF4646] flex items-center hover:underline">
-            <span className="mr-1">Show more</span>
-            <ChevronRight size={16} />
-          </button>
-        </FilterGroup>
-
-        {/* Mileage included */}
-        <FilterGroup title="Mileage included">
-          <RangeSlider
-            min={0}
-            max={500}
-            step={10}
-            minValue={0}
-            maxValue={filters.mileage}
-            onChange={handleMileageChange}
-            formatValue={(value) => value === 0 ? 'Any mileage' : `${value} miles/day`}
-          />
-        </FilterGroup>
-
-        {/* Pickup options */}
-        <FilterGroup title="Pickup options">
-          <Switch
-            isChecked={filters.deliveryOption}
-            onChange={handleDeliveryOptionToggle}
-            label="Host brings the car to me"
-            description="Show cars that can be delivered directly to an address or specific location."
-          />
-          <div className="mt-4">
-            <input
-              type="text"
-              placeholder="Enter an address"
-              className="w-full p-4 rounded-2xl bg-transparent border border-gray-700 text-white placeholder-gray-400"
-              disabled={!filters.deliveryOption}
-            />
-          </div>
-        </FilterGroup>
-
-        {/* Elevate experience */}
-        <FilterGroup title="Elevate your experience">
-          <Switch
-            isChecked={filters.deluxeClass}
-            onChange={handleDeluxeClassToggle}
-            label="Deluxe Class"
-            description="Exclusive cars for guests ages 25+"
-          />
-        </FilterGroup>
-      </div>
-
-      {/* Floating Apply Button - Always visible while scrolling */}
-      <div className="fixed bottom-20 right-4 z-50">
-        <Button 
-          onClick={handleApplyFilters}
-          className="bg-[#FF4646] hover:bg-[#FF3333] text-white px-6 py-3 rounded-full shadow-lg"
-        >
-          Apply Filters
-        </Button>
       </div>
 
       {/* Apply button - fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#212121] border-t border-gray-800">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#212121] border-t border-gray-800 z-50">
         <Button 
           onClick={handleApplyFilters}
           size="lg"
-          className="w-full"
+          className="w-full bg-[#FF4646] hover:bg-[#FF3333] text-white"
         >
-          Show 200+ results
+          Apply Filters
         </Button>
       </div>
     </Sheet>

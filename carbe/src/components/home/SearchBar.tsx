@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, ChevronLeft, X, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, X, MapPin, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import FilterModal from './FilterModal';
 import { FilterState } from './FilterModal';
+import DatePicker from '@/components/booking/DatePicker';
+import { getUserLocation } from '@/lib/geocode';
+import { useBottomNav } from '@/contexts/BottomNavContext';
+import { format, isBefore, isAfter, isSameDay, startOfDay } from 'date-fns';
 
 interface SearchBarProps {
   onSearch?: (searchParams: {
@@ -21,6 +25,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'location' | 'dates' | null>(null);
   const [searchParams, setSearchParams] = useState({
     location: '',
@@ -28,6 +33,61 @@ const SearchBar: React.FC<SearchBarProps> = ({
   });
   const [hasSearched, setHasSearched] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [calendarStartDate, setCalendarStartDate] = useState<Date | null>(null);
+  const [calendarEndDate, setCalendarEndDate] = useState<Date | null>(null);
+  const [hoverDate, setHoverDate] = useState<Date | null>(null);
+
+  // Get user location on mount (keeping for future use)
+  useEffect(() => {
+    getUserLocation().then(setUserLocation);
+  }, []);
+
+  // Generate location suggestions based on user input
+  useEffect(() => {
+    if (searchParams.location && searchParams.location.length >= 2) {
+      // In a real app, this would call a geocoding API
+      const commonLocations = [
+        'Amsterdam, Netherlands',
+        'Berlin, Germany', 
+        'London, United Kingdom',
+        'Paris, France',
+        'Madrid, Spain',
+        'Rome, Italy',
+        'Barcelona, Spain',
+        'Munich, Germany',
+        'Vienna, Austria',
+        'Brussels, Belgium',
+        'Copenhagen, Denmark',
+        'Stockholm, Sweden',
+        'Oslo, Norway',
+        'Helsinki, Finland',
+        'Dublin, Ireland',
+        'Lisbon, Portugal',
+        'Athens, Greece',
+        'Prague, Czech Republic',
+        'Warsaw, Poland',
+        'Budapest, Hungary'
+      ];
+      
+      const filtered = commonLocations.filter(loc => 
+        loc.toLowerCase().includes(searchParams.location.toLowerCase())
+      ).slice(0, 8);
+      
+      setLocationSuggestions(filtered);
+    } else {
+      setLocationSuggestions([]);
+    }
+  }, [searchParams.location]);
+
+  // Emit bottom nav visibility events
+  useEffect(() => {
+    const event = new CustomEvent('bottomNavVisibility', { 
+      detail: { visible: !isExpanded && !isFilterModalOpen && !isDatePickerOpen } 
+    });
+    window.dispatchEvent(event);
+  }, [isExpanded, isFilterModalOpen, isDatePickerOpen]);
 
   const handleExpandSearch = () => {
     setIsExpanded(true);
@@ -55,23 +115,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setActiveSection('dates');
   };
 
-  // Auto-scroll to date section when it becomes active
-  useEffect(() => {
-    if (activeSection === 'dates') {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        const dateSection = document.querySelector('[data-date-section]');
-        if (dateSection) {
-          dateSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
-    }
-  }, [activeSection]);
-
-  const handleDatesSelect = (dates: [Date | null, Date | null]) => {
+  const handleDateSelect = (startDate: Date, endDate: Date) => {
     setSearchParams({
       ...searchParams,
-      dates,
+      dates: [startDate, endDate],
     });
     // After selecting dates, perform search
     handleSearch();
@@ -87,6 +134,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setHasSearched(true);
     setIsExpanded(false);
     setActiveSection(null);
+    setIsDatePickerOpen(false);
   };
 
   const handleFilterClick = () => {
@@ -124,34 +172,44 @@ const SearchBar: React.FC<SearchBarProps> = ({
     // Count vehicle types (if not default 'cars')
     if (activeFilters.vehicleTypes.length > 0 && activeFilters.vehicleTypes[0] !== 'cars') count++;
     if (activeFilters.brands.length > 0) count++;
-    if (activeFilters.features.length > 0) count++;
     if (activeFilters.ecoFriendly.length > 0) count++;
     if (activeFilters.years.length > 0) count++;
     if (activeFilters.seats.length > 0) count++;
     if (activeFilters.transmission.length > 0) count++;
     if (activeFilters.priceRange[0] > 10 || activeFilters.priceRange[1] < 500) count++;
-    if (activeFilters.mileage < 100) count++;
-    if (activeFilters.deliveryOption) count++;
-    if (activeFilters.deluxeClass) count++;
     
     return count;
   };
 
   const renderLocationOptions = () => {
-    const locations = [
+    // Generate dynamic location options
+    const baseLocations = [
       { id: 'nearby', name: 'Nearby', description: 'Cars around your current location' },
       { id: 'anywhere', name: 'Anywhere', description: 'Search in all locations' },
-      { id: 'new_york', name: 'New York, NY', description: 'Popular destination' },
-      { id: 'los_angeles', name: 'Los Angeles, CA', description: 'Popular destination' },
-      { id: 'miami', name: 'Miami, FL', description: 'Popular destination' },
-      { id: 'chicago', name: 'Chicago, IL', description: 'Popular destination' },
-      { id: 'san_francisco', name: 'San Francisco, CA', description: 'Popular destination' },
-      { id: 'seattle', name: 'Seattle, WA', description: 'Popular destination' },
     ];
+
+    // Add popular European cities
+    const popularLocations = [
+      { id: 'amsterdam', name: 'Amsterdam, Netherlands', description: 'Popular destination' },
+      { id: 'berlin', name: 'Berlin, Germany', description: 'Popular destination' },
+      { id: 'london', name: 'London, United Kingdom', description: 'Popular destination' },
+      { id: 'paris', name: 'Paris, France', description: 'Popular destination' },
+      { id: 'barcelona', name: 'Barcelona, Spain', description: 'Popular destination' },
+      { id: 'rome', name: 'Rome, Italy', description: 'Popular destination' },
+    ];
+
+    // Show search suggestions if user is typing, otherwise show popular locations
+    const locationsToShow = locationSuggestions.length > 0 
+      ? locationSuggestions.map((loc, index) => ({
+          id: `suggestion_${index}`,
+          name: loc,
+          description: 'Search result'
+        }))
+      : [...baseLocations, ...popularLocations];
 
     return (
       <div className="h-[60vh] max-h-[500px] overflow-y-auto mt-2 py-2">
-        {locations.map((location) => (
+        {locationsToShow.map((location) => (
           <div
             key={location.id}
             className="flex items-center px-4 py-3 hover:bg-gray-700/20 rounded-lg cursor-pointer"
@@ -171,167 +229,172 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const renderDateSelector = () => {
-    const dateOptions = [
-      { 
-        id: 'anytime', 
-        label: 'Anytime',
-        description: 'Flexible dates',
-        action: () => handleDatesSelect([null, null])
-      },
-      { 
-        id: 'weekend', 
-        label: 'This weekend',
-        description: 'Saturday - Sunday',
-        action: () => {
-          const now = new Date();
-          const saturday = new Date(now);
-          const sunday = new Date(now);
-          
-          // Find next Saturday
-          const daysUntilSaturday = (6 - now.getDay()) % 7;
-          saturday.setDate(now.getDate() + (daysUntilSaturday || 7));
-          
-          // Sunday is next day
-          sunday.setDate(saturday.getDate() + 1);
-          
-          handleDatesSelect([saturday, sunday]);
+    // Use the calendar state from component level
+    const startDate = calendarStartDate || searchParams.dates[0];
+    const endDate = calendarEndDate || searchParams.dates[1];
+
+    // Generate dates for the calendar (3 months)
+    const generateCalendarDates = () => {
+      const today = new Date();
+      const months = [];
+      
+      for (let i = 0; i < 3; i++) {
+        const monthStart = new Date(today.getFullYear(), today.getMonth() + i, 1);
+        const monthName = format(monthStart, 'MMMM yyyy');
+        
+        const daysInMonth = new Date(
+          monthStart.getFullYear(),
+          monthStart.getMonth() + 1,
+          0
+        ).getDate();
+        
+        const startDay = (monthStart.getDay() + 6) % 7;
+        
+        const days = [];
+        
+        for (let d = 0; d < startDay; d++) {
+          days.push(null);
         }
-      },
-      { 
-        id: 'week', 
-        label: 'This week',
-        description: 'Next 7 days',
-        action: () => {
-          const now = new Date();
-          const nextWeek = new Date(now);
-          nextWeek.setDate(now.getDate() + 7);
-          handleDatesSelect([now, nextWeek]);
+        
+        for (let d = 1; d <= daysInMonth; d++) {
+          const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
+          days.push(date);
         }
-      },
-      { 
-        id: 'next_weekend', 
-        label: 'Next weekend',
-        description: 'Next Saturday - Sunday',
-        action: () => {
-          const now = new Date();
-          const nextSaturday = new Date(now);
-          const nextSunday = new Date(now);
-          
-          // Find next Saturday (if today is Saturday, get the following one)
-          const daysUntilSaturday = ((6 - now.getDay()) % 7) || 7;
-          nextSaturday.setDate(now.getDate() + daysUntilSaturday);
-          
-          // Sunday is next day
-          nextSunday.setDate(nextSaturday.getDate() + 1);
-          
-          handleDatesSelect([nextSaturday, nextSunday]);
-        }
-      },
-      { 
-        id: 'month', 
-        label: 'This month',
-        description: 'Next 30 days',
-        action: () => {
-          const now = new Date();
-          const nextMonth = new Date(now);
-          nextMonth.setDate(now.getDate() + 30);
-          handleDatesSelect([now, nextMonth]);
-        }
-      },
-    ];
+        
+        months.push({
+          name: monthName,
+          days,
+        });
+      }
+      
+      return months;
+    };
+
+    const isDateSelected = (date: Date) => {
+      if (!startDate && !endDate) return false;
+      if (startDate && isSameDay(date, startDate)) return true;
+      if (endDate && isSameDay(date, endDate)) return true;
+      if (startDate && endDate && isAfter(date, startDate) && isBefore(date, endDate)) return true;
+      return false;
+    };
+
+    const isDateInRange = (date: Date) => {
+      if (startDate && !endDate && hoverDate) {
+        const start = startDate;
+        const end = hoverDate;
+        return (
+          (isAfter(date, start) && isBefore(date, end)) ||
+          (isAfter(date, end) && isBefore(date, start))
+        );
+      }
+      return false;
+    };
+
+    const isDateDisabled = (date: Date) => {
+      const today = startOfDay(new Date());
+      return isBefore(date, today);
+    };
+
+    const handleDateClick = (date: Date) => {
+      if (isDateDisabled(date)) return;
+
+      // Case 1: No selection OR we have a range selected - start new single selection
+      if (!startDate || (startDate && endDate && !isSameDay(startDate, endDate))) {
+        setCalendarStartDate(date);
+        setCalendarEndDate(date);
+      }
+      // Case 2: Single date selected and clicking the same date - clear selection
+      else if (startDate && endDate && isSameDay(startDate, endDate) && isSameDay(date, startDate)) {
+        setCalendarStartDate(null);
+        setCalendarEndDate(null);
+      }
+      // Case 3: Single date selected and clicking different date - create range
+      else if (startDate && endDate && isSameDay(startDate, endDate)) {
+        const newStartDate = isBefore(date, startDate) ? date : startDate;
+        const newEndDate = isBefore(date, startDate) ? startDate : date;
+        
+        setCalendarStartDate(newStartDate);
+        setCalendarEndDate(newEndDate);
+      }
+    };
+
+    const handleDateHover = (date: Date) => {
+      if (!isDateDisabled(date)) {
+        setHoverDate(date);
+      }
+    };
+
+    const handleApplyDates = () => {
+      if (startDate && endDate && !isSameDay(startDate, endDate)) {
+        handleDateSelect(startDate, endDate);
+      }
+    };
 
     return (
-      <div data-date-section className="h-[60vh] max-h-[500px] overflow-y-auto mt-2 py-2">
-        <div className="px-4 py-2 mb-4">
-          <div className="text-lg font-medium text-white mb-1">When would you like to rent?</div>
-          <div className="text-gray-400">Select a date range or choose from options below</div>
-        </div>
-        
-        {/* Date options */}
-        <div className="px-4 space-y-2">
-          {dateOptions.map((option) => (
-            <div
-              key={option.id}
-              className="flex items-center justify-between py-4 hover:bg-gray-700/20 rounded-lg cursor-pointer px-4"
-              onClick={option.action}
-            >
-              <div className="flex items-center">
-                <div className="bg-gray-700 rounded-full p-2 mr-3 flex-shrink-0">
-                  <Calendar size={16} className="text-white" />
+      <div className="h-[60vh] max-h-[500px] flex flex-col">
+        <div className="flex-1 overflow-y-auto mt-2 py-2 px-4">
+          <div className="max-w-lg mx-auto">
+            {generateCalendarDates().map((month, monthIndex) => (
+              <div key={monthIndex} className="mb-8">
+                <h3 className="text-white font-medium text-center mb-4">{month.name}</h3>
+                
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                    <div 
+                      key={day} 
+                      className="text-xs text-center py-2 text-gray-400"
+                    >
+                      {day}
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <div className="text-white font-medium">{option.label}</div>
-                  <div className="text-gray-400 text-sm">{option.description}</div>
+                
+                <div className="grid grid-cols-7 gap-1">
+                  {month.days.map((date, dateIndex) => {
+                    if (!date) return <div key={`empty-${dateIndex}`} className="h-12" />;
+                    
+                    const isSelected = isDateSelected(date);
+                    const isInRange = isDateInRange(date);
+                    const disabled = isDateDisabled(date);
+                    
+                    return (
+                      <button
+                        key={dateIndex}
+                        onClick={() => handleDateClick(date)}
+                        onMouseEnter={() => handleDateHover(date)}
+                        disabled={disabled}
+                        className={`
+                          h-12 flex items-center justify-center rounded-lg transition-all duration-200 text-sm font-medium
+                          ${disabled ? 'text-gray-600 cursor-not-allowed' : 
+                            'text-white cursor-pointer hover:bg-gray-700'}
+                          ${isSelected && !isInRange ? 'bg-[#FF4646] text-white shadow-lg' : ''}
+                          ${isInRange ? 'bg-[#FF4646]/30' : ''}
+                          ${!disabled && !isSelected && !isInRange ? 'hover:scale-105' : ''}
+                        `}
+                      >
+                        {format(date, 'd')}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              {/* Show if this option is currently selected */}
-              {((option.id === 'anytime' && !searchParams.dates[0] && !searchParams.dates[1]) ||
-                (searchParams.dates[0] && searchParams.dates[1] && 
-                 ((option.id === 'weekend' && isThisWeekend(searchParams.dates)) ||
-                  (option.id === 'week' && isThisWeek(searchParams.dates)) ||
-                  (option.id === 'month' && isThisMonth(searchParams.dates))))) && (
-                <div className="w-2 h-2 bg-[#FF4646] rounded-full"></div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Simple date input section */}
-        <div className="px-4 mt-6">
-          <div className="bg-gray-800 rounded-2xl p-4">
-            <div className="text-white font-medium mb-4">Custom dates</div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-gray-400 text-sm block mb-2">Start date</label>
-                <input
-                  type="date"
-                  value={searchParams.dates[0] ? searchParams.dates[0].toISOString().split('T')[0] : ''}
-                  onChange={(e) => {
-                    const startDate = e.target.value ? new Date(e.target.value) : null;
-                    handleDatesSelect([startDate, searchParams.dates[1]]);
-                  }}
-                  className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-[#FF4646] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm block mb-2">End date</label>
-                <input
-                  type="date"
-                  value={searchParams.dates[1] ? searchParams.dates[1].toISOString().split('T')[0] : ''}
-                  onChange={(e) => {
-                    const endDate = e.target.value ? new Date(e.target.value) : null;
-                    handleDatesSelect([searchParams.dates[0], endDate]);
-                  }}
-                  className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-[#FF4646] focus:outline-none"
-                />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
+
+        {/* Apply button at bottom */}
+        {startDate && endDate && !isSameDay(startDate, endDate) && (
+          <div className="p-4 border-t border-gray-800">
+            <button
+              onClick={handleApplyDates}
+              className="w-full bg-[#FF4646] hover:bg-[#FF3333] text-white font-medium py-4 rounded-2xl transition-colors flex items-center justify-center"
+            >
+              Apply dates ({format(startDate, 'MMM d')} - {format(endDate, 'MMM d')})
+            </button>
+          </div>
+        )}
       </div>
     );
-  };
-
-  // Helper functions to check if dates match predefined options
-  const isThisWeekend = (dates: [Date | null, Date | null]) => {
-    if (!dates[0] || !dates[1]) return false;
-    const diffTime = Math.abs(dates[1].getTime() - dates[0].getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 2 && dates[0].getDay() === 6; // Saturday
-  };
-
-  const isThisWeek = (dates: [Date | null, Date | null]) => {
-    if (!dates[0] || !dates[1]) return false;
-    const diffTime = Math.abs(dates[1].getTime() - dates[0].getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays >= 6 && diffDays <= 8;
-  };
-
-  const isThisMonth = (dates: [Date | null, Date | null]) => {
-    if (!dates[0] || !dates[1]) return false;
-    const diffTime = Math.abs(dates[1].getTime() - dates[0].getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays >= 28 && diffDays <= 32;
   };
 
   // Compact searchbar in post-search state
@@ -361,7 +424,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     <div className="text-gray-500 text-xs">
                       {searchParams.dates[0] && searchParams.dates[1] ? 
                         `${searchParams.dates[0].toLocaleDateString()} - ${searchParams.dates[1].toLocaleDateString()}` :
-                        'Any week'
+                        'Any dates'
                       }
                     </div>
                   </div>
@@ -388,6 +451,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onApplyFilters={handleApplyFilters}
           onResetFilters={handleResetFilters}
           initialFilters={activeFilters}
+        />
+
+        <DatePicker
+          isOpen={isDatePickerOpen}
+          onClose={() => setIsDatePickerOpen(false)}
+          onSelectDates={handleDateSelect}
+          initialStartDate={searchParams.dates[0] || undefined}
+          initialEndDate={searchParams.dates[1] || undefined}
         />
       </>
     );
@@ -424,7 +495,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     type="text"
                     value={searchParams.location}
                     onChange={handleLocationChange}
-                    placeholder="Enter location"
+                    placeholder="Search destinations"
                     className="bg-transparent flex-grow focus:outline-none text-black placeholder-gray-500 text-base font-normal"
                     autoFocus={activeSection === 'location'}
                   />
@@ -504,6 +575,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
         onApplyFilters={handleApplyFilters}
         onResetFilters={handleResetFilters}
         initialFilters={activeFilters}
+      />
+
+      <DatePicker
+        isOpen={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
+        onSelectDates={handleDateSelect}
+        initialStartDate={searchParams.dates[0] || undefined}
+        initialEndDate={searchParams.dates[1] || undefined}
       />
     </>
   );

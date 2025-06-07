@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { getCars, CarSearchParams } from '@/lib/car';
 import { supabase } from '@/lib/supabase';
 
-// Real car interface matching Supabase schema
+// Database car type (updated to include owner profile)
 export interface Car {
   id: string;
   owner_id: string;
@@ -11,25 +12,27 @@ export interface Car {
   model: string;
   year: number;
   price_per_day: number;
+  transmission: string;
+  fuel_type: string;
+  seats: number;
   location: string | null;
-  transmission: string | null;
-  images: string[]; // Always an array
-  rating: number | null;
-  fuel_type: string | null;
-  seats: number | null;
-  description: string | null;
+  images: string[];
   is_available: boolean;
+  rating: number | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
-  // Host profile from join
-  host_profile?: {
+  vehicle_type?: string;
+  // Owner profile information
+  profiles?: {
     id: string;
     full_name: string;
-    avatar_url: string | null;
+    profile_image: string | null;
     created_at: string;
-  };
+  } | null;
 }
 
+// Legacy interface for backward compatibility
 export interface UseCarFilters {
   make?: string;
   model?: string;
@@ -40,17 +43,20 @@ export interface UseCarFilters {
   location?: string;
 }
 
-// Timeout wrapper to prevent stuck loaders
-async function fetchWithTimeout<T>(fn: () => Promise<T>, ms = 10000): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Request timed out')), ms);
-    fn()
-      .then(res => { clearTimeout(timer); resolve(res); })
-      .catch(err => { clearTimeout(timer); reject(err); });
+// Timeout wrapper for database queries
+async function fetchWithTimeout<T>(
+  queryFn: () => Promise<T>,
+  timeoutMs: number = 10000
+): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error('Query timeout')), timeoutMs);
   });
+
+  return Promise.race([queryFn(), timeoutPromise]);
 }
 
-export function useCars(filters?: UseCarFilters) {
+// Enhanced hook with search capabilities
+export function useCars(searchParams?: CarSearchParams) {
   const [cars, setCars] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,100 +68,60 @@ export function useCars(filters?: UseCarFilters) {
 
       // Build query with timeout wrapper
       const queryFn = async () => {
-        let query = supabase
-          .from('cars')
-          .select(`
-            *,
-            profiles!owner_id (
-              id,
-              full_name,
-              profile_image,
-              created_at
-            )
-          `)
-          .eq('is_available', true) // Only available cars
-          .order('created_at', { ascending: false });
-
-        // Apply filters
-        if (filters) {
-          if (filters.make) {
-            query = query.ilike('make', `%${filters.make}%`);
-          }
-          if (filters.model) {
-            query = query.ilike('model', `%${filters.model}%`);
-          }
-          if (filters.priceMin !== undefined) {
-            query = query.gte('price_per_day', filters.priceMin);
-          }
-          if (filters.priceMax !== undefined) {
-            query = query.lte('price_per_day', filters.priceMax);
-          }
-          if (filters.transmission) {
-            query = query.eq('transmission', filters.transmission);
-          }
-          if (filters.fuelType) {
-            query = query.eq('fuel_type', filters.fuelType);
-          }
-          if (filters.location) {
-            query = query.ilike('location', `%${filters.location}%`);
-          }
-        }
-
-        return query;
+        return await getCars(searchParams);
       };
 
-      const { data, error: fetchError } = await fetchWithTimeout(queryFn);
+      const data = await fetchWithTimeout(queryFn);
 
-      if (fetchError) {
-        throw fetchError;
+      if (data) {
+        setCars(data as Car[]);
+      } else {
+        setCars([]);
       }
-
-      // Transform data with ChatGPT's improvements
-      const transformedCars: Car[] = (data || []).map(car => ({
-        ...car,
-        images: car.images ?? [], // Ensure always array
-        host_profile: car.profiles && {
-          id: car.profiles.id,
-          full_name: car.profiles.full_name,
-          avatar_url: car.profiles.profile_image, // Map profile_image → avatar_url
-          created_at: car.profiles.created_at,
-        },
-      }));
-
-      setCars(transformedCars);
     } catch (err) {
       console.error('Error fetching cars:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch cars');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cars';
+      setError(errorMessage);
       setCars([]);
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchCars();
   }, [fetchCars]);
 
-  // Re-fetch when tab becomes visible (fixes tab switching issues)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && cars.length === 0 && !isLoading) {
-        console.log('Tab became visible, re-fetching cars...');
-        fetchCars();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [fetchCars, cars.length, isLoading]);
+  const refetch = useCallback(() => {
+    fetchCars();
+  }, [fetchCars]);
 
   return {
     cars,
     isLoading,
     error,
-    refetch: fetchCars,
+    refetch,
   };
 }
+
+// Legacy hook for backward compatibility
+export function useCarsLegacy(filters?: UseCarFilters) {
+  // Convert legacy filters to new search params format
+  const searchParams: CarSearchParams | undefined = filters ? {
+    location: filters.location,
+    make: filters.make,
+    model: filters.model,
+    priceMin: filters.priceMin,
+    priceMax: filters.priceMax,
+    transmission: filters.transmission,
+    fuelType: filters.fuelType,
+  } : undefined;
+
+  return useCars(searchParams);
+}
+
+// Export the legacy function as the default export for backward compatibility
+export { useCarsLegacy as useCarFilters };
 
 export function useCarById(id: string) {
   const [car, setCar] = useState<Car | null>(null);

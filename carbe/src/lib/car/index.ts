@@ -1,14 +1,20 @@
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
+import { FilterState } from '@/components/home/FilterModal';
 
 export type Car = Database['public']['Tables']['cars']['Row'];
 export type CarInsert = Database['public']['Tables']['cars']['Insert'];
 export type CarUpdate = Database['public']['Tables']['cars']['Update'];
 
 /**
- * Get all cars with optional filtering
+ * Enhanced search interface for cars
  */
-export async function getCars(filters?: {
+export interface CarSearchParams {
+  location?: string;
+  startDate?: Date;
+  endDate?: Date;
+  filters?: FilterState;
+  // Legacy filter support
   make?: string;
   model?: string;
   priceMin?: number;
@@ -16,31 +22,187 @@ export async function getCars(filters?: {
   transmission?: string;
   seats?: number;
   fuelType?: string;
-}) {
-  let query = supabase.from('cars').select('*');
+}
+
+/**
+ * Get all cars with optional filtering and search
+ */
+export async function getCars(searchParams?: CarSearchParams) {
+  let query = supabase
+    .from('cars')
+    .select(`
+      *,
+      profiles!owner_id (
+        id,
+        full_name,
+        profile_image,
+        created_at
+      )
+    `)
+    .eq('is_available', true) // Only available cars
+    .order('created_at', { ascending: false });
 
   // Apply filters if provided
-  if (filters) {
-    if (filters.make) {
-      query = query.ilike('make', `%${filters.make}%`);
+  if (searchParams) {
+    const { filters, location, startDate, endDate, ...legacyFilters } = searchParams;
+
+    // Handle location search
+    if (location && location !== 'Anywhere' && location !== 'Nearby') {
+      query = query.ilike('location', `%${location}%`);
     }
-    if (filters.model) {
-      query = query.ilike('model', `%${filters.model}%`);
+
+    // Handle new filter structure
+    if (filters) {
+      // Vehicle types
+      if (filters.vehicleTypes.length > 0 && !filters.vehicleTypes.includes('cars')) {
+        // Map vehicle types to database values if needed
+        const dbVehicleTypes = filters.vehicleTypes.map(type => {
+          switch (type) {
+            case 'suvs': return 'SUV';
+            case 'minivans': return 'Minivan';
+            case 'trucks': return 'Truck';
+            case 'vans': return 'Van';
+            case 'cargo_vans': return 'Cargo Van';
+            case 'box_trucks': return 'Box Truck';
+            default: return 'Car';
+          }
+        });
+        query = query.in('vehicle_type', dbVehicleTypes);
+      }
+
+      // Brands
+      if (filters.brands.length > 0) {
+        const brandNames = filters.brands.map(brandId => {
+          // Convert brand IDs to actual brand names
+          const brandMap: { [key: string]: string } = {
+            'volkswagen': 'Volkswagen',
+            'toyota': 'Toyota',
+            'nissan': 'Nissan',
+            'mercedes': 'Mercedes-Benz',
+            'bmw': 'BMW',
+            'audi': 'Audi',
+            'ford': 'Ford',
+            'honda': 'Honda',
+            'tesla': 'Tesla',
+            'porsche': 'Porsche',
+            'jaguar': 'Jaguar',
+            'land_rover': 'Land Rover',
+            'volvo': 'Volvo',
+            'mazda': 'Mazda',
+            'subaru': 'Subaru',
+            'kia': 'Kia',
+            'hyundai': 'Hyundai',
+            'peugeot': 'Peugeot',
+            'renault': 'Renault',
+            'citroen': 'Citroën',
+            'fiat': 'Fiat',
+            'seat': 'SEAT',
+            'skoda': 'Škoda'
+          };
+          return brandMap[brandId] || brandId;
+        });
+        query = query.in('make', brandNames);
+      }
+
+      // Price range
+      if (filters.priceRange[0] > 10 || filters.priceRange[1] < 500) {
+        query = query.gte('price_per_day', filters.priceRange[0]);
+        query = query.lte('price_per_day', filters.priceRange[1]);
+      }
+
+      // Transmission
+      if (filters.transmission.length > 0) {
+        const transmissionTypes = filters.transmission.map(t => 
+          t.charAt(0).toUpperCase() + t.slice(1)
+        );
+        query = query.in('transmission', transmissionTypes);
+      }
+
+      // Seats
+      if (filters.seats.length > 0) {
+        const seatNumbers = filters.seats.map(s => {
+          if (s === '7+') return 7; // Handle 7+ as minimum 7 seats
+          return parseInt(s, 10);
+        });
+        
+        if (filters.seats.includes('7+')) {
+          // If 7+ is selected, get cars with 7 or more seats
+          query = query.gte('seats', 7);
+        } else {
+          query = query.in('seats', seatNumbers);
+        }
+      }
+
+      // Years
+      if (filters.years.length > 0) {
+        const currentYear = new Date().getFullYear();
+        let yearConditions: string[] = [];
+        
+        filters.years.forEach(yearRange => {
+          switch (yearRange) {
+            case 'new':
+              yearConditions.push(`year >= 2020`);
+              break;
+            case 'recent':
+              yearConditions.push(`year >= 2015 AND year <= 2019`);
+              break;
+            case 'older':
+              yearConditions.push(`year >= 2010 AND year <= 2014`);
+              break;
+            case 'classic':
+              yearConditions.push(`year < 2010`);
+              break;
+          }
+        });
+        
+        if (yearConditions.length > 0) {
+          // Use OR logic for year ranges
+          query = query.or(yearConditions.join(','));
+        }
+      }
+
+      // Eco-friendly
+      if (filters.ecoFriendly.length > 0) {
+        const fuelTypes = filters.ecoFriendly.map(eco => {
+          switch (eco) {
+            case 'electric': return 'Electric';
+            case 'hybrid': return 'Hybrid';
+            default: return eco;
+          }
+        });
+        query = query.in('fuel_type', fuelTypes);
+      }
     }
-    if (filters.priceMin) {
-      query = query.gte('price_per_day', filters.priceMin);
+
+    // Handle legacy filters for backward compatibility
+    if (legacyFilters.make) {
+      query = query.ilike('make', `%${legacyFilters.make}%`);
     }
-    if (filters.priceMax) {
-      query = query.lte('price_per_day', filters.priceMax);
+    if (legacyFilters.model) {
+      query = query.ilike('model', `%${legacyFilters.model}%`);
     }
-    if (filters.transmission) {
-      query = query.eq('transmission', filters.transmission);
+    if (legacyFilters.priceMin) {
+      query = query.gte('price_per_day', legacyFilters.priceMin);
     }
-    if (filters.seats) {
-      query = query.eq('seats', filters.seats);
+    if (legacyFilters.priceMax) {
+      query = query.lte('price_per_day', legacyFilters.priceMax);
     }
-    if (filters.fuelType) {
-      query = query.eq('fuel_type', filters.fuelType);
+    if (legacyFilters.transmission) {
+      query = query.eq('transmission', legacyFilters.transmission);
+    }
+    if (legacyFilters.seats) {
+      query = query.eq('seats', legacyFilters.seats);
+    }
+    if (legacyFilters.fuelType) {
+      query = query.eq('fuel_type', legacyFilters.fuelType);
+    }
+
+    // TODO: Add date availability filtering
+    // This would require checking against a bookings table
+    if (startDate && endDate) {
+      // This is a placeholder - in a real implementation, you'd check for conflicts
+      // with existing bookings in a separate query or join
+      console.log('Date filtering not yet implemented:', { startDate, endDate });
     }
   }
 
@@ -51,7 +213,7 @@ export async function getCars(filters?: {
     throw error;
   }
 
-  return data;
+  return data || [];
 }
 
 /**
