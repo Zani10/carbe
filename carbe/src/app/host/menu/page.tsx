@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import HostBottomNav from '@/components/layout/HostBottomNav';
+import ProfileCard from '@/components/layout/ProfileCard';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { 
@@ -19,7 +20,7 @@ import {
   UserCheck,
   Calendar,
   Car,
-  Edit3,
+
   BarChart3,
   FileText
 } from 'lucide-react';
@@ -140,10 +141,7 @@ export default function HostMenuPage() {
     router.push(path);
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/');
-  };
+
 
   const handleSwitchToRenter = () => {
     router.push('/'); // Go back to renter home page
@@ -218,39 +216,14 @@ export default function HostMenuPage() {
       <div className="min-h-screen bg-[#212121] pb-24">
         <div className="max-w-md mx-auto px-4 py-6 space-y-6">
           {/* Profile Card */}
-          <Card variant="dark" padding="lg">
-            <div className="flex items-center">
-              <div className="h-16 w-16 bg-gray-700 rounded-full flex items-center justify-center text-gray-300 mr-4 overflow-hidden">
-                {profile?.profile_image ? (
-                  <img 
-                    src={profile.profile_image} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User size={32} strokeWidth={1.5} />
-                )}
-              </div>
-              <div className="flex-1">
-                <h1 className="text-xl font-semibold text-white">
-                  {profile?.full_name || user?.user_metadata?.full_name || 'Host'}
-                </h1>
-                <p className="text-gray-400 text-sm">{getHostSince()}</p>
-                <div className="flex items-center mt-1">
-                  <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                  <span className="text-sm text-gray-400">
-                    {earnings?.averageRating ? `${earnings.averageRating.toFixed(1)} rating` : 'New host'}
-                  </span>
-                </div>
-              </div>
-              <button 
-                onClick={handleEditProfile}
-                className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                <Edit3 className="h-4 w-4 text-gray-300" />
-              </button>
-            </div>
-          </Card>
+          <ProfileCard
+            profile={profile}
+            user={user}
+            memberSince={getHostSince()}
+            rating={earnings?.averageRating}
+            reviewCount={earnings?.totalReviews}
+            onEditClick={handleEditProfile}
+          />
 
           {/* Performance Overview - Two Cards */}
           <div className="grid grid-cols-2 gap-4">
@@ -378,7 +351,7 @@ export default function HostMenuPage() {
             <Button 
               variant="ghost" 
               className="w-full justify-center text-red-400 hover:text-red-300 hover:bg-red-900/20"
-              onClick={handleSignOut}
+              onClick={signOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out

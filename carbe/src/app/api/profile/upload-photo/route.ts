@@ -57,6 +57,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
     }
 
+    // First, delete any existing profile photos for this user
+    const { data: existingFiles } = await supabase.storage
+      .from('profiles')
+      .list('profile-photos', {
+        search: userId
+      });
+
+    if (existingFiles && existingFiles.length > 0) {
+      const filesToDelete = existingFiles.map(file => `profile-photos/${file.name}`);
+      const { error: deleteError } = await supabase.storage
+        .from('profiles')
+        .remove(filesToDelete);
+      
+      if (deleteError) {
+        console.warn('Failed to delete old profile photos:', deleteError);
+        // Continue anyway - don't fail the upload
+      }
+    }
+
     // Generate unique filename
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}-${Date.now()}.${fileExt}`;

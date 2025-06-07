@@ -4,25 +4,20 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
 import RenterBottomNav from '@/components/layout/RenterBottomNav';
+import ProfileCard from '@/components/layout/ProfileCard';
+
+import Button from '@/components/ui/Button';
 import SignInForm from '@/components/forms/SignInForm';
 import SignUpForm from '@/components/forms/SignUpForm';
 import { 
   LogOut, 
-  UserCircle, 
-  ChevronRight, 
-  Briefcase, 
+  ChevronRight,
   Heart, 
   CalendarDays,
   Settings,
   Shield,
   CreditCard,
-  Pen,
-  Plus,
-  Star,
-  Languages,
-  GraduationCap,
-  Building,
-  Home
+  Briefcase
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -68,115 +63,33 @@ export default function ProfilePage() {
     }
   };
 
-  const ProfileInfoItem = ({ icon: Icon, title, value, hasValue = false, onClick }: {
-    icon: React.ElementType;
-    title: string;
-    value?: string | null;
-    hasValue?: boolean;
-    onClick?: () => void;
-  }) => (
-    <button 
-      onClick={onClick}
-      className="w-full flex items-center justify-between p-4 bg-[#2A2A2A] border border-gray-700/50 rounded-xl hover:bg-[#2A2A2A]/80 transition-colors"
-    >
-      <div className="flex items-center">
-        <Icon className="h-5 w-5 text-gray-400 mr-3" />
-        <div className="text-left">
-          <p className="text-white font-medium">{title}</p>
-          {hasValue && value && (
-            <p className="text-sm text-gray-400">{value}</p>
-          )}
-          {!hasValue && (
-            <p className="text-sm text-gray-500">Not provided</p>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center">
-        {!hasValue && <Plus className="h-4 w-4 text-gray-500 mr-1" />}
-        {hasValue && <Pen className="h-4 w-4 text-gray-500 mr-1" />}
-        <ChevronRight className="h-4 w-4 text-gray-500" />
-      </div>
-    </button>
-  );
+  const handleEditPersonalInfo = () => {
+    router.push('/settings/personal');
+  };
 
   return (
     <>
     <div className="min-h-screen bg-[#212121] pb-24">
       {user ? (
-        <div className="max-w-md mx-auto px-4 py-6">
+        <div className="max-w-md mx-auto px-4 py-6 space-y-6">
           {/* Profile Header */}
-          <div className="bg-[#2A2A2A] border border-gray-700/50 rounded-xl p-6 mb-6">
-            <div className="flex items-center mb-4">
-              <div className="h-20 w-20 bg-gray-700 rounded-full flex items-center justify-center text-gray-300 mr-4">
-                <UserCircle size={48} strokeWidth={1.5} />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-xl font-semibold text-white">
-                  {profile?.full_name || user.user_metadata?.full_name || 'Your Name'}
-                </h1>
-                <p className="text-gray-400 text-sm">{user.email}</p>
-                <div className="flex items-center mt-1">
-                  <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                  <span className="text-sm text-gray-400">New member</span>
-                </div>
-              </div>
-              <button className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
-                <Pen className="h-4 w-4 text-gray-300" />
-              </button>
-            </div>
-            
-            {!isCurrentlyInHostMode && !profile?.is_host && (
-              <button 
-                onClick={handleSwitchMode}
-                className="w-full flex items-center justify-center px-4 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
-              >
-                <Briefcase size={18} className="mr-2" />
-                Become a Host
-              </button>
-            )}
-          </div>
+          <ProfileCard
+            profile={profile}
+            user={user}
+            memberSince="New member"
+            onEditClick={handleEditPersonalInfo}
+          />
 
-          {/* Personal Information */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Personal info</h2>
-            <div className="space-y-3">
-              <ProfileInfoItem
-                icon={Home}
-                title="Where you live"
-                value={profile?.location}
-                hasValue={!!profile?.location}
-                onClick={() => alert('Edit location functionality coming soon!')}
-              />
-              <ProfileInfoItem
-                icon={Building}
-                title="Work"
-                value={profile?.work}
-                hasValue={!!profile?.work}
-                onClick={() => alert('Edit work functionality coming soon!')}
-              />
-              <ProfileInfoItem
-                icon={GraduationCap}
-                title="Education"
-                value={profile?.education}
-                hasValue={!!profile?.education}
-                onClick={() => alert('Edit education functionality coming soon!')}
-              />
-              <ProfileInfoItem
-                icon={Languages}
-                title="Languages"
-                value={profile?.languages}
-                hasValue={!!profile?.languages}
-                onClick={() => alert('Edit languages functionality coming soon!')}
-              />
-              <ProfileInfoItem
-                icon={UserCircle}
-                title="About you"
-                value={profile?.bio}
-                hasValue={!!profile?.bio}
-                onClick={() => alert('Edit bio functionality coming soon!')}
-              />
-            </div>
-          </div>
+          {/* Switch to Host Button */}
+          {!isCurrentlyInHostMode && (
+            <button 
+              onClick={handleSwitchMode}
+              className="w-full flex items-center justify-center px-4 py-3 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
+            >
+              <Briefcase size={18} className="mr-2" />
+              {profile?.is_host ? 'Switch to Host' : 'Become a Host'}
+            </button>
+          )}
 
           {/* Quick Actions */}
           <div className="space-y-3 mb-6">
@@ -202,18 +115,7 @@ export default function ProfilePage() {
               <ChevronRight size={20} className="text-gray-500" />
             </button>
 
-            {(isCurrentlyInHostMode || profile?.is_host) && (
-              <button 
-                onClick={handleSwitchMode}
-                className="w-full flex items-center justify-between p-4 bg-[#FF4646] text-white rounded-xl hover:bg-[#FF4646]/90 transition-colors font-medium"
-              >
-                <div className="flex items-center">
-                  <Briefcase size={20} className="mr-3" />
-                  <span>Switch to {isCurrentlyInHostMode ? 'Renter' : 'Host'}</span>
-                </div>
-                <ChevronRight size={20} />
-              </button>
-            )}
+
           </div>
 
           {/* Settings & Support */}
@@ -255,14 +157,19 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Sign Out */}
-          <button 
-            onClick={() => signOut()}
-            className="w-full flex items-center justify-center p-4 bg-gray-700 text-gray-300 rounded-xl hover:bg-gray-600 transition-colors font-medium"
-          >
-            <LogOut size={20} className="mr-3" />
-            Sign out
-          </button>
+          {/* Actions */}
+          <div className="space-y-3">
+
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-center text-red-400 hover:text-red-300 hover:bg-red-900/20"
+              onClick={signOut}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="max-w-md mx-auto px-4 py-8">

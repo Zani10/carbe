@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   ArrowLeft,
   User,
@@ -34,8 +34,12 @@ const COMMON_LANGUAGES = [
 ];
 
 export default function PersonalSettingsPage() {
-  const { user, profile, isHostMode } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  
+  // Determine if user came from host or renter context
+  const isFromHost = pathname?.includes('/host/') || document.referrer.includes('/host/');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -175,18 +179,18 @@ export default function PersonalSettingsPage() {
     }
   };
 
-  if (!user || !isHostMode) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-[#212121] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-white">Host Access Required</h2>
-          <p className="text-gray-400 mt-2">You need to be a host to access settings.</p>
+          <h2 className="text-xl font-semibold text-white">Please sign in</h2>
+          <p className="text-gray-400 mt-2">You need to be signed in to access settings.</p>
           <Button 
             variant="primary" 
             className="mt-4"
-            onClick={() => router.push('/host/setup')}
+            onClick={() => router.push('/signin')}
           >
-            Become a Host
+            Sign In
           </Button>
         </div>
       </div>
@@ -435,7 +439,7 @@ export default function PersonalSettingsPage() {
                             onClick={() => addLanguage(languageSearch)}
                             className="w-full text-left px-3 py-2 text-sm text-[#FF4646] hover:bg-[#FF4646]/20 rounded-lg transition-colors"
                           >
-                            Add "{languageSearch}"
+                            Add &quot;{languageSearch}&quot;
                           </button>
                         )}
                       </div>

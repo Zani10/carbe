@@ -8,6 +8,7 @@ interface BookingData {
   status: 'pending' | 'awaiting_approval' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'rejected';
   renter_id: string;
   total_amount?: number;
+  service_fee?: number;
 }
 
 export interface CarStats {
@@ -48,7 +49,8 @@ export async function getHostCars(userId: string): Promise<{
           end_date,
           status,
           renter_id,
-          total_amount
+          total_amount,
+          service_fee
         )
       `)
       .eq('owner_id', userId)
@@ -65,16 +67,20 @@ export async function getHostCars(userId: string): Promise<{
     const carsWithStats: CarWithBookingStats[] = cars.map(car => {
       const bookings = car.bookings as BookingData[] || [];
       
-      // Count bookings that generate revenue (confirmed, active, completed)
+      // Count bookings that generate revenue (only completed bookings)
       const revenueBookings = bookings.filter((b: BookingData) => 
-        ['confirmed', 'active', 'completed'].includes(b.status)
+        b.status === 'completed'
       );
       
       // Calculate total revenue from booking amounts or daily rate calculation
+      // Host gets 85% after service fee deduction
       const revenue = revenueBookings.reduce((total: number, booking: BookingData) => {
         // Try to use total_amount from booking if available, otherwise calculate
         if (booking.total_amount) {
-          return total + booking.total_amount;
+          // Host gets 85% of (total_amount - service_fee)
+          const serviceFee = booking.service_fee || 0;
+          const hostAmount = (booking.total_amount - serviceFee) * 0.85;
+          return total + hostAmount;
         } else {
           // Fallback to calculating from daily rate
           const startDate = new Date(booking.start_date);
@@ -136,7 +142,8 @@ export async function getHostStats(userId: string): Promise<{
           start_date,
           end_date,
           status,
-          total_amount
+          total_amount,
+          service_fee
         )
       `)
       .eq('owner_id', userId);
@@ -168,19 +175,23 @@ export async function getHostStats(userId: string): Promise<{
     cars.forEach(car => {
       const bookings = car.bookings as BookingData[] || [];
       
-      // Count bookings that generate revenue (confirmed, active, completed)
+      // Count bookings that generate revenue (only completed bookings)
       const revenueBookings = bookings.filter((b: BookingData) => 
-        ['confirmed', 'active', 'completed'].includes(b.status)
+        b.status === 'completed'
       );
       
       totalBookings += revenueBookings.length;
       
       // Calculate revenue for this car
+      // Host gets 85% after service fee deduction
       const carPrice = priceMap.get(car.id) || 0;
       const carRevenue = revenueBookings.reduce((total: number, booking: BookingData) => {
         // Try to use total_amount from booking if available, otherwise calculate
         if (booking.total_amount) {
-          return total + booking.total_amount;
+          // Host gets 85% of (total_amount - service_fee)
+          const serviceFee = booking.service_fee || 0;
+          const hostAmount = (booking.total_amount - serviceFee) * 0.85;
+          return total + hostAmount;
         } else {
           // Fallback to calculating from daily rate
           const startDate = new Date(booking.start_date);
