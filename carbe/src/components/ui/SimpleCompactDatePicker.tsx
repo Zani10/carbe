@@ -117,20 +117,20 @@ const SimpleCompactDatePicker: React.FC<SimpleCompactDatePickerProps> = ({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden"
+            className="bg-[#2a2a2a] rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-600">
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-[#FF4646]" />
-                <h3 className="text-gray-900 font-semibold">Select Dates</h3>
+                <h3 className="text-white font-semibold">Select Dates</h3>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700 transition-colors"
               >
-                <X className="w-4 h-4 text-gray-500" />
+                <X className="w-4 h-4 text-gray-400" />
               </button>
             </div>
 
@@ -138,12 +138,12 @@ const SimpleCompactDatePicker: React.FC<SimpleCompactDatePickerProps> = ({
             <div className="p-4 overflow-y-auto max-h-96">
               {generateCalendarDates().map((month, monthIndex) => (
                 <div key={month.name} className={monthIndex > 0 ? 'mt-6' : ''}>
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">{month.name}</h4>
+                  <h4 className="text-sm font-medium text-white mb-3">{month.name}</h4>
                   
                   {/* Weekday headers */}
                   <div className="grid grid-cols-7 gap-1 mb-2">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                      <div key={day} className="text-xs text-gray-500 text-center py-1 font-medium">
+                      <div key={day} className="text-xs text-gray-400 text-center py-1 font-medium">
                         {day}
                       </div>
                     ))}
@@ -162,8 +162,8 @@ const SimpleCompactDatePicker: React.FC<SimpleCompactDatePickerProps> = ({
                             className={`
                               w-full h-full rounded-lg text-sm font-medium transition-all
                               ${isDateDisabled(date) 
-                                ? 'text-gray-300 cursor-not-allowed' 
-                                : 'text-gray-900 hover:bg-gray-100 cursor-pointer'
+                                ? 'text-gray-600 cursor-not-allowed' 
+                                : 'text-gray-200 hover:bg-gray-600 cursor-pointer'
                               }
                               ${isDateSelected(date) 
                                 ? 'bg-[#FF4646] text-white hover:bg-[#FF4646]' 
@@ -188,9 +188,9 @@ const SimpleCompactDatePicker: React.FC<SimpleCompactDatePickerProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-200 bg-gray-50">
+            <div className="p-4 border-t border-gray-600 bg-[#1e1e1e]">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-300">
                   {startDate && endDate ? (
                     <span>
                       {format(startDate, 'MMM d')} - {format(endDate, 'MMM d')}
@@ -207,14 +207,14 @@ const SimpleCompactDatePicker: React.FC<SimpleCompactDatePickerProps> = ({
                       setStartDate(null);
                       setEndDate(null);
                     }}
-                    className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                    className="px-3 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
                   >
                     Clear
                   </button>
                   <button
                     onClick={handleApply}
                     disabled={!startDate || !endDate}
-                    className="px-4 py-2 bg-[#FF4646] text-white text-sm font-medium rounded-lg hover:bg-[#FF3333] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 bg-[#FF4646] text-white text-sm font-medium rounded-lg hover:bg-[#FF3333] disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                   >
                     Apply
                   </button>
