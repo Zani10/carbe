@@ -9,6 +9,7 @@ import MapView from '@/components/home/MapView';
 import CarCard from '@/components/car/CarCard';
 import MapListingCard from '@/components/maps/MapListingCard';
 import RenterBottomNav from '@/components/layout/RenterBottomNav';
+
 import { useCars } from '@/hooks/useCars';
 import { geocodeAll, CarWithCoordinates } from '@/lib/geocode';
 import { FilterState } from '@/components/home/FilterModal';
@@ -29,6 +30,7 @@ export default function HomePage() {
     dates: [Date | null, Date | null];
     filters?: FilterState;
   } | null>(null);
+
   
   // Convert search params to useCars format
   const carsSearchParams = searchParams ? {
@@ -329,6 +331,8 @@ export default function HomePage() {
           <RenterBottomNav />
         </div>
       )}
+
+
     </main>
   );
 }

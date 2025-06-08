@@ -4,8 +4,12 @@ import clsx from 'clsx';
 import FilterModal from './FilterModal';
 import { FilterState } from './FilterModal';
 import DatePicker from '@/components/booking/DatePicker';
+import SmartBookingModal from '@/components/ai/SmartBookingModal';
 import { getUserLocation } from '@/lib/geocode';
 import { format, isBefore, isAfter, isSameDay, startOfDay } from 'date-fns';
+import { motion } from 'framer-motion';
+import { Car } from '@/types/car';
+import { processAISearchPrompt } from '@/lib/ai/searchBooking';
 
 interface SearchBarProps {
   onSearch?: (searchParams: {
@@ -24,6 +28,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'location' | 'dates' | null>(null);
   const [searchParams, setSearchParams] = useState({
@@ -37,6 +42,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [calendarStartDate, setCalendarStartDate] = useState<Date | null>(null);
   const [calendarEndDate, setCalendarEndDate] = useState<Date | null>(null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
+  const [isAIMode, setIsAIMode] = useState(false);
+  const [isAIExpanded, setIsAIExpanded] = useState(false);
+  const [aiState, setAiState] = useState<'normal' | 'aiInput' | 'processing' | 'aiResults'>('normal');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResults, setAiResults] = useState<Car[]>([]);
+  const [aiMatchCount, setAiMatchCount] = useState<1 | 2 | 3>(1);
+  const [aiExplanation, setAiExplanation] = useState<string>('');
 
   // Get user location on mount (keeping for future use)
   useEffect(() => {
@@ -138,6 +150,97 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleFilterClick = () => {
     setIsFilterModalOpen(true);
+  };
+
+  const handleAIClick = () => {
+    if (isAIMode) {
+      // Toggle back to manual search
+      handleAIClose();
+    } else {
+      // Enter AI mode - but don't expand
+      setIsAIMode(true);
+      setAiState('aiInput');
+      setIsAIExpanded(false); // Keep it compact!
+    }
+  };
+
+  const handleAIPromptSubmit = async () => {
+    if (!aiPrompt.trim()) return;
+    
+    setAiState('processing');
+    
+    // Simulate AI processing with smart algorithm
+    try {
+      const result = await processAISearchPrompt(aiPrompt);
+      setAiResults(result.cars);
+      setAiMatchCount(result.matchCount);
+      setAiExplanation(result.explanation);
+      setAiState('aiResults');
+    } catch (error) {
+      console.error('AI processing failed:', error);
+      setAiState('aiInput');
+    }
+  };
+
+
+
+  const handleAIClose = () => {
+    setAiState('normal');
+    setIsAIMode(false);
+    setIsAIExpanded(false);
+    setAiPrompt('');
+    setAiResults([]);
+    setAiExplanation('');
+    setIsAIModalOpen(false);
+  };
+
+  const extractDatesFromPrompt = (prompt: string): { startDate: Date | null, endDate: Date | null } => {
+    const promptLower = prompt.toLowerCase();
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    // Simple date extraction patterns
+    if (promptLower.includes('today')) {
+      return { startDate: today, endDate: tomorrow };
+    }
+    if (promptLower.includes('tomorrow')) {
+      return { startDate: tomorrow, endDate: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000) };
+    }
+    if (promptLower.includes('weekend')) {
+      const friday = new Date(today);
+      const dayOfWeek = today.getDay();
+      const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+      friday.setDate(today.getDate() + daysUntilFriday);
+      const sunday = new Date(friday);
+      sunday.setDate(friday.getDate() + 2);
+      return { startDate: friday, endDate: sunday };
+    }
+    if (promptLower.includes('next week')) {
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + 7);
+      const weekEnd = new Date(nextWeek);
+      weekEnd.setDate(nextWeek.getDate() + 3);
+      return { startDate: nextWeek, endDate: weekEnd };
+    }
+    
+    return { startDate: null, endDate: null };
+  };
+
+  const handleReserve = (car: Car) => {
+    // Extract dates from AI prompt
+    const { startDate, endDate } = extractDatesFromPrompt(aiPrompt);
+    
+    // Close AI mode
+    handleAIClose();
+    
+    // Navigate to booking with pre-filled data
+    const bookingUrl = `/book/${car.id}${startDate && endDate 
+      ? `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}` 
+      : ''
+    }`;
+    
+    window.location.href = bookingUrl;
   };
 
   const handleApplyFilters = (filters: FilterState) => {
@@ -405,42 +508,163 @@ const SearchBar: React.FC<SearchBarProps> = ({
           className
         )}>
           <div className="flex flex-col">
-            <div className="relative bg-white rounded-full shadow-md flex items-center py-3 px-4 w-full">
-              <div className="flex-grow flex justify-between items-center">
-                <button 
-                  onClick={handleExpandSearch}
-                  className="flex items-center text-left"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 text-[#FF4646] mr-2 flex-shrink-0 animate-spin" />
-                  ) : (
-                    <Search className="h-5 w-5 text-[#FF4646] mr-2 flex-shrink-0" />
-                  )}
-                  <div>
-                    <div className="text-black font-medium text-sm">
-                      {searchParams.location || 'Anywhere'}
-                    </div>
-                    <div className="text-gray-500 text-xs">
-                      {searchParams.dates[0] && searchParams.dates[1] ? 
-                        `${searchParams.dates[0].toLocaleDateString()} - ${searchParams.dates[1].toLocaleDateString()}` :
-                        'Any dates'
-                      }
-                    </div>
+            <motion.div 
+              className={clsx(
+                "relative rounded-full shadow-md py-3 px-4 w-full transition-all duration-500",
+                isAIMode ? "bg-gradient-to-r from-[#FF4646] to-[#FF6B6B]" : "bg-white"
+              )}
+              animate={{
+                borderRadius: aiState === 'aiResults' ? "0px" : "999px",
+                height: aiState === 'aiResults' ? "100vh" : "auto",
+                scale: isAIMode ? 1.01 : 1
+              }}
+              transition={{ 
+                duration: 0.6,
+                type: "spring",
+                stiffness: 300,
+                damping: 30
+              }}
+            >
+              {!isAIExpanded ? (
+                // Normal compact SearchBar mode
+                <div className="relative flex items-center">
+                  {/* AI Button - Absolute positioned left */}
+                  <button 
+                    className={clsx(
+                      "absolute left-0 p-2 rounded-full transition-all duration-300 z-10",
+                      isAIMode ? "bg-white/20 backdrop-blur-sm" : "hover:bg-gray-100"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAIClick();
+                    }}
+                  >
+                    <svg 
+                      width="18" 
+                      height="18" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      className={clsx(
+                        "transition-colors duration-300",
+                        isAIMode ? "text-white" : "text-[#FF4646]"
+                      )}
+                    >
+                      <path 
+                        d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
+                        fill="currentColor"
+                      />
+                      <path 
+                        d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" 
+                        fill="currentColor" 
+                        opacity="0.7"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Filter Button - Absolute positioned right */}
+                  <button 
+                    onClick={handleFilterClick}
+                    className={clsx(
+                      "absolute right-0 p-2 rounded-full transition-all duration-300 z-10",
+                      isAIMode ? "bg-white/20 backdrop-blur-sm" : "hover:bg-gray-100"
+                    )}
+                  >
+                    <SlidersHorizontal className={clsx(
+                      "h-5 w-5 transition-colors duration-300",
+                      isAIMode ? "text-white" : "text-gray-800"
+                    )} />
+                    {getActiveFilterCount() > 0 && (
+                      <div className="absolute -top-1 -right-1 bg-[#FF4646] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {getActiveFilterCount()}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Search content - Perfectly centered */}
+                  <div className="w-full flex justify-center">
+                    <button 
+                      onClick={handleExpandSearch}
+                      className="flex items-center text-left"
+                    >
+                      {isLoading ? (
+                        <Loader2 className={clsx(
+                          "h-5 w-5 mr-2 flex-shrink-0 animate-spin transition-colors duration-300",
+                          isAIMode ? "text-white" : "text-[#FF4646]"
+                        )} />
+                      ) : (
+                        <Search className={clsx(
+                          "h-5 w-5 mr-2 flex-shrink-0 transition-colors duration-300",
+                          isAIMode ? "text-white" : "text-[#FF4646]"
+                        )} />
+                      )}
+                      <div>
+                        <div className={clsx(
+                          "font-medium text-sm transition-colors duration-300",
+                          isAIMode ? "text-white" : "text-black"
+                        )}>
+                          {searchParams.location || 'Anywhere'}
+                        </div>
+                        <div className={clsx(
+                          "text-xs transition-colors duration-300",
+                          isAIMode ? "text-white/80" : "text-gray-500"
+                        )}>
+                          {searchParams.dates[0] && searchParams.dates[1] ? 
+                            `${searchParams.dates[0].toLocaleDateString()} - ${searchParams.dates[1].toLocaleDateString()}` :
+                            'Any dates'
+                          }
+                        </div>
+                      </div>
+                    </button>
                   </div>
-                </button>
-                <button 
-                  onClick={handleFilterClick}
-                  className="relative p-2 hover:bg-gray-100 rounded-full flex-shrink-0"
+                </div>
+              ) : (
+                // AI Expanded mode in compact view
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="p-4"
                 >
-                  <SlidersHorizontal className="h-5 w-5 text-gray-800" />
-                  {getActiveFilterCount() > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-[#FF4646] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {getActiveFilterCount()}
+                  {/* Same AI interface as the main SearchBar */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-white">
+                          <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-medium text-sm">Smart Booking AI</h4>
+                        <p className="text-white/80 text-xs">Describe what you need</p>
+                      </div>
                     </div>
-                  )}
-                </button>
-              </div>
-            </div>
+                    <button 
+                      onClick={() => {
+                        setIsAIExpanded(false);
+                        setIsAIMode(false);
+                        setIsAIModalOpen(false);
+                      }}
+                      className="w-6 h-6 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="7-seater for tomorrow near Brussels..."
+                      className="w-full bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl px-3 py-2 text-white placeholder-white/60 focus:outline-none focus:ring-1 focus:ring-white/50 transition-all text-sm"
+                    />
+                    <button className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[#FF4646] hover:bg-white/90 transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <path d="m5 12 7-7 7 7M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
           </div>
         </div>
 
@@ -536,34 +760,297 @@ const SearchBar: React.FC<SearchBarProps> = ({
           </div>
         ) : (
           <div className="px-4">
-            <div className="relative bg-white rounded-full shadow-md flex items-center justify-between py-3 px-4 w-full" onClick={handleExpandSearch}>
-              <div className="flex-grow flex justify-center items-center">
-                <div className="flex items-center gap-2">
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 text-[#FF4646] flex-shrink-0 animate-spin" />
-                  ) : (
-                    <Search className="h-5 w-5 text-[#FF4646] flex-shrink-0" />
-                  )}
-                  <div className="text-black text-base font-normal">
-                    Start your search
+            <motion.div 
+              className={clsx(
+                "relative rounded-full shadow-md w-full transition-all duration-500",
+                isAIMode ? "bg-gradient-to-r from-[#FF4646] to-[#FF6B6B]" : "bg-white"
+              )}
+              onClick={!isAIExpanded ? handleExpandSearch : undefined}
+              animate={{
+                borderRadius: aiState === 'aiResults' ? "0px" : "999px",
+                height: aiState === 'aiResults' ? "100vh" : "56px",
+                scale: isAIMode ? 1.01 : 1
+              }}
+              transition={{ 
+                duration: 0.6,
+                type: "spring",
+                stiffness: 300,
+                damping: 30
+              }}
+            >
+{aiState === 'normal' ? (
+                // Normal SearchBar mode
+                <div className="relative py-3 px-4 flex items-center h-14">
+                  {/* AI Button - Absolute positioned left */}
+                  <motion.button 
+                    className={clsx(
+                      "absolute left-4 p-2 rounded-full transition-all duration-300 z-10",
+                      isAIMode ? "bg-white/20 backdrop-blur-sm" : "hover:bg-gray-100"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAIClick();
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      className={clsx(
+                        "transition-colors duration-300",
+                        isAIMode ? "text-white" : "text-[#FF4646]"
+                      )}
+                    >
+                      <path 
+                        d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
+                        fill="currentColor"
+                      />
+                      <path 
+                        d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" 
+                        fill="currentColor" 
+                        opacity="0.7"
+                      />
+                    </svg>
+                  </motion.button>
+
+                  {/* Filter Button - Absolute positioned right */}
+                  <motion.button 
+                    className={clsx(
+                      "absolute right-4 p-2 rounded-full transition-all duration-300 z-10",
+                      isAIMode ? "bg-white/20 backdrop-blur-sm opacity-0 pointer-events-none" : "hover:bg-gray-100 opacity-100"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFilterClick();
+                    }}
+                    animate={{ opacity: isAIMode ? 0 : 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <SlidersHorizontal className={clsx(
+                      "h-5 w-5 transition-colors duration-300",
+                      isAIMode ? "text-white" : "text-gray-800"
+                    )} />
+                    {getActiveFilterCount() > 0 && (
+                      <div className="absolute -top-1 -right-1 bg-[#FF4646] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {getActiveFilterCount()}
+                      </div>
+                    )}
+                  </motion.button>
+
+                  {/* Search content - Perfectly centered */}
+                  <div className="w-full flex justify-center items-center">
+                    <motion.div 
+                      className="flex items-center gap-2"
+                      animate={{ 
+                        opacity: isAIMode ? 0 : 1,
+                        scale: isAIMode ? 0.9 : 1 
+                      }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {isLoading ? (
+                        <Loader2 className={clsx(
+                          "h-5 w-5 flex-shrink-0 animate-spin transition-colors duration-300",
+                          isAIMode ? "text-white" : "text-[#FF4646]"
+                        )} />
+                      ) : (
+                        <Search className={clsx(
+                          "h-5 w-5 flex-shrink-0 transition-colors duration-300",
+                          isAIMode ? "text-white" : "text-[#FF4646]"
+                        )} />
+                      )}
+                      <div className={clsx(
+                        "text-base font-normal transition-colors duration-300",
+                        isAIMode ? "text-white" : "text-black"
+                      )}>
+                        Start your search
+                      </div>
+                    </motion.div>
                   </div>
                 </div>
-              </div>
-              <button 
-                className="relative p-2 hover:bg-gray-100 rounded-full flex-shrink-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFilterClick();
-                }}
-              >
-                <SlidersHorizontal className="h-5 w-5 text-gray-800" />
-                {getActiveFilterCount() > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-[#FF4646] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {getActiveFilterCount()}
+              ) : aiState === 'aiInput' ? (
+                // AI Input mode - Same SearchBar but with AI magic
+                <div className="relative py-3 px-4 flex items-center h-14">
+                  {/* AI Button - Now active/highlighted */}
+                  <motion.button 
+                    className="absolute left-4 p-2 rounded-full bg-white/30 backdrop-blur-sm z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAIClick();
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <motion.svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      className="text-white"
+                      animate={{ rotate: [0, 15, -15, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <path 
+                        d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
+                        fill="currentColor"
+                      />
+                      <path 
+                        d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" 
+                        fill="currentColor" 
+                        opacity="0.7"
+                      />
+                    </motion.svg>
+                  </motion.button>
+
+                  {/* Hidden Input for AI Prompt */}
+                  <input
+                    type="text"
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Describe what you're looking for: 7-seater for tomorrow in Brussels..."
+                    className="w-full bg-transparent text-white placeholder-white/70 outline-none text-center pr-16 pl-16"
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleAIPromptSubmit()}
+                  />
+
+                  {/* Send Button */}
+                  {aiPrompt.trim() && (
+                    <motion.button 
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      onClick={handleAIPromptSubmit}
+                      className="absolute right-4 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#FF4646] hover:bg-white/90 transition-colors z-10"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="m5 12 7-7 7 7M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </motion.button>
+                  )}
+                </div>
+              ) : aiState === 'processing' ? (
+                // Processing state
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="p-6 flex items-center justify-center"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Loader2 className="w-6 h-6 text-white animate-spin" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">AI is finding your perfect match...</p>
+                      <p className="text-white/70 text-sm">&ldquo;{aiPrompt}&rdquo;</p>
+                    </div>
                   </div>
-                )}
-              </button>
-            </div>
+                </motion.div>
+              ) : (
+                // AI Results - Clean professional layout
+                <div className="h-screen bg-gradient-to-br from-[#FF4646] to-[#FF6B6B] flex flex-col">
+                  {/* Results Header */}
+                  <div className="flex-shrink-0 p-6 border-b border-white/20">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-white">
+                            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
+                            <path d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" fill="currentColor" opacity="0.7"/>
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h2 className="text-white font-bold text-xl leading-tight">
+                            AI Found {aiMatchCount} Perfect {aiMatchCount === 1 ? 'Match' : 'Matches'}
+                          </h2>
+                          <p className="text-white/80 text-sm mt-1 font-medium">&ldquo;{aiPrompt}&rdquo;</p>
+                          {aiExplanation && (
+                            <p className="text-white/70 text-sm mt-2 leading-relaxed">{aiExplanation}</p>
+                          )}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={handleAIClose}
+                        className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-colors flex-shrink-0"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* AI Results List */}
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="p-6 space-y-4">
+                      {aiResults.length === 0 ? (
+                        <div className="text-center py-12">
+                          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Search className="w-8 h-8 text-white" />
+                          </div>
+                          <p className="text-white font-medium text-lg">No cars found</p>
+                          <p className="text-white/70 text-sm mt-2">Try adjusting your search criteria</p>
+                        </div>
+                      ) : (
+                        aiResults.map((car, index) => (
+                          <motion.div
+                            key={car.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="bg-white/15 backdrop-blur-sm rounded-2xl p-5 border border-white/20 hover:bg-white/20 transition-colors"
+                          >
+                            <div className="flex items-center gap-5">
+                              {/* Car Image */}
+                              <div className="w-24 h-18 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                                <img 
+                                  src={car.images?.[0] || '/api/placeholder/96/72'} 
+                                  alt={`${car.make} ${car.model}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              
+                              {/* Car Details */}
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-white font-bold text-lg leading-tight">
+                                  {car.make} {car.model}
+                                </h3>
+                                <p className="text-white/70 text-sm mt-1">{car.location}</p>
+                                
+                                <div className="flex items-center gap-4 mt-3 text-sm">
+                                  <span className="text-white/80 bg-white/10 px-2 py-1 rounded-lg">
+                                    {car.transmission}
+                                  </span>
+                                  <span className="text-white/80 bg-white/10 px-2 py-1 rounded-lg">
+                                    {car.seats} seats
+                                  </span>
+                                  {car.fuel_type && (
+                                    <span className="text-white/80 bg-white/10 px-2 py-1 rounded-lg">
+                                      {car.fuel_type}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Price & Reserve */}
+                              <div className="text-right flex-shrink-0">
+                                <div className="text-white font-bold text-xl">€{car.price_per_day}</div>
+                                <div className="text-white/70 text-sm">per day</div>
+                                
+                                <button 
+                                  onClick={() => handleReserve(car)}
+                                  className="mt-3 bg-white text-[#FF4646] font-bold px-6 py-2.5 rounded-xl hover:bg-white/90 transition-colors text-sm shadow-lg"
+                                >
+                                  Reserve Now
+                                </button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
           </div>
         )}
       </div>
@@ -582,6 +1069,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
         onSelectDates={handleDateSelect}
         initialStartDate={searchParams.dates[0] || undefined}
         initialEndDate={searchParams.dates[1] || undefined}
+      />
+
+      <SmartBookingModal 
+        isOpen={isAIModalOpen} 
+        onClose={() => {
+          setIsAIModalOpen(false);
+          setIsAIMode(false);
+        }} 
       />
     </>
   );
