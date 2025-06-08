@@ -3,7 +3,7 @@ import { Search, SlidersHorizontal, ChevronLeft, X, MapPin, Loader2 } from 'luci
 import clsx from 'clsx';
 import FilterModal from './FilterModal';
 import { FilterState } from './FilterModal';
-import DatePicker from '@/components/booking/DatePicker';
+import SimpleCompactDatePicker from '@/components/ui/SimpleCompactDatePicker';
 import SmartBookingModal from '@/components/ai/SmartBookingModal';
 import { getUserLocation } from '@/lib/geocode';
 import { format, isBefore, isAfter, isSameDay, startOfDay } from 'date-fns';
@@ -19,12 +19,14 @@ interface SearchBarProps {
   }) => void;
   className?: string;
   isLoading?: boolean;
+  onAIExpandedChange?: (isExpanded: boolean) => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
   className,
   isLoading = false,
+  onAIExpandedChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -48,7 +50,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResults, setAiResults] = useState<Car[]>([]);
   const [aiMatchCount, setAiMatchCount] = useState<1 | 2 | 3>(1);
-  const [aiExplanation, setAiExplanation] = useState<string>('');
+  const [aiExtractedDates, setAiExtractedDates] = useState<{ startDate: Date | null, endDate: Date | null }>({ startDate: null, endDate: null });
 
   // Get user location on mount (keeping for future use)
   useEffect(() => {
@@ -131,8 +133,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
       ...searchParams,
       dates: [startDate, endDate],
     });
-    // After selecting dates, perform search
-    handleSearch();
+    
+    // If in AI mode, also update AI extracted dates
+    if (aiState === 'aiResults') {
+      setAiExtractedDates({ startDate, endDate });
+    } else {
+      // After selecting dates, perform search (only if not in AI mode)
+      handleSearch();
+    }
   };
 
   const handleSearch = () => {
@@ -172,10 +180,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
     // Simulate AI processing with smart algorithm
     try {
       const result = await processAISearchPrompt(aiPrompt);
+      const extractedDates = extractDatesFromPrompt(aiPrompt);
+      
       setAiResults(result.cars);
       setAiMatchCount(result.matchCount);
-      setAiExplanation(result.explanation);
+      setAiExtractedDates(extractedDates);
       setAiState('aiResults');
+      onAIExpandedChange?.(true);
     } catch (error) {
       console.error('AI processing failed:', error);
       setAiState('aiInput');
@@ -190,7 +201,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setIsAIExpanded(false);
     setAiPrompt('');
     setAiResults([]);
-    setAiExplanation('');
+    onAIExpandedChange?.(false);
+    setAiExtractedDates({ startDate: null, endDate: null });
     setIsAIModalOpen(false);
   };
 
@@ -228,8 +240,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const handleReserve = (car: Car) => {
-    // Extract dates from AI prompt
-    const { startDate, endDate } = extractDatesFromPrompt(aiPrompt);
+    // Use the extracted dates from AI or the current searchParams dates
+    const startDate = aiExtractedDates.startDate || searchParams.dates[0];
+    const endDate = aiExtractedDates.endDate || searchParams.dates[1];
     
     // Close AI mode
     handleAIClose();
@@ -510,9 +523,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
           <div className="flex flex-col">
             <motion.div 
               className={clsx(
-                "relative rounded-full shadow-md py-3 px-4 w-full transition-all duration-500",
+                "relative rounded-full shadow-md py-3 px-4 w-full",
                 isAIMode ? "bg-gradient-to-r from-[#FF4646] to-[#FF6B6B]" : "bg-white"
               )}
+              style={{
+                transition: 'background 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
               animate={{
                 borderRadius: aiState === 'aiResults' ? "0px" : "999px",
                 height: aiState === 'aiResults' ? "100vh" : "auto",
@@ -676,7 +692,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           initialFilters={activeFilters}
         />
 
-        <DatePicker
+        <SimpleCompactDatePicker
           isOpen={isDatePickerOpen}
           onClose={() => setIsDatePickerOpen(false)}
           onSelectDates={handleDateSelect}
@@ -762,10 +778,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
           <div className="px-4">
             <motion.div 
               className={clsx(
-                "relative rounded-full shadow-md w-full transition-all duration-500",
+                "relative rounded-full shadow-md w-full",
                 isAIMode ? "bg-gradient-to-r from-[#FF4646] to-[#FF6B6B]" : "bg-white"
               )}
-              onClick={!isAIExpanded ? handleExpandSearch : undefined}
+              style={{
+                transition: 'background 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+                              onClick={!isAIExpanded && !isAIMode ? handleExpandSearch : undefined}
               animate={{
                 borderRadius: aiState === 'aiResults' ? "0px" : "999px",
                 height: aiState === 'aiResults' ? "100vh" : "56px",
@@ -909,8 +928,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     type="text"
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
-                    placeholder="Describe what you're looking for: 7-seater for tomorrow in Brussels..."
-                    className="w-full bg-transparent text-white placeholder-white/70 outline-none text-center pr-16 pl-16"
+                    placeholder="7-seater for tomorrow in Brussels under €80..."
+                    className="w-full bg-transparent text-white placeholder-white/70 outline-none text-center pr-16 pl-16 text-sm"
                     autoFocus
                     onKeyDown={(e) => e.key === 'Enter' && handleAIPromptSubmit()}
                   />
@@ -948,34 +967,67 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 </motion.div>
               ) : (
                 // AI Results - Clean professional layout
-                <div className="h-screen bg-gradient-to-br from-[#FF4646] to-[#FF6B6B] flex flex-col">
+                <div className="h-screen bg-gradient-to-br from-[#FF4646] to-[#FF6B6B] flex flex-col rounded-t-[35px] overflow-hidden">
                   {/* Results Header */}
-                  <div className="flex-shrink-0 p-6 border-b border-white/20">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-white">
+                  <div className="flex-shrink-0 p-4 border-b border-white/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-white">
                             <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
-                            <path d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" fill="currentColor" opacity="0.7"/>
                           </svg>
                         </div>
-                        <div className="flex-1">
-                          <h2 className="text-white font-bold text-xl leading-tight">
-                            AI Found {aiMatchCount} Perfect {aiMatchCount === 1 ? 'Match' : 'Matches'}
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-white font-bold text-lg leading-tight">
+                            {aiMatchCount} Perfect {aiMatchCount === 1 ? 'Match' : 'Matches'}
                           </h2>
-                          <p className="text-white/80 text-sm mt-1 font-medium">&ldquo;{aiPrompt}&rdquo;</p>
-                          {aiExplanation && (
-                            <p className="text-white/70 text-sm mt-2 leading-relaxed">{aiExplanation}</p>
-                          )}
+                          <p className="text-white/80 text-xs truncate">&ldquo;{aiPrompt}&rdquo;</p>
                         </div>
                       </div>
                       <button 
                         onClick={handleAIClose}
-                        className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-colors flex-shrink-0"
+                        className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-colors flex-shrink-0"
                       >
-                        <X size={20} />
+                        <X size={18} />
                       </button>
                     </div>
+                  </div>
+
+                  {/* Compact Date Picker */}
+                  <div className="flex-shrink-0 px-4 py-3 border-b border-white/20">
+                    {aiExtractedDates.startDate && aiExtractedDates.endDate ? (
+                      <button 
+                        onClick={() => setIsDatePickerOpen(true)}
+                        className="w-full bg-white/15 hover:bg-white/20 rounded-xl p-3 flex items-center gap-3 transition-colors"
+                      >
+                        <div className="w-5 h-5 text-white/80">
+                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className="text-white font-medium text-sm">
+                            {aiExtractedDates.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {aiExtractedDates.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                          <div className="text-white/70 text-xs">Tap to change dates</div>
+                        </div>
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => setIsDatePickerOpen(true)}
+                        className="w-full bg-white/15 hover:bg-white/20 rounded-xl p-3 flex items-center gap-3 transition-colors"
+                      >
+                        <div className="w-5 h-5 text-white/80">
+                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className="text-white font-medium text-sm">Select dates</div>
+                          <div className="text-white/70 text-xs">When do you need the car?</div>
+                        </div>
+                      </button>
+                    )}
                   </div>
 
                   {/* AI Results List */}
@@ -996,50 +1048,55 @@ const SearchBar: React.FC<SearchBarProps> = ({
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
-                            className="bg-white/15 backdrop-blur-sm rounded-2xl p-5 border border-white/20 hover:bg-white/20 transition-colors"
+                            className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-colors"
                           >
-                            <div className="flex items-center gap-5">
-                              {/* Car Image */}
-                              <div className="w-24 h-18 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
-                                <img 
-                                  src={car.images?.[0] || '/api/placeholder/96/72'} 
-                                  alt={`${car.make} ${car.model}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              
-                              {/* Car Details */}
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-white font-bold text-lg leading-tight">
-                                  {car.make} {car.model}
-                                </h3>
-                                <p className="text-white/70 text-sm mt-1">{car.location}</p>
+                            {/* Mobile-First Layout */}
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                              {/* Car Image & Basic Info */}
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="w-16 h-12 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                                  <img 
+                                    src={car.images?.[0] || '/api/placeholder/64/48'} 
+                                    alt={`${car.make} ${car.model}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
                                 
-                                <div className="flex items-center gap-4 mt-3 text-sm">
-                                  <span className="text-white/80 bg-white/10 px-2 py-1 rounded-lg">
-                                    {car.transmission}
-                                  </span>
-                                  <span className="text-white/80 bg-white/10 px-2 py-1 rounded-lg">
-                                    {car.seats} seats
-                                  </span>
-                                  {car.fuel_type && (
-                                    <span className="text-white/80 bg-white/10 px-2 py-1 rounded-lg">
-                                      {car.fuel_type}
-                                    </span>
-                                  )}
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-white font-bold text-base leading-tight">
+                                    {car.make} {car.model}
+                                  </h3>
+                                  <p className="text-white/70 text-xs mt-1 truncate">{car.location}</p>
                                 </div>
                               </div>
                               
+                              {/* Car Details */}
+                              <div className="flex items-center gap-2 text-xs flex-wrap">
+                                <span className="text-white/80 bg-white/10 px-2 py-1 rounded-md">
+                                  {car.transmission}
+                                </span>
+                                <span className="text-white/80 bg-white/10 px-2 py-1 rounded-md">
+                                  {car.seats} seats
+                                </span>
+                                {car.fuel_type && (
+                                  <span className="text-white/80 bg-white/10 px-2 py-1 rounded-md">
+                                    {car.fuel_type}
+                                  </span>
+                                )}
+                              </div>
+                              
                               {/* Price & Reserve */}
-                              <div className="text-right flex-shrink-0">
-                                <div className="text-white font-bold text-xl">€{car.price_per_day}</div>
-                                <div className="text-white/70 text-sm">per day</div>
+                              <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3">
+                                <div className="text-left sm:text-right">
+                                  <div className="text-white font-bold text-lg">€{car.price_per_day}</div>
+                                  <div className="text-white/70 text-xs">per day</div>
+                                </div>
                                 
                                 <button 
                                   onClick={() => handleReserve(car)}
-                                  className="mt-3 bg-white text-[#FF4646] font-bold px-6 py-2.5 rounded-xl hover:bg-white/90 transition-colors text-sm shadow-lg"
+                                  className="bg-white text-[#FF4646] font-bold px-4 py-2 rounded-xl hover:bg-white/90 transition-colors text-sm shadow-lg flex-shrink-0"
                                 >
-                                  Reserve Now
+                                  Reserve
                                 </button>
                               </div>
                             </div>
@@ -1063,7 +1120,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         initialFilters={activeFilters}
       />
 
-      <DatePicker
+      <SimpleCompactDatePicker
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}
         onSelectDates={handleDateSelect}

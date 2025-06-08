@@ -30,6 +30,7 @@ export default function HomePage() {
     dates: [Date | null, Date | null];
     filters?: FilterState;
   } | null>(null);
+  const [isAIExpanded, setIsAIExpanded] = useState(false);
 
   
   // Convert search params to useCars format
@@ -208,7 +209,11 @@ export default function HomePage() {
     <main className="relative w-full h-screen bg-[#212121] overflow-hidden">
       {/* SearchBar - Fixed at top */}
       <header className="fixed top-0 left-0 right-0 z-30 w-full">
-        <SearchBar onSearch={handleSearch} isLoading={carsLoading || isGeocodingLoading} />
+        <SearchBar 
+          onSearch={handleSearch} 
+          isLoading={carsLoading || isGeocodingLoading}
+          onAIExpandedChange={setIsAIExpanded}
+        />
       </header>
 
       {/* Search Summary - Show after search */}
@@ -325,11 +330,17 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Bottom Navigation - Only show when NOT in full map mode */}
-      {!isFullMap && (
-        <div className="fixed bottom-0 left-0 right-0 z-40">
+      {/* Bottom Navigation - Only show when NOT in full map mode and NOT in AI results */}
+      {!isFullMap && !isAIExpanded && (
+        <motion.div 
+          className="fixed bottom-0 left-0 right-0 z-40"
+          initial={{ y: 0 }}
+          animate={{ y: isAIExpanded ? 100 : 0 }}
+          exit={{ y: 100 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+        >
           <RenterBottomNav />
-        </div>
+        </motion.div>
       )}
 
 
