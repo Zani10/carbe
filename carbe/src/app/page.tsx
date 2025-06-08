@@ -30,7 +30,15 @@ export default function HomePage() {
     filters?: FilterState;
   } | null>(null);
   
-  const { cars, isLoading: carsLoading } = useCars();
+  // Convert search params to useCars format
+  const carsSearchParams = searchParams ? {
+    location: searchParams.location === 'Anywhere' ? undefined : searchParams.location,
+    startDate: searchParams.dates[0] || undefined,
+    endDate: searchParams.dates[1] || undefined,
+    filters: searchParams.filters
+  } : undefined;
+  
+  const { cars, isLoading: carsLoading } = useCars(carsSearchParams);
 
   useEffect(() => {
     setScreenHeight(window.innerHeight);

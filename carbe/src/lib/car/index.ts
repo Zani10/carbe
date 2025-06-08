@@ -48,7 +48,21 @@ export async function getCars(searchParams?: CarSearchParams) {
 
     // Handle location search
     if (location && location !== 'Anywhere' && location !== 'Nearby') {
-      query = query.ilike('location', `%${location}%`);
+      // Extract just the country/city parts for better matching
+      const searchTerms = location.split(',').map(term => term.trim());
+      
+      // If searching for "Amsterdam, Netherlands" or just "Netherlands", try multiple approaches
+      if (searchTerms.length > 1) {
+        // Multi-part location like "Amsterdam, Netherlands"
+        const city = searchTerms[0];
+        const country = searchTerms[1];
+        
+        // Search for cars that match either the city or country
+        query = query.or(`location.ilike.%${city}%,location.ilike.%${country}%`);
+      } else {
+        // Single search term - could be city or country
+        query = query.ilike('location', `%${location}%`);
+      }
     }
 
     // Handle new filter structure

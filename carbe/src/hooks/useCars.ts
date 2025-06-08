@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCars, CarSearchParams } from '@/lib/car';
 import { supabase } from '@/lib/supabase';
 
@@ -60,15 +60,45 @@ export function useCars(searchParams?: CarSearchParams) {
   const [cars, setCars] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Create stable dependencies to prevent infinite loops
+  const location = searchParams?.location;
+  const startDate = searchParams?.startDate?.toISOString();
+  const endDate = searchParams?.endDate?.toISOString();
+  const filtersString = searchParams?.filters ? JSON.stringify(searchParams.filters) : undefined;
+  const make = searchParams?.make;
+  const model = searchParams?.model;
+  const priceMin = searchParams?.priceMin;
+  const priceMax = searchParams?.priceMax;
+  const transmission = searchParams?.transmission;
+  const seats = searchParams?.seats;
+  const fuelType = searchParams?.fuelType;
 
   const fetchCars = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
+      // Reconstruct searchParams from stable dependencies
+      const hasAnyParams = location || startDate || endDate || filtersString || make || model || priceMin || priceMax || transmission || seats || fuelType;
+      const params: CarSearchParams | undefined = hasAnyParams ? {
+        location,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        filters: filtersString ? JSON.parse(filtersString) : undefined,
+        make,
+        model,
+        priceMin,
+        priceMax,
+        transmission,
+        seats,
+        fuelType
+      } : undefined;
+
       // Build query with timeout wrapper
       const queryFn = async () => {
-        return await getCars(searchParams);
+        return await getCars(params);
       };
 
       const data = await fetchWithTimeout(queryFn);
@@ -86,10 +116,25 @@ export function useCars(searchParams?: CarSearchParams) {
     } finally {
       setIsLoading(false);
     }
-  }, [searchParams]);
+  }, [location, startDate, endDate, filtersString, make, model, priceMin, priceMax, transmission, seats, fuelType]);
 
   useEffect(() => {
-    fetchCars();
+    // Clear existing timeout
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Set new timeout for debouncing rapid search changes
+    debounceRef.current = setTimeout(() => {
+      fetchCars();
+    }, 300); // 300ms debounce
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
   }, [fetchCars]);
 
   const refetch = useCallback(() => {

@@ -5,7 +5,6 @@ import FilterModal from './FilterModal';
 import { FilterState } from './FilterModal';
 import DatePicker from '@/components/booking/DatePicker';
 import { getUserLocation } from '@/lib/geocode';
-import { useBottomNav } from '@/contexts/BottomNavContext';
 import { format, isBefore, isAfter, isSameDay, startOfDay } from 'date-fns';
 
 interface SearchBarProps {
@@ -402,7 +401,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     return (
       <>
         <div className={clsx(
-          "fixed top-0 left-0 right-0 z-30 w-full bg-[#212121] pt-5 pb-4 px-4",
+          "fixed top-0 left-0 right-0 z-30 w-full bg-[#212121] rounded-b-[35px] pt-5 pb-4 px-4",
           className
         )}>
           <div className="flex flex-col">
