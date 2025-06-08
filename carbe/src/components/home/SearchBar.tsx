@@ -9,7 +9,8 @@ import { getUserLocation } from '@/lib/geocode';
 import { format, isBefore, isAfter, isSameDay, startOfDay } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Car } from '@/types/car';
-import { processAISearchPrompt } from '@/lib/ai/searchBooking';
+import { processSmartSearch } from '@/lib/ai';
+import { supabase } from '@/lib/supabase';
 
 interface SearchBarProps {
   onSearch?: (searchParams: {
@@ -139,7 +140,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       setAiExtractedDates({ startDate, endDate });
     } else {
       // After selecting dates, perform search (only if not in AI mode)
-      handleSearch();
+    handleSearch();
     }
   };
 
@@ -177,23 +178,86 @@ const SearchBar: React.FC<SearchBarProps> = ({
     
     setAiState('processing');
     
-    // Simulate AI processing with smart algorithm
-    try {
-      const result = await processAISearchPrompt(aiPrompt);
-      const extractedDates = extractDatesFromPrompt(aiPrompt);
+    // Smart detection: Only use AI for complex natural language queries
+    const isComplexQuery = (query: string): boolean => {
+      const complexIndicators = [
+        /\b(need|want|looking for|find me)\b/i,
+        /\b(this|next|last)\s+(weekend|week|month)\b/i,
+        /\b(under|below|max|maximum)\s*[€$]\d+/i,
+        /\b(family|luxury|cheap|budget|eco|electric)\b/i,
+        /\b(near|around|close to)\b/i,
+        /\b(automatic|manual)\b/i,
+        /\b(today|tomorrow|tonight)\b/i, // Time indicators
+        /\b(for|in)\s+\w+/i, // "for vacation", "in paris"
+      ];
       
-      setAiResults(result.cars);
-      setAiMatchCount(result.matchCount);
-      setAiExtractedDates(extractedDates);
-      setAiState('aiResults');
-      onAIExpandedChange?.(true);
+      return complexIndicators.some(pattern => pattern.test(query)) || query.split(' ').length >= 3;
+    };
+
+    try {
+      if (isComplexQuery(aiPrompt)) {
+        // Use AI for complex natural language queries
+        console.log('🤖 Using AI search for complex query:', aiPrompt);
+        const result = await processSmartSearch(aiPrompt);
+        const extractedDates = extractDatesFromPrompt(aiPrompt);
+        
+        setAiResults(result.cars);
+        setAiMatchCount(Math.min(result.cars.length, 3) as 1 | 2 | 3);
+        setAiExtractedDates(extractedDates);
+        setAiState('aiResults');
+        onAIExpandedChange?.(true);
+      } else {
+        // Use traditional search for simple queries - inline implementation
+        console.log('⚡ Using fast traditional search for simple query:', aiPrompt);
+        
+        // Enhanced traditional search with better keyword matching
+        const searchTerms = aiPrompt.toLowerCase().split(' ').filter(term => term.length > 1);
+        let query = supabase
+          .from('cars')
+          .select('*')
+          .eq('is_available', true);
+
+        // Build flexible OR conditions for each search term
+        const orConditions = searchTerms.flatMap(term => [
+          `make.ilike.%${term}%`,
+          `model.ilike.%${term}%`,
+          `location.ilike.%${term}%`,
+          `fuel_type.ilike.%${term}%`,
+          `description.ilike.%${term}%`
+        ]);
+
+        if (orConditions.length > 0) {
+          query = query.or(orConditions.join(','));
+        }
+
+        const { data: fallbackResult } = await query
+          .order('rating', { ascending: false })
+          .limit(6);
+
+        // If no results found, show some available cars as fallback
+        let finalResults = fallbackResult || [];
+        if (finalResults.length === 0) {
+          console.log('🔄 No specific matches, showing available cars as fallback');
+          const { data: allCars } = await supabase
+            .from('cars')
+            .select('*')
+            .eq('is_available', true)
+            .order('rating', { ascending: false })
+            .limit(6);
+          finalResults = allCars || [];
+        }
+
+        setAiResults(finalResults);
+        setAiMatchCount(Math.min(Math.max(finalResults.length || 1, 1), 3) as 1 | 2 | 3);
+        setAiExtractedDates({ startDate: null, endDate: null });
+        setAiState('aiResults');
+        onAIExpandedChange?.(true);
+      }
     } catch (error) {
       console.error('AI processing failed:', error);
       setAiState('aiInput');
     }
   };
-
-
 
   const handleAIClose = () => {
     setAiState('normal');
@@ -598,39 +662,39 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
                   {/* Search content - Perfectly centered */}
                   <div className="w-full flex justify-center">
-                    <button 
-                      onClick={handleExpandSearch}
-                      className="flex items-center text-left"
-                    >
-                      {isLoading ? (
+                <button 
+                  onClick={handleExpandSearch}
+                  className="flex items-center text-left"
+                >
+                  {isLoading ? (
                         <Loader2 className={clsx(
                           "h-5 w-5 mr-2 flex-shrink-0 animate-spin transition-colors duration-300",
                           isAIMode ? "text-white" : "text-[#FF4646]"
                         )} />
-                      ) : (
+                  ) : (
                         <Search className={clsx(
                           "h-5 w-5 mr-2 flex-shrink-0 transition-colors duration-300",
                           isAIMode ? "text-white" : "text-[#FF4646]"
                         )} />
-                      )}
-                      <div>
+                  )}
+                  <div>
                         <div className={clsx(
                           "font-medium text-sm transition-colors duration-300",
                           isAIMode ? "text-white" : "text-black"
                         )}>
-                          {searchParams.location || 'Anywhere'}
-                        </div>
+                      {searchParams.location || 'Anywhere'}
+                    </div>
                         <div className={clsx(
                           "text-xs transition-colors duration-300",
                           isAIMode ? "text-white/80" : "text-gray-500"
                         )}>
-                          {searchParams.dates[0] && searchParams.dates[1] ? 
-                            `${searchParams.dates[0].toLocaleDateString()} - ${searchParams.dates[1].toLocaleDateString()}` :
-                            'Any dates'
-                          }
-                        </div>
-                      </div>
-                    </button>
+                      {searchParams.dates[0] && searchParams.dates[1] ? 
+                        `${searchParams.dates[0].toLocaleDateString()} - ${searchParams.dates[1].toLocaleDateString()}` :
+                        'Any dates'
+                      }
+                    </div>
+                  </div>
+                </button>
                   </div>
                 </div>
               ) : (
@@ -654,7 +718,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                         <p className="text-white/80 text-xs">Describe what you need</p>
                       </div>
                     </div>
-                    <button 
+                <button 
                       onClick={() => {
                         setIsAIExpanded(false);
                         setIsAIMode(false);
@@ -664,7 +728,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     >
                       <X size={14} />
                     </button>
-                  </div>
+                    </div>
                   
                   <div className="relative">
                     <input
@@ -676,8 +740,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                         <path d="m5 12 7-7 7 7M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                    </button>
-                  </div>
+                </button>
+              </div>
                 </motion.div>
               )}
             </motion.div>
@@ -708,6 +772,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <div className={clsx(
         "fixed top-0 left-0 right-0 z-30 w-full bg-[#212121] transition-all",
         isExpanded ? "h-screen pb-0" : "rounded-b-[35px] pt-5 pb-4",
+        aiState === 'aiResults' ? "h-screen pt-5 pb-4 rounded-b-[35px]" : "",
         className
       )}>
         {isExpanded ? (
@@ -777,25 +842,37 @@ const SearchBar: React.FC<SearchBarProps> = ({
         ) : (
           <div className="px-4">
             <motion.div 
-              className={clsx(
-                "relative rounded-full shadow-md w-full",
-                isAIMode ? "bg-gradient-to-r from-[#FF4646] to-[#FF6B6B]" : "bg-white"
-              )}
-              style={{
-                transition: 'background 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+              className="relative shadow-md w-full"
+              variants={{
+                normal: {
+                  backgroundColor: isAIMode ? '#FF4646' : '#ffffff',
+                  borderRadius: '999px',
+                  height: '56px',
+                  scale: isAIMode ? 1.01 : 1
+                },
+                ai: {
+                  backgroundColor: 'transparent',
+                  borderRadius: '35px',
+                  height: '100vh',
+                  scale: 1,
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  marginLeft: 0,
+                  marginRight: 0,
+                  marginTop: 0,
+                  marginBottom: 0
+                }
               }}
-                              onClick={!isAIExpanded && !isAIMode ? handleExpandSearch : undefined}
-              animate={{
-                borderRadius: aiState === 'aiResults' ? "0px" : "999px",
-                height: aiState === 'aiResults' ? "100vh" : "56px",
-                scale: isAIMode ? 1.01 : 1
-              }}
-              transition={{ 
-                duration: 0.6,
-                type: "spring",
+              initial="normal"
+              animate={aiState === 'aiResults' ? 'ai' : 'normal'}
+              transition={{
+                type: 'spring',
                 stiffness: 300,
                 damping: 30
               }}
+              onClick={!isAIExpanded && !isAIMode ? handleExpandSearch : undefined}
             >
 {aiState === 'normal' ? (
                 // Normal SearchBar mode
@@ -823,10 +900,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
                         isAIMode ? "text-white" : "text-[#FF4646]"
                       )}
                     >
+                      {/* Main sparkle */}
                       <path 
                         d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
                         fill="currentColor"
                       />
+                      {/* Top right sparkle */}
                       <path 
                         d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" 
                         fill="currentColor" 
@@ -869,34 +948,34 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       }}
                       transition={{ duration: 0.3 }}
                     >
-                      {isLoading ? (
+                  {isLoading ? (
                         <Loader2 className={clsx(
                           "h-5 w-5 flex-shrink-0 animate-spin transition-colors duration-300",
                           isAIMode ? "text-white" : "text-[#FF4646]"
                         )} />
-                      ) : (
+                  ) : (
                         <Search className={clsx(
                           "h-5 w-5 flex-shrink-0 transition-colors duration-300",
                           isAIMode ? "text-white" : "text-[#FF4646]"
                         )} />
-                      )}
+                  )}
                       <div className={clsx(
                         "text-base font-normal transition-colors duration-300",
                         isAIMode ? "text-white" : "text-black"
                       )}>
-                        Start your search
-                      </div>
-                    </motion.div>
+                    Start your search
                   </div>
+                    </motion.div>
                 </div>
+              </div>
               ) : aiState === 'aiInput' ? (
                 // AI Input mode - Same SearchBar but with AI magic
                 <div className="relative py-3 px-4 flex items-center h-14">
                   {/* AI Button - Now active/highlighted */}
                   <motion.button 
                     className="absolute left-4 p-2 rounded-full bg-white/30 backdrop-blur-sm z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                onClick={(e) => {
+                  e.stopPropagation();
                       handleAIClick();
                     }}
                     whileHover={{ scale: 1.05 }}
@@ -911,10 +990,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       animate={{ rotate: [0, 15, -15, 0] }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     >
+                      {/* Main sparkle */}
                       <path 
                         d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
                         fill="currentColor"
                       />
+                      {/* Top right sparkle */}
                       <path 
                         d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" 
                         fill="currentColor" 
@@ -947,34 +1028,109 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       </svg>
                     </motion.button>
                   )}
-                </div>
+                  </div>
               ) : aiState === 'processing' ? (
-                // Processing state
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="p-6 flex items-center justify-center"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Loader2 className="w-6 h-6 text-white animate-spin" />
-                    </div>
-                    <div>
-                      <p className="text-white font-medium">AI is finding your perfect match...</p>
-                      <p className="text-white/70 text-sm">&ldquo;{aiPrompt}&rdquo;</p>
+                // Processing state - Clean SearchBar style
+                <div className="relative py-3 px-4 flex items-center h-14">
+                  {/* Animated AI Button */}
+                  <motion.div 
+                    className="absolute left-4 p-2 rounded-full bg-white/30 backdrop-blur-sm z-10"
+                    animate={{ 
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 180, 360]
+                    }}
+                    transition={{ 
+                      duration: 2, 
+                      repeat: Infinity, 
+                      ease: "easeInOut" 
+                    }}
+                  >
+                    <svg 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      className="text-white"
+                    >
+                      {/* Main sparkle */}
+                      <path 
+                        d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
+                        fill="currentColor"
+                      />
+                      {/* Top right sparkle */}
+                      <path 
+                        d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" 
+                        fill="currentColor" 
+                        opacity="0.9"
+                      />
+                      {/* Small top sparkle */}
+                      <path 
+                        d="M6 6L6.5 7.5L8 8L6.5 8.5L6 10L5.5 8.5L4 8L5.5 7.5L6 6Z" 
+                        fill="currentColor" 
+                        opacity="0.6"
+                      />
+                      {/* Tiny bottom sparkle */}
+                      <circle cx="18" cy="6" r="1" fill="currentColor" opacity="0.8" />
+                    </svg>
+                  </motion.div>
+
+                  {/* Processing Text with Animated Dots */}
+                  <div className="w-full flex justify-center items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-medium text-sm">Finding perfect matches</span>
+                      <motion.div 
+                        className="flex gap-1"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        {[0, 1, 2].map((i) => (
+                          <motion.div
+                            key={i}
+                            className="w-1 h-1 bg-white rounded-full"
+                            animate={{ 
+                              opacity: [0.3, 1, 0.3],
+                              scale: [0.8, 1.2, 0.8]
+                            }}
+                            transition={{ 
+                              duration: 1.5, 
+                              repeat: Infinity, 
+                              delay: i * 0.2,
+                              ease: "easeInOut"
+                            }}
+                          />
+                        ))}
+                      </motion.div>
                     </div>
                   </div>
-                </motion.div>
+
+                  {/* Optional: Show processed prompt in smaller text */}
+                  <motion.div 
+                    className="absolute bottom-1 left-1/2 transform -translate-x-1/2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    <p className="text-white/60 text-xs max-w-[200px] truncate">
+                      &ldquo;{aiPrompt}&rdquo;
+                    </p>
+                  </motion.div>
+                </div>
               ) : (
-                // AI Results - Clean professional layout
-                <div className="h-screen bg-gradient-to-br from-[#FF4646] to-[#FF6B6B] flex flex-col rounded-t-[35px] overflow-hidden">
+                // AI Results 
+                <div className="h-full flex flex-col overflow-hidden rounded-[35px]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF4646] to-[#FF6B6B]" />
+                  <div className="relative z-10 h-full flex flex-col">
                   {/* Results Header */}
                   <div className="flex-shrink-0 p-4 border-b border-white/20">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-white">
+                            {/* Main sparkle */}
                             <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
+                            {/* Secondary sparkle */}
+                            <path d="M19 12L19.5 14.5L22 15L19.5 15.5L19 18L18.5 15.5L16 15L18.5 14.5L19 12Z" fill="currentColor" opacity="0.7"/>
                           </svg>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1052,21 +1208,44 @@ const SearchBar: React.FC<SearchBarProps> = ({
                           >
                             {/* Mobile-First Layout */}
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                              {/* Car Image & Basic Info */}
+                              {/* Enhanced Car Image & Basic Info */}
                               <div className="flex items-center gap-3 flex-1">
-                                <div className="w-16 h-12 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+                                <div className="relative w-20 h-14 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 group">
                                   <img 
                                     src={car.images?.[0] || '/api/placeholder/64/48'} 
                                     alt={`${car.make} ${car.model}`}
                                     className="w-full h-full object-cover"
                                   />
+                                  
+                                  {/* Image Count Indicator */}
+                                  {car.images && car.images.length > 1 && (
+                                    <div className="absolute top-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                                      +{car.images.length - 1}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Quick View Overlay */}
+                                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="white" strokeWidth="2" fill="none"/>
+                                      <circle cx="12" cy="12" r="3" stroke="white" strokeWidth="2" fill="none"/>
+                                    </svg>
+                                  </div>
                                 </div>
                                 
                                 <div className="flex-1 min-w-0">
                                   <h3 className="text-white font-bold text-base leading-tight">
                                     {car.make} {car.model}
                                   </h3>
-                                  <p className="text-white/70 text-xs mt-1 truncate">{car.location}</p>
+                                  {/* Enhanced Location with Map Icon */}
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-white/60 flex-shrink-0">
+                                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                      <circle cx="12" cy="10" r="3" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                    </svg>
+                                    <p className="text-white/70 text-xs truncate">{car.location}</p>
+                                    <span className="text-white/50 text-xs">• 2.3km</span>
+                                  </div>
                                 </div>
                               </div>
                               
@@ -1097,13 +1276,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
                                   className="bg-white text-[#FF4646] font-bold px-4 py-2 rounded-xl hover:bg-white/90 transition-colors text-sm shadow-lg flex-shrink-0"
                                 >
                                   Reserve
-                                </button>
-                              </div>
+              </button>
+            </div>
                             </div>
                           </motion.div>
                         ))
                       )}
                     </div>
+                  </div>
                   </div>
                 </div>
               )}

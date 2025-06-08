@@ -126,7 +126,7 @@ export function useCars(searchParams?: CarSearchParams) {
 
     // Set new timeout for debouncing rapid search changes
     debounceRef.current = setTimeout(() => {
-      fetchCars();
+    fetchCars();
     }, 300); // 300ms debounce
 
     // Cleanup timeout on unmount

@@ -61,7 +61,7 @@ export async function getCars(searchParams?: CarSearchParams) {
         query = query.or(`location.ilike.%${city}%,location.ilike.%${country}%`);
       } else {
         // Single search term - could be city or country
-        query = query.ilike('location', `%${location}%`);
+      query = query.ilike('location', `%${location}%`);
       }
     }
 

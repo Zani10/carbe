@@ -10,7 +10,8 @@ import CarCard from '@/components/car/CarCard';
 import MapListingCard from '@/components/maps/MapListingCard';
 import RenterBottomNav from '@/components/layout/RenterBottomNav';
 
-import { useCars } from '@/hooks/useCars';
+import { supabase } from '@/lib/supabase';
+import { Car } from '@/types/car';
 import { geocodeAll, CarWithCoordinates } from '@/lib/geocode';
 import { FilterState } from '@/components/home/FilterModal';
 import Link from 'next/link';
@@ -31,17 +32,69 @@ export default function HomePage() {
     filters?: FilterState;
   } | null>(null);
   const [isAIExpanded, setIsAIExpanded] = useState(false);
+  const [cars, setCars] = useState<Car[]>([]);
+  const [carsLoading, setCarsLoading] = useState(false);
 
-  
-  // Convert search params to useCars format
-  const carsSearchParams = searchParams ? {
-    location: searchParams.location === 'Anywhere' ? undefined : searchParams.location,
-    startDate: searchParams.dates[0] || undefined,
-    endDate: searchParams.dates[1] || undefined,
-    filters: searchParams.filters
-  } : undefined;
-  
-  const { cars, isLoading: carsLoading } = useCars(carsSearchParams);
+  // Fetch cars with direct Supabase query
+  useEffect(() => {
+    const fetchCars = async () => {
+      setCarsLoading(true);
+      try {
+        let query = supabase
+          .from('cars')
+          .select('*')
+          .eq('is_available', true);
+
+        // Apply search filters if provided
+        if (searchParams?.location && searchParams.location !== 'Anywhere') {
+          query = query.ilike('location', `%${searchParams.location}%`);
+        }
+
+        // Apply other filters if provided
+        if (searchParams?.filters) {
+          const { priceRange, vehicleTypes, transmission, seats, brands } = searchParams.filters;
+          
+          if (priceRange) {
+            query = query.gte('price_per_day', priceRange[0]).lte('price_per_day', priceRange[1]);
+          }
+          if (vehicleTypes && vehicleTypes.length > 0 && !vehicleTypes.includes('cars')) {
+            // Map vehicle types to database fuel_type field
+            const typeConditions = vehicleTypes.map(type => `fuel_type.ilike.%${type}%`);
+            query = query.or(typeConditions.join(','));
+          }
+          if (transmission && transmission.length > 0) {
+            const transmissionConditions = transmission.map(t => `transmission.eq.${t.charAt(0).toUpperCase() + t.slice(1)}`);
+            query = query.or(transmissionConditions.join(','));
+          }
+          if (seats && seats.length > 0) {
+            const seatNumbers = seats.map(s => s === '7+' ? 7 : parseInt(s)).filter(n => !isNaN(n));
+            if (seatNumbers.length > 0) {
+              const seatConditions = seatNumbers.map(n => `seats.gte.${n}`);
+              query = query.or(seatConditions.join(','));
+            }
+          }
+          if (brands && brands.length > 0) {
+            const brandConditions = brands.map(brand => `make.ilike.%${brand}%`);
+            query = query.or(brandConditions.join(','));
+          }
+        }
+
+        const { data, error } = await query
+          .order('rating', { ascending: false })
+          .order('price_per_day', { ascending: true });
+
+        if (error) throw error;
+        setCars(data || []);
+      } catch (error) {
+        console.error('Error fetching cars:', error);
+        setCars([]);
+      } finally {
+        setCarsLoading(false);
+      }
+    };
+
+    fetchCars();
+  }, [searchParams]);
 
   useEffect(() => {
     setScreenHeight(window.innerHeight);
@@ -184,13 +237,13 @@ export default function HomePage() {
       setIsGeocodingLoading(true);
       try {
         const geocodedCars = await geocodeAll(
-          cars.filter(car => car.location).map(car => ({
+          cars.filter(car => car.location && car.images).map(car => ({
             id: car.id,
             location: car.location!,
             price_per_day: car.price_per_day,
             make: car.make,
             model: car.model,
-            images: car.images,
+            images: car.images!,
             rating: car.rating
           }))
         );
