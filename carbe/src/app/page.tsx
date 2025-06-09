@@ -431,6 +431,21 @@ export default function HomePage() {
 
               {/* Right Side Actions */}
               <div className="flex items-center space-x-6">
+                {/* Navigation Links */}
+                <Link
+                  href="/dashboard/renter"
+                  className="text-gray-400 hover:text-white transition-colors duration-200 text-sm font-medium"
+                >
+                  Rides
+                </Link>
+                
+                <Link
+                  href="/chat"
+                  className="text-gray-400 hover:text-white transition-colors duration-200 text-sm font-medium"
+                >
+                  Inbox
+                </Link>
+                
                 {/* Conditionally show Become a host button */}
                 {user && profile && !profile.is_host && (
                   <Link
@@ -443,14 +458,14 @@ export default function HomePage() {
                 
                 <Link
                   href="/favorites"
-                  className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200"
                 >
-                  <Heart className="w-6 h-6" />
+                  Saved
                 </Link>
                 
                 <Link
                   href={user ? "/profile" : "/signin"}
-                  className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200"
                 >
                   <User className="w-6 h-6" />
                 </Link>
@@ -494,10 +509,6 @@ export default function HomePage() {
               checkOut={desktopCheckOut}
               onCheckOutChange={setDesktopCheckOut}
               onSearch={handleDesktopSearch}
-              onFilterClick={() => {
-                // TODO: Implement filter modal for desktop
-                console.log('Filter clicked - TODO: Implement filter modal');
-              }}
             />
           </div>
         </section>
