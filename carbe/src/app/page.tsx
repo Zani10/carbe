@@ -5,8 +5,10 @@ import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SearchBar from '@/components/home/SearchBar';
+import DesktopSearchBar from '@/components/home/DesktopSearchBar';
 import MapView from '@/components/home/MapView';
 import CarCard from '@/components/car/CarCard';
+import DesktopCarCard from '@/components/car/DesktopCarCard';
 import MapListingCard from '@/components/maps/MapListingCard';
 import RenterBottomNav from '@/components/layout/RenterBottomNav';
 
@@ -17,10 +19,12 @@ import { FilterState } from '@/components/home/FilterModal';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Map, Heart, User, SlidersHorizontal } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const SEARCHBAR_HEIGHT = 68;
 
 export default function HomePage() {
+  const { user, profile } = useAuth();
   const [screenHeight, setScreenHeight] = useState(800);
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
   const [selectedListingIndex, setSelectedListingIndex] = useState(0);
@@ -34,8 +38,6 @@ export default function HomePage() {
     filters?: FilterState;
   } | null>(null);
   const [isAIExpanded, setIsAIExpanded] = useState(false);
-<<<<<<< Updated upstream
-=======
   const [cars, setCars] = useState<Car[]>([]);
   const [carsLoading, setCarsLoading] = useState(false);
   
@@ -44,9 +46,6 @@ export default function HomePage() {
   const [desktopSearchLocation, setDesktopSearchLocation] = useState('');
   const [desktopCheckIn, setDesktopCheckIn] = useState('');
   const [desktopCheckOut, setDesktopCheckOut] = useState('');
->>>>>>> Stashed changes
-  const [cars, setCars] = useState<Car[]>([]);
-  const [carsLoading, setCarsLoading] = useState(false);
 
   // Fetch cars with direct Supabase query
   useEffect(() => {
@@ -418,9 +417,9 @@ export default function HomePage() {
       </main>
 
       {/* Desktop Layout - Hidden on Mobile */}
-      <main className="hidden lg:block min-h-screen bg-gray-900">
+      <main className="hidden lg:block min-h-screen bg-[#212121]">
         {/* Desktop Navigation */}
-        <nav className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+        <nav className="bg-[#212121] border-b border-gray-800 sticky top-0 z-[100]">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               {/* Logo */}
@@ -432,12 +431,15 @@ export default function HomePage() {
 
               {/* Right Side Actions */}
               <div className="flex items-center space-x-6">
-                <Link
-                  href="/host/setup"
-                  className="px-4 py-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                >
-                  Become a host
-                </Link>
+                {/* Conditionally show Become a host button */}
+                {user && profile && !profile.is_host && (
+                  <Link
+                    href="/host/setup"
+                    className="px-4 py-2 text-sm font-medium text-white bg-[#FF4646] hover:bg-red-600 rounded-lg transition-colors duration-200"
+                  >
+                    Become a host
+                  </Link>
+                )}
                 
                 <Link
                   href="/favorites"
@@ -447,7 +449,7 @@ export default function HomePage() {
                 </Link>
                 
                 <Link
-                  href="/profile"
+                  href={user ? "/profile" : "/signin"}
                   className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
                 >
                   <User className="w-6 h-6" />
@@ -458,7 +460,7 @@ export default function HomePage() {
         </nav>
 
         {/* Hero Section */}
-        <section className="relative h-96 bg-gradient-to-r from-gray-900 to-gray-800 overflow-hidden">
+        <section className="relative h-96 bg-gradient-to-r from-[#212121] to-[#2A2A2A] overflow-hidden">
           {/* Hero Background Image */}
           <div className="absolute inset-0">
             <Image
@@ -468,7 +470,7 @@ export default function HomePage() {
               className="object-cover opacity-40"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 to-gray-800/60"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#212121]/80 to-[#2A2A2A]/60"></div>
           </div>
 
           {/* Hero Content */}
@@ -484,67 +486,19 @@ export default function HomePage() {
             </div>
 
             {/* Desktop Search Bar */}
-            <div className="max-w-4xl mx-auto w-full">
-              <div className="bg-white rounded-2xl shadow-2xl p-2 flex items-center">
-                <div className="flex-1 grid grid-cols-3 divide-x divide-gray-200">
-                  {/* Location */}
-                  <div className="px-4 py-3">
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                      Where
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Search destinations"
-                      value={desktopSearchLocation}
-                      onChange={(e) => setDesktopSearchLocation(e.target.value)}
-                      className="w-full text-sm text-gray-900 placeholder-gray-400 border-0 p-0 focus:ring-0 focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Check In */}
-                  <div className="px-4 py-3">
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                      Check in
-                    </label>
-                    <input
-                      type="date"
-                      value={desktopCheckIn}
-                      onChange={(e) => setDesktopCheckIn(e.target.value)}
-                      className="w-full text-sm text-gray-900 border-0 p-0 focus:ring-0 focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Check Out */}
-                  <div className="px-4 py-3">
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                      Check out
-                    </label>
-                    <input
-                      type="date"
-                      value={desktopCheckOut}
-                      onChange={(e) => setDesktopCheckOut(e.target.value)}
-                      className="w-full text-sm text-gray-900 border-0 p-0 focus:ring-0 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Search Button */}
-                <button
-                  onClick={handleDesktopSearch}
-                  className="ml-2 bg-[#FF4646] hover:bg-red-600 text-white p-3 rounded-xl transition-colors duration-200"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Filter Button */}
-              <div className="flex justify-end mt-4">
-                <button className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                  <SlidersHorizontal className="w-4 h-4" />
-                  <span className="text-sm font-medium">Filters</span>
-                </button>
-              </div>
-            </div>
+            <DesktopSearchBar
+              location={desktopSearchLocation}
+              onLocationChange={setDesktopSearchLocation}
+              checkIn={desktopCheckIn}
+              onCheckInChange={setDesktopCheckIn}
+              checkOut={desktopCheckOut}
+              onCheckOutChange={setDesktopCheckOut}
+              onSearch={handleDesktopSearch}
+              onFilterClick={() => {
+                // TODO: Implement filter modal for desktop
+                console.log('Filter clicked - TODO: Implement filter modal');
+              }}
+            />
           </div>
         </section>
 
@@ -555,10 +509,10 @@ export default function HomePage() {
               {cars.length} car{cars.length !== 1 ? 's' : ''} available
             </h2>
             
-            <button
-              onClick={() => setShowDesktopMap(!showDesktopMap)}
-              className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-            >
+                         <button
+               onClick={() => setShowDesktopMap(!showDesktopMap)}
+               className="flex items-center space-x-2 bg-[#2A2A2A] hover:bg-[#333333] text-white px-4 py-2 rounded-lg transition-colors duration-200 border border-gray-600"
+             >
               <Map className="w-4 h-4" />
               <span className="text-sm font-medium">
                 {showDesktopMap ? 'Hide map' : 'Show map'}
@@ -570,9 +524,9 @@ export default function HomePage() {
             {/* Car Grid */}
             <div className={`${showDesktopMap ? 'w-1/2' : 'w-full'} transition-all duration-300`}>
               {carsLoading || isGeocodingLoading ? (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="bg-gray-800 rounded-2xl p-4 animate-pulse">
+                <div className={`grid gap-6 ${showDesktopMap ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="bg-[#2A2A2A] rounded-2xl p-4 animate-pulse">
                       <div className="bg-gray-700 h-48 rounded-xl mb-4"></div>
                       <div className="bg-gray-700 h-4 rounded mb-2"></div>
                       <div className="bg-gray-700 h-3 rounded w-3/4"></div>
@@ -585,58 +539,40 @@ export default function HomePage() {
                   <p className="text-gray-500 text-sm mt-2">Try adjusting your search criteria</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  {cars.slice(0, showDesktopMap ? 6 : 8).map((car) => (
+                <div className={`grid gap-6 ${showDesktopMap ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
+                  {cars.slice(0, showDesktopMap ? 8 : 12).map((car) => (
                     <Link key={car.id} href={`/car/${car.id}`}>
-                                             <div className="group bg-gray-800 rounded-2xl overflow-hidden hover:bg-gray-700 transition-colors duration-200">
-                        <div className="relative">
-                          <Image
-                            src={car.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
-                            alt={`${car.make} ${car.model}`}
-                            width={400}
-                            height={240}
-                            className="w-full h-48 object-cover"
-                          />
-                          <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-sm flex items-center">
-                            ⭐ {(car.rating || 0).toFixed(1)}
-                          </div>
-                          <button className="absolute top-3 right-3 p-2 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-colors">
-                            <Heart className="w-4 h-4 text-white" />
-                          </button>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="text-lg font-semibold text-white mb-1">
-                            {car.make} {car.model}
-                          </h3>
-                          <p className="text-gray-400 text-sm mb-2">
-                            {car.location || 'Location not specified'}
-                          </p>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400 text-sm">
-                              {car.transmission || 'Automatic'}
-                            </span>
-                            <span className="text-white font-semibold">
-                              €{car.price_per_day}/day
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      <DesktopCarCard
+                        id={car.id}
+                        image={car.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                        rating={car.rating || 0}
+                        make={car.make}
+                        model={car.model}
+                        location={car.location || 'Location not specified'}
+                        transmission={car.transmission || 'Automatic'}
+                        pricePerDay={car.price_per_day}
+                        onCardClick={() => {
+                          // The Link already handles navigation
+                        }}
+                      />
                     </Link>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Desktop Map */}
+            {/* Desktop Map - Made Sticky */}
             {showDesktopMap && (
-              <div className="w-1/2 h-[600px] rounded-2xl overflow-hidden bg-gray-800">
-                <MapView 
-                  listings={mapListings} 
-                  isLoading={isGeocodingLoading || carsLoading}
-                  activeId={selectedListingId}
-                  onMarkerClick={handleMarkerClick}
-                  mapCenter={mapCenter}
-                />
+              <div className="w-1/2">
+                <div className="sticky top-20 h-[calc(100vh-6rem)] rounded-2xl overflow-hidden bg-[#2A2A2A]">
+                  <MapView 
+                    listings={mapListings} 
+                    isLoading={isGeocodingLoading || carsLoading}
+                    activeId={selectedListingId}
+                    onMarkerClick={handleMarkerClick}
+                    mapCenter={mapCenter}
+                  />
+                </div>
               </div>
             )}
           </div>
