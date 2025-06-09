@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, startOfDay, isBefore, isAfter, isSameDay } from 'date-fns';
 import { X, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +21,12 @@ const SimpleCompactDatePicker: React.FC<SimpleCompactDatePickerProps> = ({
   const [startDate, setStartDate] = useState<Date | null>(initialStartDate || null);
   const [endDate, setEndDate] = useState<Date | null>(initialEndDate || null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
+
+  // Sync internal state with props when they change (for AI extracted dates)
+  useEffect(() => {
+    setStartDate(initialStartDate || null);
+    setEndDate(initialEndDate || null);
+  }, [initialStartDate, initialEndDate]);
 
   const handleDateClick = (date: Date) => {
     const today = startOfDay(new Date());

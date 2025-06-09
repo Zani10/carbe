@@ -199,7 +199,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
         // Use AI for complex natural language queries
         console.log('🤖 Using AI search for complex query:', aiPrompt);
         const result = await processSmartSearch(aiPrompt);
-        const extractedDates = extractDatesFromPrompt(aiPrompt);
+        
+        // Extract dates from AI result first, fallback to prompt parsing
+        const aiResultDates = result.response.criteria.dates;
+        const extractedDates = aiResultDates?.start && aiResultDates?.end 
+          ? { 
+              startDate: new Date(aiResultDates.start), 
+              endDate: new Date(aiResultDates.end) 
+            }
+          : extractDatesFromPrompt(aiPrompt);
         
         setAiResults(result.cars);
         setAiMatchCount(Math.min(result.cars.length, 3) as 1 | 2 | 3);
@@ -760,8 +768,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
           isOpen={isDatePickerOpen}
           onClose={() => setIsDatePickerOpen(false)}
           onSelectDates={handleDateSelect}
-          initialStartDate={searchParams.dates[0] || undefined}
-          initialEndDate={searchParams.dates[1] || undefined}
+          initialStartDate={aiExtractedDates.startDate || searchParams.dates[0] || undefined}
+          initialEndDate={aiExtractedDates.endDate || searchParams.dates[1] || undefined}
         />
       </>
     );
@@ -1010,7 +1018,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     placeholder="7-seater for tomorrow in Brussels under €80..."
-                    className="w-full bg-transparent text-white placeholder-white/70 outline-none text-center pr-16 pl-16 text-sm"
+                    className="w-full bg-transparent text-white placeholder-white/70 outline-none text-left pr-16 pl-16 text-sm"
                     autoFocus
                     onKeyDown={(e) => e.key === 'Enter' && handleAIPromptSubmit()}
                   />
@@ -1304,8 +1312,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}
         onSelectDates={handleDateSelect}
-        initialStartDate={searchParams.dates[0] || undefined}
-        initialEndDate={searchParams.dates[1] || undefined}
+        initialStartDate={aiExtractedDates.startDate || searchParams.dates[0] || undefined}
+        initialEndDate={aiExtractedDates.endDate || searchParams.dates[1] || undefined}
       />
 
       <SmartBookingModal 
