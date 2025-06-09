@@ -18,48 +18,82 @@ export interface DesktopCarCardProps {
   onCardClick?: () => void;
 }
 
-// Dynamic brand logo mapping
+// Dynamic brand logo mapping with GitHub raw URLs from car-logos-dataset
 const getBrandLogoUrl = (make: string): string => {
-  const brandLogos: Record<string, string> = {
-    'BMW': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/200px-BMW.svg.png',
-    'Mercedes': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Logo.svg/200px-Mercedes-Logo.svg.png',
-    'Mercedes-Benz': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Logo.svg/200px-Mercedes-Logo.svg.png',
-    'Audi': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Audi-Logo_2016.svg/200px-Audi-Logo_2016.svg.png',
-    'Volkswagen': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Volkswagen_logo_2019.svg/200px-Volkswagen_logo_2019.svg.png',
-    'Ford': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Ford_logo_flat.svg/200px-Ford_logo_flat.svg.png',
-    'Toyota': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Toyota.svg/200px-Toyota.svg.png',
-    'Honda': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Honda.svg/200px-Honda.svg.png',
-    'Nissan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Nissan_2020_logo.svg/200px-Nissan_2020_logo.svg.png',
-    'Porsche': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Porsche_logo.svg/200px-Porsche_logo.svg.png',
-    'Tesla': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Tesla_T_symbol.svg/200px-Tesla_T_symbol.svg.png',
-    'Chevrolet': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Chevrolet-logo.svg/200px-Chevrolet-logo.svg.png',
-    'Ferrari': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Ferrari_Logo.svg/200px-Ferrari_Logo.svg.png',
-    'Lamborghini': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Lamborghini_Logo.svg/200px-Lamborghini_Logo.svg.png',
-    'Maserati': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Maserati_logo.png/200px-Maserati_logo.png',
-    'Jaguar': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Jaguar_logo_2012.svg/200px-Jaguar_logo_2012.svg.png',
-    'Land Rover': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Land_Rover_logo.svg/200px-Land_Rover_logo.svg.png',
-    'Mini': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/MINI_logo.svg/200px-MINI_logo.svg.png',
-    'Volvo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Volvo_logo_%282014%29.svg/200px-Volvo_logo_%282014%29.svg.png',
-    'Subaru': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Subaru_logo.svg/200px-Subaru_logo.svg.png',
-    'Mazda': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Mazda_logo.svg/200px-Mazda_logo.svg.png',
-    'Hyundai': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Hyundai_logo.svg/200px-Hyundai_logo.svg.png',
-    'Kia': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Kia_logo2.svg/200px-Kia_logo2.svg.png',
+  const makeLower = make.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '');
+  
+  // Map common name variations
+  const brandMap: Record<string, string> = {
+    'mercedes-benz': 'mercedes-benz',
+    'mercedes': 'mercedes-benz',
+    'volkswagen': 'volkswagen',
+    'vw': 'volkswagen',
+    'bmw': 'bmw',
+    'audi': 'audi',
+    'ford': 'ford',
+    'toyota': 'toyota',
+    'honda': 'honda',
+    'chevrolet': 'chevrolet',
+    'chevy': 'chevrolet',
+    'nissan': 'nissan',
+    'hyundai': 'hyundai',
+    'kia': 'kia',
+    'mazda': 'mazda',
+    'subaru': 'subaru',
+    'volvo': 'volvo',
+    'lexus': 'lexus',
+    'infiniti': 'infiniti',
+    'acura': 'acura',
+    'tesla': 'tesla',
+    'porsche': 'porsche',
+    'jaguar': 'jaguar',
+    'land-rover': 'land-rover',
+    'range-rover': 'land-rover',
+    'mini': 'mini',
+    'fiat': 'fiat',
+    'alfa-romeo': 'alfa-romeo',
+    'ferrari': 'ferrari',
+    'lamborghini': 'lamborghini',
+    'maserati': 'maserati',
+    'bentley': 'bentley',
+    'rolls-royce': 'rolls-royce',
+    'aston-martin': 'aston-martin',
+    'mclaren': 'mclaren',
+    'bugatti': 'bugatti',
+    'lotus': 'lotus',
+    'peugeot': 'peugeot',
+    'renault': 'renault',
+    'citroen': 'citroen',
+    'opel': 'opel',
+    'vauxhall': 'opel',
+    'seat': 'seat',
+    'skoda': 'skoda',
+    'dacia': 'dacia',
+    'saab': 'saab',
+    'smart': 'smart',
+    'mitsubishi': 'mitsubishi',
+    'suzuki': 'suzuki',
+    'isuzu': 'isuzu',
+    'jeep': 'jeep',
+    'dodge': 'dodge',
+    'chrysler': 'chrysler',
+    'ram': 'ram',
+    'cadillac': 'cadillac',
+    'buick': 'buick',
+    'gmc': 'gmc',
+    'lincoln': 'lincoln',
+    'mercury': 'mercury',
+    'pontiac': 'pontiac',
+    'oldsmobile': 'oldsmobile',
+    'saturn': 'saturn',
+    'hummer': 'hummer',
+    'scion': 'scion',
   };
 
-  // Try exact match first, then partial match
-  const exactMatch = brandLogos[make];
-  if (exactMatch) return exactMatch;
-
-  // Look for partial matches (case insensitive)
-  const makeUpper = make.toUpperCase();
-  for (const [brand, url] of Object.entries(brandLogos)) {
-    if (makeUpper.includes(brand.toUpperCase()) || brand.toUpperCase().includes(makeUpper)) {
-      return url;
-    }
-  }
-
-  // Default fallback - generic car logo
-  return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB4PSI4IiB5PSIxMiIgd2lkdGg9IjI0IiBoZWlnaHQ9IjE2IiB2aWV3Qm94PSIwIDAgMjQgMTYiIGZpbGw9Im5vbmUiPgo8cGF0aCBkPSJNMyA4VjEzSDIxVjhIMThaIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsbD0ibm9uZSIvPgo8Y2lyY2xlIGN4PSI2IiBjeT0iMTIiIHI9IjIiIGZpbGw9IndoaXRlIi8+CjxjaXJjbGUgY3g9IjE4IiBjeT0iMTIiIHI9IjIiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik00IDhMNiAzSDE4TDIwIDhINCIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=';
+  const brandSlug = brandMap[makeLower] || makeLower;
+  
+  // Return GitHub raw URL for the optimized logo
+  return `https://raw.githubusercontent.com/filippofilip95/car-logos-dataset/master/logos/optimized/${brandSlug}.png`;
 };
 
 const DesktopCarCard: React.FC<DesktopCarCardProps> = ({
