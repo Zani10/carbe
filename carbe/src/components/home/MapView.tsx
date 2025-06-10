@@ -19,6 +19,7 @@ interface MapViewProps {
   listings?: CarWithCoordinates[];
   isLoading?: boolean;
   activeId?: string | null;
+  hoveredId?: string | null;
   onMarkerClick?: (id: string) => void;
   mapCenter?: { lat: number; lng: number; zoom?: number } | null;
 }
@@ -26,7 +27,8 @@ interface MapViewProps {
 const MapView: React.FC<MapViewProps> = ({ 
   listings = [], 
   isLoading = false, 
-  activeId, 
+  activeId,
+  hoveredId,
   onMarkerClick,
   mapCenter: externalMapCenter
 }) => {
@@ -77,6 +79,7 @@ const MapView: React.FC<MapViewProps> = ({
         userLocation={userLocation}
         onMarkerClick={handleMarkerClick}
         activeId={activeId}
+        hoveredId={hoveredId}
       />
       
     </div>

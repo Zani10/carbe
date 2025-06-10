@@ -59,6 +59,9 @@ export default function HomePage() {
     transmission: '',
     fuelType: '',
   });
+  
+  // Hover state for map interaction
+  const [hoveredCarId, setHoveredCarId] = useState<string | null>(null);
 
   // Fetch cars with direct Supabase query
   useEffect(() => {
@@ -248,13 +251,42 @@ export default function HomePage() {
     }
   );
 
-  const handleSearch = (params: {
+  const handleSearch = async (params: {
     location: string;
     dates: [Date | null, Date | null];
     filters?: FilterState;
   }) => {
     console.log('Search params:', params);
     setSearchParams(params);
+
+    // If user searched for a specific location, try to center map on it
+    if (params.location && params.location !== 'Anywhere') {
+      try {
+        // Simple geocoding for common cities
+        const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
+          'paris': { lat: 48.8566, lng: 2.3522 },
+          'london': { lat: 51.5074, lng: -0.1278 },
+          'amsterdam': { lat: 52.3676, lng: 4.9041 },
+          'berlin': { lat: 52.5200, lng: 13.4050 },
+          'madrid': { lat: 40.4168, lng: -3.7038 },
+          'rome': { lat: 41.9028, lng: 12.4964 },
+          'brussels': { lat: 50.8503, lng: 4.3517 },
+          'barcelona': { lat: 41.3851, lng: 2.1734 },
+          'milan': { lat: 45.4642, lng: 9.1900 },
+          'lisbon': { lat: 38.7223, lng: -9.1393 }
+        };
+        
+        const locationKey = params.location.toLowerCase();
+        if (cityCoordinates[locationKey]) {
+          setMapCenter({
+            ...cityCoordinates[locationKey],
+            zoom: 12
+          });
+        }
+      } catch (error) {
+        console.error('Error setting map center for location:', error);
+      }
+    }
   };
 
   const handleMarkerClick = (carId: string) => {
@@ -287,6 +319,51 @@ export default function HomePage() {
   };
 
   // Geocode cars when loaded
+  // Function to calculate optimal map center and zoom for given cars
+  const calculateMapBounds = (geocodedCars: CarWithCoordinates[]) => {
+    if (geocodedCars.length === 0) return null;
+    
+    if (geocodedCars.length === 1) {
+      // Single car - center on it with moderate zoom
+      return {
+        lat: geocodedCars[0].lat,
+        lng: geocodedCars[0].lng,
+        zoom: 13
+      };
+    }
+    
+    // Multiple cars - calculate bounds
+    const lats = geocodedCars.map(car => car.lat);
+    const lngs = geocodedCars.map(car => car.lng);
+    
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    
+    // Calculate center
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    
+    // Calculate zoom based on the spread of coordinates
+    const latDiff = maxLat - minLat;
+    const lngDiff = maxLng - minLng;
+    const maxDiff = Math.max(latDiff, lngDiff);
+    
+    // Estimate zoom level (this is approximate)
+    let zoom = 13;
+    if (maxDiff > 1) zoom = 8;
+    else if (maxDiff > 0.5) zoom = 10;
+    else if (maxDiff > 0.1) zoom = 12;
+    else if (maxDiff > 0.01) zoom = 14;
+    
+    return {
+      lat: centerLat,
+      lng: centerLng,
+      zoom
+    };
+  };
+
   useEffect(() => {
     const geocodeCars = async () => {
       if (cars.length === 0 || carsLoading) return;
@@ -305,6 +382,12 @@ export default function HomePage() {
           }))
         );
         setMapListings(geocodedCars);
+        
+        // Auto-focus map on the filtered cars
+        const bounds = calculateMapBounds(geocodedCars);
+        if (bounds) {
+          setMapCenter(bounds);
+        }
       } catch (error) {
         console.error('Failed to geocode cars:', error);
       } finally {
@@ -315,7 +398,7 @@ export default function HomePage() {
     geocodeCars();
   }, [cars, carsLoading]);
 
-  const handleDesktopSearch = () => {
+  const handleDesktopSearch = async () => {
     // Create search parameters from desktop inputs
     const searchDates: [Date | null, Date | null] = [
       desktopCheckIn ? new Date(desktopCheckIn) : null,
@@ -351,6 +434,38 @@ export default function HomePage() {
     console.log('Desktop search:', searchParamsObj);
     setDesktopSearchParams(searchParamsObj);
     setIsDesktopSearchActive(true);
+    
+    // Auto-open map after search
+    setShowDesktopMap(true);
+
+    // If user searched for a specific location, try to center map on it
+    if (desktopSearchLocation && desktopSearchLocation !== 'Anywhere') {
+      try {
+        // Simple geocoding for common cities (you can expand this)
+        const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
+          'paris': { lat: 48.8566, lng: 2.3522 },
+          'london': { lat: 51.5074, lng: -0.1278 },
+          'amsterdam': { lat: 52.3676, lng: 4.9041 },
+          'berlin': { lat: 52.5200, lng: 13.4050 },
+          'madrid': { lat: 40.4168, lng: -3.7038 },
+          'rome': { lat: 41.9028, lng: 12.4964 },
+          'brussels': { lat: 50.8503, lng: 4.3517 },
+          'barcelona': { lat: 41.3851, lng: 2.1734 },
+          'milan': { lat: 45.4642, lng: 9.1900 },
+          'lisbon': { lat: 38.7223, lng: -9.1393 }
+        };
+        
+        const locationKey = desktopSearchLocation.toLowerCase();
+        if (cityCoordinates[locationKey]) {
+          setMapCenter({
+            ...cityCoordinates[locationKey],
+            zoom: 12
+          });
+        }
+      } catch (error) {
+        console.error('Error setting map center for location:', error);
+      }
+    }
   };
 
   const resetDesktopSearch = () => {
@@ -690,19 +805,24 @@ export default function HomePage() {
                 <div className={`grid gap-6 ${showDesktopMap ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
                   {cars.slice(0, showDesktopMap ? 8 : 12).map((car) => (
                     <Link key={car.id} href={`/car/${car.id}`}>
-                      <DesktopCarCard
-                        id={car.id}
-                        image={car.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
-                        rating={car.rating || 0}
-                        make={car.make}
-                        model={car.model}
-                        location={car.location || 'Location not specified'}
-                        transmission={car.transmission || 'Automatic'}
-                        pricePerDay={car.price_per_day}
-                        onCardClick={() => {
-                          // The Link already handles navigation
-                        }}
-                      />
+                      <div
+                        onMouseEnter={() => setHoveredCarId(car.id)}
+                        onMouseLeave={() => setHoveredCarId(null)}
+                      >
+                        <DesktopCarCard
+                          id={car.id}
+                          image={car.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                          rating={car.rating || 0}
+                          make={car.make}
+                          model={car.model}
+                          location={car.location || 'Location not specified'}
+                          transmission={car.transmission || 'Automatic'}
+                          pricePerDay={car.price_per_day}
+                          onCardClick={() => {
+                            // The Link already handles navigation
+                          }}
+                        />
+                      </div>
                     </Link>
                   ))}
                 </div>
@@ -717,6 +837,7 @@ export default function HomePage() {
                     listings={mapListings} 
                     isLoading={isGeocodingLoading || carsLoading}
                     activeId={selectedListingId}
+                    hoveredId={hoveredCarId}
                     onMarkerClick={handleMarkerClick}
                     mapCenter={mapCenter}
                   />

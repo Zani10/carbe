@@ -15,8 +15,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Create price marker with active state (like Airbnb)
-const createPriceIcon = (price: number, isActive: boolean = false) => {
+// Create price marker with active and hovered states (like Airbnb)
+const createPriceIcon = (price: number, isActive: boolean = false, isHovered: boolean = false) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('nl-NL', {
       style: 'currency',
@@ -27,12 +27,13 @@ const createPriceIcon = (price: number, isActive: boolean = false) => {
   };
 
   const activeClass = isActive ? 'price-marker-active' : '';
-  const scale = isActive ? 1.15 : 1;
-  const zIndex = isActive ? 2000 : 1000; // Higher z-index for active markers
+  const hoveredClass = isHovered ? 'price-marker-hovered' : '';
+  const scale = isActive ? 1.15 : (isHovered ? 1.1 : 1);
+  const zIndex = isActive ? 2000 : (isHovered ? 1500 : 1000); // Higher z-index for active/hovered markers
 
   return new L.DivIcon({
     html: `
-      <div class="price-marker ${activeClass}" style="transform: scale(${scale}); z-index: ${zIndex}; position: relative;">
+      <div class="price-marker ${activeClass} ${hoveredClass}" style="transform: scale(${scale}); z-index: ${zIndex}; position: relative;">
         <span class="price-text">${formatPrice(price)}</span>
       </div>
     `,
@@ -125,9 +126,10 @@ interface MapProps {
   userLocation: Coordinates | null;
   onMarkerClick: (car: CarWithCoordinates) => void;
   activeId?: string | null;
+  hoveredId?: string | null;
 }
 
-const Map: React.FC<MapProps> = ({ center, zoom, listings, userLocation, onMarkerClick, activeId }) => {
+const Map: React.FC<MapProps> = ({ center, zoom, listings, userLocation, onMarkerClick, activeId, hoveredId }) => {
   return (
     <>
       {/* Add custom styles for markers */}
@@ -145,6 +147,9 @@ const Map: React.FC<MapProps> = ({ center, zoom, listings, userLocation, onMarke
           color: #222;
           position: relative;
           z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
         .price-marker:hover {
@@ -164,9 +169,23 @@ const Map: React.FC<MapProps> = ({ center, zoom, listings, userLocation, onMarke
           color: white !important;
         }
         
+        .price-marker-hovered {
+          background: #FF4646 !important;
+          color: white !important;
+          border-color: #FF4646 !important;
+          box-shadow: 0 4px 12px rgba(255, 70, 70, 0.3) !important;
+          transform: scale(1.1) !important;
+        }
+        
+        .price-marker-hovered .price-text {
+          color: white !important;
+        }
+        
         .price-text {
           white-space: nowrap;
           line-height: 1;
+          text-align: center;
+          display: block;
         }
         
         .user-marker {
@@ -238,12 +257,13 @@ const Map: React.FC<MapProps> = ({ center, zoom, listings, userLocation, onMarke
         {listings.map((car) => {
           const jitteredCoords = addJitter({ lat: car.lat, lng: car.lng });
           const isActive = activeId === car.id;
+          const isHovered = hoveredId === car.id;
           
           return (
             <Marker
               key={car.id}
               position={[jitteredCoords.lat, jitteredCoords.lng]}
-              icon={createPriceIcon(car.pricePerDay, isActive)}
+              icon={createPriceIcon(car.pricePerDay, isActive, isHovered)}
               eventHandlers={{
                 click: () => onMarkerClick(car),
               }}
