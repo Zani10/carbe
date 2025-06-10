@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MessageSquare, Loader2 } from 'lucide-react';
+import { MessageCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/chat/useChat';
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,7 @@ export const MessageHostButton: React.FC<MessageHostButtonProps> = ({
   carName = 'this car',
   bookingId,
   className,
-  variant = 'primary',
+  variant = 'secondary',
 }) => {
   const { user } = useAuth();
   const { createOrGetConversation } = useChat();
@@ -64,19 +64,17 @@ export const MessageHostButton: React.FC<MessageHostButtonProps> = ({
       onClick={handleMessageHost}
       disabled={isCreating}
       className={clsx(
-        'flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-medium transition-all disabled:opacity-50',
-        variant === 'primary' && 'bg-[#FF4646] text-white hover:bg-[#FF4646]/90',
-        variant === 'secondary' && 'bg-[#2A2A2A] text-white border border-gray-700/50 hover:bg-[#333333] hover:border-gray-600/50',
+        'w-full bg-[#2A2A2A] hover:bg-[#3A3A3A] text-white font-medium py-3.5 px-4 rounded-full flex items-center justify-center transition-colors disabled:opacity-50',
         className
       )}
     >
       {isCreating ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
+        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
       ) : (
-        <MessageSquare className="h-5 w-5" />
+        <MessageCircle className="w-5 h-5 mr-2" />
       )}
       <span>
-        {isCreating ? 'Starting chat...' : `Message Host about ${carName}`}
+        {isCreating ? 'Starting chat...' : 'Message host'}
       </span>
     </button>
   );

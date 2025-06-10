@@ -12,7 +12,7 @@ interface SpecsGridProps {
 }
 
 const SpecIcon: React.FC<{ type: Spec['icon'] }> = ({ type }) => {
-  const iconClassName = "h-7 w-7 text-[#FF3B30]"; // Ferrari red color for icons
+  const iconClassName = "h-7 w-7 lg:h-8 lg:w-8 text-[#FF4646]";
   
   switch (type) {
     case 'range':
@@ -28,15 +28,15 @@ const SpecIcon: React.FC<{ type: Spec['icon'] }> = ({ type }) => {
 
 const SpecsGrid: React.FC<SpecsGridProps> = ({ specs }) => {
   return (
-    <div className="grid grid-cols-3 gap-3 mb-8">
+    <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-8">
       {specs.map((spec, index) => (
         <div
           key={index}
-          className="bg-[#2A2A2A] rounded-xl p-4 flex flex-col items-center justify-center text-center"
+          className="bg-[#2A2A2A] rounded-xl p-4 lg:p-6 flex flex-col items-center justify-center text-center"
         >
           <SpecIcon type={spec.icon} />
           <div className="mt-3">
-            <div className="font-bold text-white text-base">{spec.value}</div>
+            <div className="font-bold text-white text-base lg:text-lg">{spec.value}</div>
             <div className="text-xs text-gray-400 mt-0.5">{spec.subtext}</div>
           </div>
         </div>

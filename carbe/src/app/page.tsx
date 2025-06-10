@@ -192,9 +192,10 @@ export default function HomePage() {
     }
     setSelectedListingId(null);
     setSelectedListingIndex(0);
-    // Clear map center zoom to reset to default view
-    setMapCenter(null);
-    // Don't change the draggable section height - just remove the selection
+    // Clear map center zoom to reset to user location
+    if (!searchParams?.location || searchParams.location === 'Anywhere') {
+      setMapCenter(null);
+    }
   };
 
   const bind = useDrag(
@@ -202,7 +203,7 @@ export default function HomePage() {
       if (last) {
         const newHeight = defaultHeight - my;
         
-        // More natural fast swipe detection (reduced threshold)
+        
         if (Math.abs(vy) > 0.25) {
           if (vy < 0) {
             // Fast swipe up - full list
@@ -383,10 +384,13 @@ export default function HomePage() {
         );
         setMapListings(geocodedCars);
         
-        // Auto-focus map on the filtered cars
-        const bounds = calculateMapBounds(geocodedCars);
-        if (bounds) {
-          setMapCenter(bounds);
+        // Homepage: Don't auto-focus on cars, let MapView focus on user location
+        // Only set map center if user has searched for a specific location
+        if (searchParams?.location && searchParams.location !== 'Anywhere') {
+          const bounds = calculateMapBounds(geocodedCars);
+          if (bounds) {
+            setMapCenter(bounds);
+          }
         }
       } catch (error) {
         console.error('Failed to geocode cars:', error);
@@ -396,7 +400,7 @@ export default function HomePage() {
     };
 
     geocodeCars();
-  }, [cars, carsLoading]);
+  }, [cars, carsLoading, searchParams]);
 
   const handleDesktopSearch = async () => {
     // Create search parameters from desktop inputs
@@ -670,6 +674,16 @@ export default function HomePage() {
                 )}
               {/* Right Side Actions */}
               <div className="flex items-center space-x-6 flex-shrink-0">
+                {/* Conditionally show Become a host button - moved to the left */}
+                {user && profile && !profile.is_host && (
+                  <Link
+                  href="/host/setup"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#FF4646] hover:bg-red-600 rounded-lg transition-colors duration-200"
+                  >
+                    Become a host
+                  </Link>
+                )}
+                
                 {/* Navigation Links */}
                 <Link
                   href="/dashboard/renter"
@@ -684,16 +698,6 @@ export default function HomePage() {
                 >
                   Inbox
                 </Link>
-                
-                {/* Conditionally show Become a host button */}
-                {user && profile && !profile.is_host && (
-                  <Link
-                  href="/host/setup"
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#FF4646] hover:bg-red-600 rounded-lg transition-colors duration-200"
-                  >
-                    Become a host
-                  </Link>
-                )}
                 
                 <Link
                   href="/favorites"

@@ -35,8 +35,19 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
         name={carName} 
         description={description} 
       />
-      <SpecsGrid specs={specs} />
-      <DetailsSection details={details} />
+      
+      {/* Mobile: Simple stacked layout, Desktop: Side-by-side */}
+      <div className="block lg:grid lg:grid-cols-3 lg:gap-8 space-y-6 lg:space-y-0">
+        {/* Mobile: Full width, Desktop: 2 columns */}
+        <div className="lg:col-span-2">
+          <SpecsGrid specs={specs} />
+        </div>
+        
+        {/* Mobile: Full width, Desktop: 1 column */}
+        <div className="lg:col-span-1">
+          <DetailsSection details={details} />
+        </div>
+      </div>
       
       {/* Message Host Button */}
       {carId && hostId && (

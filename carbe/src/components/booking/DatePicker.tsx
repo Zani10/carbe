@@ -368,38 +368,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
             ))
           )}
 
-          {/* Legend */}
-          {availabilityData && (
-            <div className="mt-6 p-4 bg-[#292929] rounded-xl">
-              <h4 className="text-white font-medium mb-3">Legend</h4>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-[#1F1F1F] rounded border border-gray-600"></div>
-                  <span className="text-gray-300">Weekend</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-red-900/20 rounded border border-red-500/30 relative">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-2 h-0.5 bg-red-500 rotate-45"></div>
-                    </div>
-                  </div>
-                  <span className="text-gray-300">Unavailable</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-blue-600/30 rounded border border-blue-500/50 relative">
-                    <div className="absolute top-0.5 right-0.5">
-                      <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
-                    </div>
-                  </div>
-                  <span className="text-gray-300">Your booking</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-[#FF4646] rounded"></div>
-                  <span className="text-gray-300">Selected</span>
-                </div>
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
 
