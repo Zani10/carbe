@@ -686,6 +686,13 @@ export default function HomePage() {
                 
                 {/* Navigation Links */}
                 <Link
+                  href="/favorites"
+                  className="text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200"
+                  >
+                  Saved
+                </Link>
+
+                <Link
                   href="/dashboard/renter"
                   className="text-gray-400 hover:text-white transition-colors duration-200 text-sm font-medium"
                 >
@@ -697,13 +704,6 @@ export default function HomePage() {
                   className="text-gray-400 hover:text-white transition-colors duration-200 text-sm font-medium"
                 >
                   Inbox
-                </Link>
-                
-                <Link
-                  href="/favorites"
-                  className="text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200"
-                  >
-                  Saved
                 </Link>
                 
                 <Link

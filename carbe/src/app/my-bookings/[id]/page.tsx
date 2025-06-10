@@ -128,25 +128,46 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
 
   return (
     <div className="min-h-screen bg-[#212121]">
-      {/* Enhanced Header */}
-      <div className="bg-[#2A2A2A] border-b border-gray-700/50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+      {/* Mobile Header */}
+      <div className="lg:hidden sticky top-0 z-50 bg-[#2A2A2A] border-b border-gray-700/50">
+        <div className="flex items-center justify-between px-4 py-4">
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => router.back()}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700/50 hover:bg-gray-600/50 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 text-white" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-white">Your Ride</h1>
+              <p className="text-gray-400 text-sm">
+                {booking.cars.make} {booking.cars.model}
+              </p>
+            </div>
+          </div>
+          <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full ${statusInfo.bgColor} border border-opacity-20`}>
+            <CheckCircle className="h-4 w-4" />
+            <span className={`text-sm font-medium ${statusInfo.color}`}>{statusInfo.text}</span>
+          </div>
+        </div>
+      </div>
+
+            {/* Desktop Header */}
+      <div className="hidden lg:block bg-[#212121] border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => router.back()}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700/50 hover:bg-gray-600/50 transition-colors"
+                className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer"
               >
-                <ArrowLeft className="h-5 w-5 text-white" />
+                <ArrowLeft size={20} />
+                <span className="text-sm font-medium">Back</span>
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-white">Your Ride</h1>
-                <p className="text-gray-400 text-sm">
-                  {booking.cars.make} {booking.cars.model}
-                </p>
-              </div>
+              <div className="h-4 w-px bg-gray-700"></div>
+              <h1 className="text-xl font-semibold text-white">Your Ride</h1>
             </div>
-            <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full ${statusInfo.bgColor} border border-opacity-20`}>
+            <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full ${statusInfo.bgColor} `}>
               <CheckCircle className="h-4 w-4" />
               <span className={`text-sm font-medium ${statusInfo.color}`}>{statusInfo.text}</span>
             </div>
@@ -154,7 +175,7 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -214,12 +235,12 @@ export default function BookingDetailsPage({ params }: BookingDetailsPageProps) 
               {/* Dynamic pickup location from host */}
               <div className="bg-gray-800/50 rounded-xl p-4 mb-4">
                 <p className="text-gray-300 text-sm whitespace-pre-line leading-relaxed">
-                  {booking.pickup_location || booking.cars.location || "Contact host for pickup location"}
+                  {booking.pickup_location || booking.cars.location || "Contact host for pickup locations details"}
                 </p>
               </div>
               
               <PickupLocationMap 
-                address={booking.pickup_location || booking.cars.location || "Contact host for pickup location"}
+                address={booking.pickup_location || booking.cars.location || "Amsterdam, Netherlands"}
               />
             </div>
 

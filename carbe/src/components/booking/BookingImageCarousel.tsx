@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
-import { Car } from 'lucide-react';
+import { Car, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface BookingImageCarouselProps {
   images: string[];
@@ -83,6 +83,24 @@ export default function BookingImageCarousel({ images, alt, className = '' }: Bo
             />
           </div>
         ))}
+
+        {/* Desktop Navigation Arrows - Only show on desktop */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={goToPrevious}
+              className="hidden lg:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full items-center justify-center transition-colors z-10"
+            >
+              <ChevronLeft className="h-5 w-5 text-white" />
+            </button>
+            <button
+              onClick={goToNext}
+              className="hidden lg:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full items-center justify-center transition-colors z-10"
+            >
+              <ChevronRight className="h-5 w-5 text-white" />
+            </button>
+          </>
+        )}
 
         {/* Image Counter - Only show if more than 1 image */}
         {images.length > 1 && (

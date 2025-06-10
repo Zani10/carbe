@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { MapPin, Navigation, Copy, ExternalLink, Loader2 } from 'lucide-react';
 
@@ -26,23 +26,66 @@ export default function PickupLocationMap({
   className = '' 
 }: PickupLocationMapProps) {
   const [copied, setCopied] = useState(false);
+  const [mapCoordinates, setMapCoordinates] = useState(coordinates);
+
+  // Geocode address to get actual coordinates
+  const geocodeAddress = async (addressToGeocode: string) => {
+    if (addressToGeocode.includes("Contact host for pickup")) return;
+    
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressToGeocode)}`);
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        const newCoords = { lat: parseFloat(lat), lng: parseFloat(lon) };
+        setMapCoordinates(newCoords);
+      }
+    } catch (error) {
+      console.error('Geocoding failed:', error);
+    }
+  };
+
+  // Effect to geocode address when it changes
+  React.useEffect(() => {
+    if (address && !address.includes("Contact host for pickup")) {
+      geocodeAddress(address);
+    }
+  }, [address]);
 
   const copyAddress = async () => {
-    if (address !== "Contact host for pickup location") {
+    if (!address || address.includes("Contact host for pickup")) {
+      console.warn('Cannot copy address: invalid or placeholder address');
+      return;
+    }
+    
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy address:', err);
+      // Fallback for older browsers
       try {
-        await navigator.clipboard.writeText(address);
+        const textArea = document.createElement('textarea');
+        textArea.value = address;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy address:', err);
+      } catch (fallbackErr) {
+        console.error('Fallback copy method also failed:', fallbackErr);
       }
     }
   };
 
   const openDirections = () => {
-    if (address === "Contact host for pickup location") return;
+    if (address.includes("Contact host for pickup")) return;
     
     const encodedAddress = encodeURIComponent(address);
+    const coords = `${mapCoordinates.lat},${mapCoordinates.lng}`;
     
     // Detect user agent and open appropriate maps app
     const userAgent = navigator.userAgent;
@@ -50,14 +93,14 @@ export default function PickupLocationMap({
     const isAndroid = /Android/.test(userAgent);
     
     if (isIOS) {
-      // Open Apple Maps on iOS
-      window.open(`maps://maps.apple.com/?q=${encodedAddress}`, '_blank');
+      // Try Apple Maps with coordinates first, fallback to address
+      window.open(`maps://maps.apple.com/?daddr=${coords}&dirflg=d`, '_blank');
     } else if (isAndroid) {
-      // Open Google Maps on Android
-      window.open(`google.navigation:q=${encodedAddress}`, '_blank');
+      // Open Google Maps with navigation to coordinates
+      window.open(`google.navigation:q=${coords}`, '_blank');
     } else {
-      // Open Google Maps in browser as fallback
-      window.open(`https://maps.google.com/maps?q=${encodedAddress}`, '_blank');
+      // Open Google Maps in browser with directions
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${coords}&travelmode=driving`, '_blank');
     }
   };
 
@@ -66,7 +109,7 @@ export default function PickupLocationMap({
       {/* Leaflet Map */}
       <div className="relative h-48 rounded-xl overflow-hidden border border-gray-700/50">
         <DynamicMap 
-          center={coordinates}
+          center={mapCoordinates}
         />
       </div>
 
@@ -78,31 +121,31 @@ export default function PickupLocationMap({
             <p className="font-medium text-white text-sm leading-relaxed">
               {address}
             </p>
-            {address !== "Contact host for pickup location" && (
+            {!address.includes("Contact host for pickup") && (
               <p className="text-xs text-gray-400 mt-1">Pickup and return location</p>
             )}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <button
             onClick={openDirections}
-            disabled={address === "Contact host for pickup location"}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              address === "Contact host for pickup location"
+            disabled={address.includes("Contact host for pickup")}
+            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              address.includes("Contact host for pickup")
                 ? 'text-gray-500 cursor-not-allowed'
-                : 'text-[#FF2800] hover:text-[#FF2800]/80 hover:bg-[#FF2800]/5'
+                : 'text-white bg-[#FF4646] hover:bg-[#FF4646]/90 hover:shadow-lg transform hover:scale-105'
             }`}
           >
             <Navigation className="h-4 w-4" />
             <span>Get Directions</span>
           </button>
 
-          {address !== "Contact host for pickup location" && (
+          {address && !address.includes("Contact host for pickup") && (
             <button
               onClick={copyAddress}
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500 transition-all"
             >
               {copied ? (
                 <>

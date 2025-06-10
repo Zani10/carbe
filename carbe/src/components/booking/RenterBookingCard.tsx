@@ -121,7 +121,7 @@ export default function RenterBookingCard({ booking }: RenterBookingCardProps) {
 
           {/* Main Content Area */}
           <div className="flex-1 min-w-0">
-            {/* Top Row: Car name and Status */}
+            {/* Top Row: Car name, Status, and Message Button */}
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-white leading-tight truncate">
@@ -129,11 +129,37 @@ export default function RenterBookingCard({ booking }: RenterBookingCardProps) {
                 </h3>
               </div>
               
-              <div className="flex items-center space-x-1 ml-3">
-                <div className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotColor}`} />
-                <span className={`text-xs font-medium ${statusConfig.textColor} whitespace-nowrap`}>
-                  {statusConfig.text}
-                </span>
+              <div className="flex items-center space-x-2 ml-3">
+                {booking.status === 'completed' && (
+                  <button 
+                    className="text-gray-400 hover:text-amber-400 transition-colors p-1 flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Add review functionality
+                    }}
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                
+                {['confirmed', 'awaiting_approval'].includes(booking.status) && (
+                  <MessageBookingButton
+                    carId={booking.cars.id}
+                    hostId={booking.cars.owner_id}
+                    renterId={booking.renter_id}
+                    bookingId={booking.id}
+                    variant="icon"
+                    size="sm"
+                    className="text-gray-400 hover:text-blue-400 bg-transparent hover:bg-gray-700/50 p-1 flex-shrink-0"
+                  />
+                )}
+                
+                <div className="flex items-center space-x-1">
+                  <div className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotColor}`} />
+                  <span className={`text-xs font-medium ${statusConfig.textColor} whitespace-nowrap`}>
+                    {statusConfig.text}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -154,33 +180,7 @@ export default function RenterBookingCard({ booking }: RenterBookingCardProps) {
             </div>
 
             {/* Action Row */}
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex items-center space-x-2">
-                {booking.status === 'completed' && (
-                  <button 
-                    className="text-gray-400 hover:text-amber-400 transition-colors p-0.5"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Add review functionality
-                    }}
-                  >
-                    <Star className="h-3.5 w-3.5" />
-                  </button>
-                )}
-                
-                {['confirmed', 'awaiting_approval'].includes(booking.status) && (
-                  <MessageBookingButton
-                    carId={booking.cars.id}
-                    hostId={booking.cars.owner_id}
-                    renterId={booking.renter_id}
-                    bookingId={booking.id}
-                    variant="icon"
-                    size="sm"
-                    className="text-gray-400 hover:text-blue-400 bg-transparent hover:bg-gray-700/50 p-0.5"
-                  />
-                )}
-              </div>
-
+            <div className="flex items-center justify-end mt-2">
               {booking.status === 'confirmed' && isUpcoming() && (
                 <div className="flex items-center text-xs text-green-400">
                   <MapPin className="h-3 w-3 mr-1" />
