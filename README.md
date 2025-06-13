@@ -1,7 +1,7 @@
 # 🚗 Carbe - Premium Car Sharing Platform
 
 <div align="center">
-  <img src="https://via.placeholder.com/200x60/FF4646/FFFFFF?text=CARBE" alt="Carbe Logo" />
+  carbe
   
   **A modern, professional car-sharing platform built for the next generation**
   
