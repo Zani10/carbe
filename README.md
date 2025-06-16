@@ -465,5 +465,5 @@ This project is proprietary software. All rights reserved.
 
 <div align="center">
   <p>Built with ❤️</p>
-  <p>© 2022 Carbe. All rights reserved.</p>
+  <p>© 2025 Carbe. All rights reserved.</p>
 </div> 
